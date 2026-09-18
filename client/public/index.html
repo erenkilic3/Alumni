@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alumni Tracking System | Modern Graduate Network</title>
+  <meta name="description" content="Next-generation Alumni Tracking Platform built with Node.js, PostgreSQL, and Docker. Track alumni career trajectories, connect mentors, and discover opportunities.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-logo">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">Alumni<span class="highlight">Sphere</span></span>
+          <span class="brand-subtitle">Tracking & Network System</span>
+        </div>
+      </div>
+
+      <!-- Live Architecture Status Pills -->
+      <div class="sys-status-container">
+        <div class="status-pill" id="backendStatusPill" title="Node.js API Server">
+          <span class="status-dot pulsing"></span>
+          <span class="status-text">API: Connecting...</span>
+        </div>
+        <div class="status-pill" id="dbStatusPill" title="PostgreSQL Container">
+          <span class="status-dot"></span>
+          <span class="status-text">PostgreSQL: Ready</span>
+        </div>
+        <div class="status-pill docker-pill" title="Docker Containerization">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.186.185.186zm0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .103.082.186.185.186zm-2.93 2.714h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186H8.099a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185H8.099a.185.185 0 00-.185.185v1.887c0 .103.082.186.185.186zm-2.955 5.428h2.118a.186.186 0 00.186-.185V11.72a.186.186 0 00-.186-.186H5.144a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V9.006a.186.186 0 00-.186-.186H5.144a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185H5.144a.185.185 0 00-.185.185v1.887c0 .103.083.186.185.186m-2.93 5.428h2.118a.186.186 0 00.186-.185V11.72a.186.186 0 00-.186-.186H2.214a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185"/>
+          </svg>
+          <span>Dockerized</span>
+        </div>
+      </div>
+
+      <!-- Actions: Theme Toggle & Add Profile -->
+      <div class="nav-actions">
+        <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Dark / Light Mode" title="Toggle Theme">
+          <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span class="theme-label" id="themeLabel">Dark</span>
+        </button>
+
+        <button id="openModalBtn" class="btn btn-primary">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+          <span>Register Alumni</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="hero-glow"></div>
+    <div class="container hero-content">
+      <div class="hero-badge">
+        <span class="badge-dot"></span>
+        <span>Node.js • PostgreSQL • Docker Powered Architecture</span>
+      </div>
+      <h1 class="hero-title">
+        Empowering Global <span class="gradient-text">Alumni Connections</span> & Career Trajectories
+      </h1>
+      <p class="hero-subtitle">
+        Real-time graduate tracking, industry intelligence, mentorship matching, and job opportunities in a high-performance containerized platform.
+      </p>
+
+      <!-- Key Metrics Row -->
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon">👥</div>
+          <div class="metric-number" id="metricTotalAlumni">1,245+</div>
+          <div class="metric-label">Registered Alumni</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">💼</div>
+          <div class="metric-number" id="metricEmploymentRate">94.8%</div>
+          <div class="metric-label">Employment Rate</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🌱</div>
+          <div class="metric-number" id="metricMentors">183</div>
+          <div class="metric-label">Active Mentors</div>
+        </div>
+        <div class="metric-card">
+          <div class="metric-icon">🏢</div>
+          <div class="metric-number" id="metricPartners">145</div>
+          <div class="metric-label">Partner Employers</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Main Workspace Area -->
+  <main class="container main-content">
+    <!-- Tab Navigation -->
+    <div class="tabs-header">
+      <div class="tabs-list">
+        <button class="tab-btn active" data-tab="directory">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          Alumni Directory
+        </button>
+        <button class="tab-btn" data-tab="jobs">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
+          Job & Internship Board
+        </button>
+        <button class="tab-btn" data-tab="architecture">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+          Docker & System Specs
+        </button>
+      </div>
+    </div>
+
+    <!-- Tab 1: Alumni Directory -->
+    <section id="tab-directory" class="tab-content active">
+      <!-- Search & Filters Toolbar -->
+      <div class="filter-card">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="searchInput" placeholder="Search by name, role, company, or skills (e.g., Google, Go, AI)...">
+          <button id="clearSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+        </div>
+
+        <div class="filter-controls">
+          <div class="select-group">
+            <label for="deptFilter">Department</label>
+            <select id="deptFilter">
+              <option value="All">All Departments</option>
+              <option value="Computer Engineering">Computer Engineering</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Industrial Engineering">Industrial Engineering</option>
+              <option value="Electrical & Electronics Engineering">Electrical & Electronics</option>
+              <option value="Business Administration">Business Administration</option>
+            </select>
+          </div>
+
+          <div class="select-group">
+            <label for="yearFilter">Grad Year</label>
+            <select id="yearFilter">
+              <option value="All">All Years</option>
+              <option value="2024">2024</option>
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="2019">2019</option>
+              <option value="2018">2018</option>
+            </select>
+          </div>
+
+          <label class="toggle-switch-label" title="Show only mentors available for students">
+            <input type="checkbox" id="mentorFilter">
+            <span class="custom-toggle"></span>
+            <span class="toggle-text">Mentors Only</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- Result Counter & Loading -->
+      <div class="results-header">
+        <span id="resultsCount">Showing alumni profiles...</span>
+        <div class="sort-indicator">
+          <span>Sort: Recent Graduates</span>
+        </div>
+      </div>
+
+      <!-- Alumni Cards Grid -->
+      <div class="alumni-grid" id="alumniGrid">
+        <!-- Injected via JavaScript -->
+      </div>
+    </section>
+
+    <!-- Tab 2: Job Board -->
+    <section id="tab-jobs" class="tab-content">
+      <div class="section-intro">
+        <h2>Career & Internship Opportunities</h2>
+        <p>Curated roles posted directly by alumni network members and verified enterprise partners.</p>
+      </div>
+      <div class="jobs-list" id="jobsList">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Docker & Architecture Specs -->
+    <section id="tab-architecture" class="tab-content">
+      <div class="arch-container">
+        <div class="arch-card">
+          <h3>🐳 Container Topology (docker-compose.yml)</h3>
+          <p>The system is isolated into distinct lightweight containers orchestrated via Docker Compose:</p>
+          <div class="docker-services-list">
+            <div class="service-box">
+              <div class="service-tag tag-db">Database</div>
+              <h4>db (PostgreSQL 16)</h4>
+              <p>Persistent storage via Docker volume <code>pgdata</code>. Relational tables for users, profiles, career timelines.</p>
+              <code>Port: 5432:5432</code>
+            </div>
+            <div class="service-box">
+              <div class="service-tag tag-api">Backend</div>
+              <h4>server (Node.js & Express)</h4>
+              <p>REST API with JSON validation, CORS guards, and PostgreSQL connection pool.</p>
+              <code>Port: 5000:5000</code>
+            </div>
+            <div class="service-box">
+              <div class="service-tag tag-client">Frontend</div>
+              <h4>client (Web UI + Dark Mode)</h4>
+              <p>Interactive client interface with theme synchronization and real-time query engine.</p>
+              <code>Port: 3000:3000</code>
+            </div>
+          </div>
+        </div>
+
+        <div class="arch-card">
+          <h3>⚡ Quick Terminal Commands</h3>
+          <div class="command-block">
+            <div class="cmd-title">Start all containers:</div>
+            <pre><code>docker compose up --build</code></pre>
+          </div>
+          <div class="command-block">
+            <div class="cmd-title">Local Development without Docker:</div>
+            <pre><code>npm run install:all
+# In terminal 1:
+npm run server
+# In terminal 2:
+npm run client</code></pre>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal: Add / Register Alumni -->
+  <div class="modal-overlay" id="addModalOverlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Register New Alumni</h3>
+          <p>Add a verified graduate profile to the directory</p>
+        </div>
+        <button class="modal-close" id="closeModalBtn">&times;</button>
+      </div>
+      <form id="alumniForm" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formName">Full Name *</label>
+            <input type="text" id="formName" required placeholder="e.g. Ahmet Yılmaz">
+          </div>
+          <div class="form-group">
+            <label for="formYear">Graduation Year *</label>
+            <input type="number" id="formYear" min="1980" max="2026" required value="2023">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formDept">Department *</label>
+            <select id="formDept" required>
+              <option value="Computer Engineering">Computer Engineering</option>
+              <option value="Software Engineering">Software Engineering</option>
+              <option value="Industrial Engineering">Industrial Engineering</option>
+              <option value="Electrical & Electronics Engineering">Electrical & Electronics</option>
+              <option value="Business Administration">Business Administration</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="formCompany">Current Company</label>
+            <input type="text" id="formCompany" placeholder="e.g. Microsoft / Freelance">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="formRole">Position / Role</label>
+            <input type="text" id="formRole" placeholder="e.g. Software Architect">
+          </div>
+          <div class="form-group">
+            <label for="formLocation">Location</label>
+            <input type="text" id="formLocation" placeholder="e.g. Istanbul / Remote">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="formSkills">Skills (comma-separated)</label>
+          <input type="text" id="formSkills" placeholder="Node.js, PostgreSQL, Docker, React, AWS">
+        </div>
+
+        <div class="form-group">
+          <label for="formBio">Short Bio & Mentorship Focus</label>
+          <textarea id="formBio" rows="3" placeholder="Tell current students about your experience and career tips..."></textarea>
+        </div>
+
+        <div class="form-checkbox">
+          <label>
+            <input type="checkbox" id="formIsMentor" checked>
+            <span>Available to mentor university students</span>
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save & Publish Profile</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div class="footer-left">
+        <strong>Alumni Tracking System</strong> • Architected with Node.js, PostgreSQL & Docker
+      </div>
+      <div class="footer-right">
+        <span>Active Theme: <span class="theme-indicator">Dark Mode</span></span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>

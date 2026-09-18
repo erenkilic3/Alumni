@@ -1,0 +1,15 @@
+{
+  "name": "alumni-tracking-system",
+  "version": "1.0.0",
+  "description": "Alumni Tracking System - Fullstack Node.js, PostgreSQL, Docker",
+  "scripts": {
+    "install:all": "npm --prefix server install && npm --prefix client install",
+    "server": "npm --prefix server start",
+    "client": "npm --prefix client start",
+    "docker:up": "docker compose up --build",
+    "docker:down": "docker compose down"
+  },
+  "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],
+  "author": "Eren Kılıç",
+  "license": "MIT"
+}

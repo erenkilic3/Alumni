@@ -1,0 +1,13 @@
+{
+  "name": "alumni-frontend",
+  "version": "1.0.0",
+  "description": "Alumni Tracking System Web Client with Dark Mode",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2"
+  }
+}
