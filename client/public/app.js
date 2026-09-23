@@ -8,7 +8,7 @@ const API_BASE_URL = 'http://localhost:5001/api';
 const fallbackAlumni = [
   {
     id: "1",
-    name: "Ayşe Yılmaz",
+    name: "Hakan Tosun",
     graduationYear: 2021,
     department: "Computer Engineering",
     company: "Google",
@@ -22,12 +22,12 @@ const fallbackAlumni = [
   },
   {
     id: "2",
-    name: "Burak Demir",
+    name: "Mehmet Raşid FamousHand",
     graduationYear: 2019,
     department: "Industrial Engineering",
     company: "Amazon",
     role: "Lead Product Manager",
-    location: "London, UK",
+    location: "Çorum",
     industry: "E-Commerce",
     skills: ["Product Strategy", "Agile", "Data Analytics", "UX"],
     avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
@@ -36,7 +36,7 @@ const fallbackAlumni = [
   },
   {
     id: "3",
-    name: "Zeynep Kaya",
+    name: "Erenk3",
     graduationYear: 2023,
     department: "Software Engineering",
     company: "Spotify",
