@@ -126,9 +126,225 @@ const mockJobs = [
   }
 ];
 
-// Root endpoint
+// Sum calculation handler
+const handleSum = (req, res) => {
+  const n1 = req.params.number1 ?? req.query.number1 ?? req.query.num1 ?? req.query.n1 ?? req.query.a;
+  const n2 = req.params.number2 ?? req.query.number2 ?? req.query.num2 ?? req.query.n2 ?? req.query.b;
+
+  if (n1 !== undefined && n2 !== undefined) {
+    const num1 = parseFloat(n1);
+    const num2 = parseFloat(n2);
+
+    if (isNaN(num1) || isNaN(num2)) {
+      return res.status(400).send('Invalid numbers');
+    }
+
+    const sum = num1 + num2;
+    if (req.headers.accept && req.headers.accept.includes('application/json')) {
+      return res.json({ number1: num1, number2: num2, sum });
+    }
+    return res.send(`${sum}`);
+  }
+
+  // Interactive form if no parameters provided
+  res.send(`<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sum Calculator</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #38bdf8;
+    }
+    p {
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+    button {
+      padding: 0.85rem;
+      border-radius: 10px;
+      border: none;
+      background: #0284c7;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover {
+      background: #0369a1;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>➕ Toplama (Sum)</h1>
+    <p>Toplamak için iki sayı girin:</p>
+    <form action="/sum" method="GET">
+      <input type="number" step="any" name="number1" placeholder="Birinci sayı (number1)" required autofocus />
+      <input type="number" step="any" name="number2" placeholder="İkinci sayı (number2)" required />
+      <button type="submit">Topla</button>
+    </form>
+  </div>
+</body>
+</html>`);
+};
+
+// Sum routes
+app.get('/sum/:number1/:number2', handleSum);
+app.get('/sum', handleSum);
+
+// Root endpoint: Kullanıcıya isim sorar veya sum işlemi yapar
 app.get('/', (req, res) => {
-  res.send('ok');
+  const n1 = req.query.number1 ?? req.query.num1 ?? req.query.n1 ?? req.query.a;
+  const n2 = req.query.number2 ?? req.query.num2 ?? req.query.n2 ?? req.query.b;
+  if (n1 !== undefined && n2 !== undefined) {
+    return handleSum(req, res);
+  }
+
+  const name = req.query.name;
+  if (name) {
+    return res.send(`hello ${name}`);
+  }
+
+  res.send(`<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alumni</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+      color: #f8fafc;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+    .card {
+      background: rgba(30, 41, 59, 0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 420px;
+      box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      text-align: center;
+    }
+    h1 {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.75rem;
+      color: #38bdf8;
+    }
+    p {
+      color: #94a3b8;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    form {
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+    }
+    input {
+      padding: 0.85rem 1rem;
+      border-radius: 10px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: #38bdf8;
+      box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+    }
+    button {
+      padding: 0.85rem;
+      border-radius: 10px;
+      border: none;
+      background: #0284c7;
+      color: white;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s, transform 0.1s;
+    }
+    button:hover {
+      background: #0369a1;
+    }
+    button:active {
+      transform: scale(0.98);
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>👋 Hoş Geldiniz</h1>
+    <p>Lütfen isminizi girin:</p>
+    <form action="/" method="GET">
+      <input type="text" name="name" placeholder="İsminiz..." required autofocus autocomplete="off" />
+      <button type="submit">Gönder</button>
+    </form>
+  </div>
+</body>
+</html>`);
 });
 
 // Health Check Endpoint
