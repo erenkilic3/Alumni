@@ -30,7 +30,7 @@ pool.connect()
 let mockAlumni = [
   {
     id: "1",
-    name: "Ayşe Yılmaz",
+    name: "Hakan Tosun",
     graduationYear: 2021,
     department: "Computer Engineering",
     company: "Google",
@@ -45,12 +45,12 @@ let mockAlumni = [
   },
   {
     id: "2",
-    name: "Burak Demir",
+    name: "Mehmet Raşid FamousHand",
     graduationYear: 2019,
     department: "Industrial Engineering",
     company: "Amazon",
     role: "Lead Product Manager",
-    location: "London, UK",
+    location: "Çorum",
     industry: "E-Commerce",
     skills: ["Product Strategy", "Agile", "Data Analytics", "UX"],
     linkedin: "https://linkedin.com/in/example",
@@ -60,7 +60,7 @@ let mockAlumni = [
   },
   {
     id: "3",
-    name: "Zeynep Kaya",
+    name: "Erenk3",
     graduationYear: 2023,
     department: "Software Engineering",
     company: "Spotify",
