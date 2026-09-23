@@ -126,6 +126,11 @@ const mockJobs = [
   }
 ];
 
+// Root endpoint
+app.get('/', (req, res) => {
+  res.send('ok');
+});
+
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
   res.json({
