@@ -6,6 +6,7 @@
     "install:all": "npm --prefix server install && npm --prefix client install",
     "server": "npm --prefix server start",
     "client": "npm --prefix client start",
+    "homepage": "node homepage.js",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down"
   },
