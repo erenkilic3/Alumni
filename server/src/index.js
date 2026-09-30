@@ -514,6 +514,9 @@ const renderUsersPage = (users, message = null, error = null) => {
         <span class="role-badge role-${(u.role || 'STUDENT').toLowerCase()}">${escapeHtml(u.role || 'STUDENT')}</span>
       </td>
       <td class="text-muted">${new Date(u.createdAt).toLocaleString('tr-TR')}</td>
+      <td>
+        <button type="button" class="btn-action" onclick="editUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}', '${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.department || '')}')" title="PUT/PATCH ile Güncelle">✏️ Düzenle</button>
+      </td>
     </tr>
   `).join('');
 
@@ -792,6 +795,24 @@ const renderUsersPage = (users, message = null, error = null) => {
       background: #334155;
       color: white;
     }
+    .btn-action {
+      padding: 0.35rem 0.75rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: var(--accent);
+      font-size: 0.8rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+    .btn-action:hover {
+      background: var(--accent);
+      color: #0f172a;
+    }
     .table-container {
       overflow-x: auto;
     }
@@ -802,7 +823,7 @@ const renderUsersPage = (users, message = null, error = null) => {
     <div class="header">
       <div class="badge">💾 Database Kullanılmadan • In-Memory RAM Store</div>
       <h1>👥 Kullanıcı Yönetim Arayüzü</h1>
-      <p class="subtitle"><code>POST /api/users</code> ile yeni kullanıcı ekleyin veya listeyi görüntüleyin.</p>
+      <p class="subtitle"><code>POST /api/users</code> ile ekleyin, <code>PUT/PATCH /api/user/{id}</code> ile güncelleyin.</p>
     </div>
 
     ${message ? `<div class="alert alert-success">✅ ${escapeHtml(message)}</div>` : ''}
@@ -867,6 +888,7 @@ const renderUsersPage = (users, message = null, error = null) => {
                 <th>E-Posta</th>
                 <th>Rol</th>
                 <th>Tarih</th>
+                <th>İşlem</th>
               </tr>
             </thead>
             <tbody id="userTableBody">
@@ -895,6 +917,39 @@ const renderUsersPage = (users, message = null, error = null) => {
     const tableBody = document.getElementById('userTableBody');
     const userCount = document.getElementById('userCount');
     const liveAlert = document.getElementById('liveAlert');
+
+    window.editUser = async (id, currentName, currentEmail, currentRole, currentDept) => {
+      const newName = prompt('Yeni Ad Soyad (PUT/PATCH):', currentName);
+      if (newName === null) return;
+      const newEmail = prompt('Yeni E-posta (PUT/PATCH):', currentEmail);
+      if (newEmail === null) return;
+      const newRole = prompt('Yeni Rol (STUDENT, ALUMNI, ADMIN):', currentRole);
+      if (newRole === null) return;
+      const newDept = prompt('Yeni Bölüm / Alan:', currentDept);
+      if (newDept === null) return;
+
+      try {
+        const res = await fetch('/api/user/' + id, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            name: newName,
+            email: newEmail,
+            role: newRole,
+            department: newDept
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          liveAlert.innerHTML = '<div class="alert alert-success">✅ Kullanıcı #' + id + ' (PATCH /api/user/' + id + ') başarıyla güncellendi!</div>';
+          setTimeout(() => location.reload(), 600);
+        } else {
+          liveAlert.innerHTML = '<div class="alert alert-danger">⚠️ ' + (data.error || 'Güncelleme hatası') + '</div>';
+        }
+      } catch (err) {
+        alert('Hata: ' + err.message);
+      }
+    };
 
     form.addEventListener('submit', async (e) => {
       e.preventDefault();
@@ -1009,6 +1064,81 @@ app.get('/api/users', handleGetUsers);
 app.get('/users', handleGetUsers);
 app.post('/api/users', handleCreateUser);
 app.post('/users', handleCreateUser);
+
+// Single User Handlers (GET, PUT, PATCH)
+const handleGetUserById = (req, res) => {
+  const userId = req.params.id;
+  const user = inMemoryUsers.find(u => u.id === userId.toString());
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      error: `Kullanıcı bulunamadı (ID: ${userId})`
+    });
+  }
+
+  res.json({
+    success: true,
+    user
+  });
+};
+
+const handleUpdateUser = (req, res) => {
+  const userId = req.params.id;
+  const userIndex = inMemoryUsers.findIndex(u => u.id === userId.toString());
+
+  if (userIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      error: `Kullanıcı bulunamadı (ID: ${userId})`
+    });
+  }
+
+  const existing = inMemoryUsers[userIndex];
+  const { name, email, role, department } = req.body || {};
+
+  // For PUT requests: if neither name nor email is provided
+  if (req.method === 'PUT' && (!name || !email)) {
+    return res.status(400).json({
+      success: false,
+      error: 'PUT isteğinde "name" ve "email" alanları zorunludur.'
+    });
+  }
+
+  const updatedUser = {
+    ...existing,
+    name: name !== undefined ? name.trim() : existing.name,
+    email: email !== undefined ? email.trim().toLowerCase() : existing.email,
+    role: role !== undefined ? role.toUpperCase() : existing.role,
+    department: department !== undefined ? department.trim() : existing.department,
+    updatedAt: new Date().toISOString()
+  };
+
+  inMemoryUsers[userIndex] = updatedUser;
+
+  res.json({
+    success: true,
+    message: `Kullanıcı #${userId} (${req.method}) metoduyla başarıyla güncellendi.`,
+    method: req.method,
+    user: updatedUser
+  });
+};
+
+// Single User endpoints (PUT, PATCH, GET)
+app.get('/api/user/:id', handleGetUserById);
+app.get('/api/users/:id', handleGetUserById);
+app.get('/user/:id', handleGetUserById);
+app.get('/users/:id', handleGetUserById);
+
+app.put('/api/user/:id', handleUpdateUser);
+app.patch('/api/user/:id', handleUpdateUser);
+app.put('/api/users/:id', handleUpdateUser);
+app.patch('/api/users/:id', handleUpdateUser);
+
+app.put('/user/:id', handleUpdateUser);
+app.patch('/user/:id', handleUpdateUser);
+app.put('/users/:id', handleUpdateUser);
+app.patch('/users/:id', handleUpdateUser);
 
 // Statistics Endpoint
 app.get('/api/stats', (req, res) => {
