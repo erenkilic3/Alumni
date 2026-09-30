@@ -909,6 +909,9 @@ const renderUsersPage = (users, message = null, error = null) => {
         </div>
 
         <div class="actions-bar">
+          <a href="/api/swagger" class="btn-link" target="_blank">
+            <span>📖 Swagger Docs</span>
+          </a>
           <a href="/api/users?format=json" class="btn-link" target="_blank">
             <span>{ } JSON Görüntüle</span>
           </a>
@@ -1198,6 +1201,520 @@ app.delete('/api/users/:id', handleDeleteUser);
 app.delete('/api/user/:id', handleDeleteUser);
 app.delete('/users/:id', handleDeleteUser);
 app.delete('/user/:id', handleDeleteUser);
+
+// ==========================================================================
+// Swagger / OpenAPI 3.0 Documentation Module
+// ==========================================================================
+const swaggerDocument = {
+  openapi: "3.0.3",
+  info: {
+    title: "Alumni Tracking System REST API",
+    version: "1.0.0",
+    description: "Alumni Sphere - Mezun Takip ve Ağ Sistemi RESTful API Dokümantasyonu (Swagger / OpenAPI)",
+    contact: {
+      name: "Eren Kılıç",
+      url: "https://github.com/erenkilic3/Alumni"
+    }
+  },
+  servers: [
+    {
+      url: "http://localhost:5001",
+      description: "Development Backend Server (:5001)"
+    },
+    {
+      url: "http://localhost:3000",
+      description: "Frontend / Homepage Server (:3000)"
+    }
+  ],
+  tags: [
+    { name: "Swagger", description: "API Dokümantasyonu ve Şeması" },
+    { name: "Health", description: "Sistem ve Veritabanı Sağlık Kontrolü" },
+    { name: "Users", description: "In-Memory Kullanıcı Yönetimi (CRUD)" },
+    { name: "Alumni", description: "Mezun Profilleri ve Arama" },
+    { name: "Jobs", description: "Kariyer ve İş İlanları" },
+    { name: "Stats", description: "Platform İstatistikleri" },
+    { name: "Calculator", description: "Toplama ve Yardımcı İşlemler" }
+  ],
+  paths: {
+    "/api/swagger": {
+      get: {
+        tags: ["Swagger"],
+        summary: "Swagger UI ve OpenAPI Belgelendirmesi",
+        description: "Tarayıcıda interaktif Swagger UI arayüzünü, API istemcilerinde veya ?format=json ile OpenAPI JSON şemasını sunar.",
+        parameters: [
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["json"] },
+            description: "JSON şemasını doğrudan almak için 'json' girin"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Swagger UI HTML veya OpenAPI 3.0 JSON şeması"
+          }
+        }
+      }
+    },
+    "/api/health": {
+      get: {
+        tags: ["Health"],
+        summary: "Sistem sağlık durumunu kontrol et",
+        description: "API sunucusu ve veritabanı durumunu JSON formatında döndürür.",
+        responses: {
+          "200": {
+            description: "Sağlık durumu yanıtı",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    status: { type: "string", example: "ok" },
+                    message: { type: "string", example: "healthy" },
+                    online: { type: "boolean", example: true },
+                    timestamp: { type: "string", example: "2026-09-30T10:00:00.000Z" },
+                    postgresConnected: { type: "boolean", example: false },
+                    environment: { type: "string", example: "development" },
+                    serverVersion: { type: "string", example: "1.0.0" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/users": {
+      get: {
+        tags: ["Users"],
+        summary: "Tüm kullanıcıları listele (In-Memory)",
+        description: "Bellekte (RAM) saklanan tüm kullanıcıların listesini döndürür.",
+        parameters: [
+          {
+            name: "format",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["json"] },
+            description: "JSON çıktısı için 'json' verilebilir"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "Kullanıcı listesi",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    count: { type: "integer", example: 5 },
+                    users: {
+                      type: "array",
+                      items: { $ref: "#/components/schemas/User" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ["Users"],
+        summary: "Yeni kullanıcı ekle (No Database)",
+        description: "Belleğe (RAM) veritabanı kullanmadan yeni kullanıcı ekler.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateUserRequest" }
+            },
+            "application/x-www-form-urlencoded": {
+              schema: { $ref: "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "201": {
+            description: "Kullanıcı oluşturuldu",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu." },
+                    user: { $ref: "#/components/schemas/User" },
+                    totalUsers: { type: "integer", example: 6 }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            description: "Ad veya e-posta alanı eksik"
+          }
+        }
+      }
+    },
+    "/api/user/{id}": {
+      get: {
+        tags: ["Users"],
+        summary: "ID'ye göre kullanıcı getir",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+        ],
+        responses: {
+          "200": {
+            description: "Kullanıcı bulundu",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    user: { $ref: "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "Kullanıcı bulunamadı" }
+        }
+      },
+      put: {
+        tags: ["Users"],
+        summary: "Kullanıcıyı tamamen güncelle (PUT)",
+        description: "Kullanıcı verilerini günceller (name ve email zorunludur).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Kullanıcı güncellendi" },
+          "400": { description: "Eksik zorunlu alanlar" },
+          "404": { description: "Kullanıcı bulunamadı" }
+        }
+      },
+      patch: {
+        tags: ["Users"],
+        summary: "Kullanıcıyı kısmi güncelle (PATCH)",
+        description: "Yalnızca gönderilen alanları günceller.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PatchUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Kullanıcı güncellendi" },
+          "404": { description: "Kullanıcı bulunamadı" }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      delete: {
+        tags: ["Users"],
+        summary: "Kullanıcıyı sil (DELETE)",
+        description: "Kullanıcıyı in-memory veri deposundan siler.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Silinecek Kullanıcı ID" }
+        ],
+        responses: {
+          "200": {
+            description: "Kullanıcı silindi",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Kullanıcı #1 başarıyla silindi." },
+                    deletedUser: { $ref: "#/components/schemas/User" },
+                    remainingUsers: { type: "integer", example: 4 }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "Kullanıcı bulunamadı" }
+        }
+      }
+    },
+    "/api/alumni": {
+      get: {
+        tags: ["Alumni"],
+        summary: "Mezunları filtrele ve listele",
+        parameters: [
+          { name: "search", in: "query", required: false, schema: { type: "string" }, description: "İsim, şirket, yetenek arama" },
+          { name: "department", in: "query", required: false, schema: { type: "string" }, description: "Bölüm filtresi" },
+          { name: "year", in: "query", required: false, schema: { type: "string" }, description: "Mezuniyet yılı" },
+          { name: "mentorOnly", in: "query", required: false, schema: { type: "boolean" }, description: "Yalnızca mentor olanlar" }
+        ],
+        responses: {
+          "200": { description: "Mezun listesi" }
+        }
+      },
+      post: {
+        tags: ["Alumni"],
+        summary: "Yeni mezun profili ekle",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["name", "graduationYear", "department"],
+                properties: {
+                  name: { type: "string", example: "Selin Öztürk" },
+                  graduationYear: { type: "integer", example: 2022 },
+                  department: { type: "string", example: "Business Administration" },
+                  company: { type: "string", example: "McKinsey & Company" },
+                  role: { type: "string", example: "Associate Consultant" },
+                  location: { type: "string", example: "Istanbul, Turkey" },
+                  industry: { type: "string", example: "Management Consulting" },
+                  skills: { type: "array", items: { type: "string" }, example: ["Strategy", "Financial Modeling"] },
+                  bio: { type: "string", example: "Danışmanlık sektörü mezunu." },
+                  isMentor: { type: "boolean", example: true }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "201": { description: "Mezun profili eklendi" }
+        }
+      }
+    },
+    "/api/stats": {
+      get: {
+        tags: ["Stats"],
+        summary: "Platform istatistikleri",
+        responses: {
+          "200": { description: "Mezun, istihdam ve sektör oranları" }
+        }
+      }
+    },
+    "/api/jobs": {
+      get: {
+        tags: ["Jobs"],
+        summary: "İş ve staj ilanları",
+        responses: {
+          "200": { description: "İş listesi" }
+        }
+      }
+    },
+    "/sum": {
+      get: {
+        tags: ["Calculator"],
+        summary: "İki sayıyı topla (query parametreleri)",
+        parameters: [
+          { name: "number1", in: "query", required: false, schema: { type: "number" }, example: 5 },
+          { name: "number2", in: "query", required: false, schema: { type: "number" }, example: 10 }
+        ],
+        responses: {
+          "200": { description: "Toplam sonucu veya hesaplama formu" }
+        }
+      }
+    },
+    "/homepage": {
+      get: {
+        tags: ["Calculator"],
+        summary: "Bağımsız anasayfa ve hakkımızda sayfası",
+        responses: {
+          "200": { description: "Anasayfa HTML sayfası" }
+        }
+      }
+    }
+  },
+  components: {
+    schemas: {
+      User: {
+        type: "object",
+        properties: {
+          id: { type: "string", example: "1" },
+          name: { type: "string", example: "Eren Kılıç" },
+          email: { type: "string", example: "eren@alumni.edu" },
+          role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"], example: "ADMIN" },
+          department: { type: "string", example: "Software Engineering" },
+          createdAt: { type: "string", example: "2026-09-30T09:00:00.000Z" },
+          updatedAt: { type: "string", example: "2026-09-30T10:30:00.000Z" }
+        }
+      },
+      CreateUserRequest: {
+        type: "object",
+        required: ["name", "email"],
+        properties: {
+          name: { type: "string", example: "Ahmet Yılmaz" },
+          email: { type: "string", example: "ahmet@alumni.edu" },
+          role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"], example: "STUDENT" },
+          department: { type: "string", example: "Bilgisayar Mühendisliği" }
+        }
+      },
+      UpdateUserRequest: {
+        type: "object",
+        required: ["name", "email"],
+        properties: {
+          name: { type: "string", example: "Ahmet Yılmaz Güncel" },
+          email: { type: "string", example: "ahmet.yeni@alumni.edu" },
+          role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"], example: "ALUMNI" },
+          department: { type: "string", example: "Yazılım Mühendisliği" }
+        }
+      },
+      PatchUserRequest: {
+        type: "object",
+        properties: {
+          name: { type: "string", example: "Ahmet Yılmaz" },
+          email: { type: "string", example: "ahmet@alumni.edu" },
+          role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"] },
+          department: { type: "string", example: "Veri Bilimi" }
+        }
+      }
+    }
+  }
+};
+
+const renderSwaggerUI = (spec) => `<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Swagger UI - Alumni API Documentation</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-32x32.png" sizes="32x32" />
+  <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-16x16.png" sizes="16x16" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 0;
+      background: #0f172a;
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-header {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      color: #f8fafc;
+      flex-wrap: wrap;
+      gap: 1rem;
+    }
+    .custom-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .custom-links {
+      display: flex;
+      gap: 0.75rem;
+      flex-wrap: wrap;
+    }
+    .custom-links a {
+      color: #94a3b8;
+      text-decoration: none;
+      font-size: 0.85rem;
+      font-weight: 500;
+      padding: 0.4rem 0.8rem;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #0f172a;
+      transition: all 0.2s;
+    }
+    .custom-links a:hover {
+      color: white;
+      border-color: #38bdf8;
+    }
+    #swagger-ui {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1.5rem 1rem;
+    }
+    .swagger-ui {
+      filter: invert(88%) hue-rotate(180deg);
+    }
+    .swagger-ui .topbar { display: none !important; }
+    .swagger-ui img { filter: invert(100%) hue-rotate(180deg); }
+  </style>
+</head>
+<body>
+  <div class="custom-header">
+    <div class="custom-brand">
+      <span>📖 AlumniSphere API (OpenAPI / Swagger)</span>
+    </div>
+    <div class="custom-links">
+      <a href="/api/swagger?format=json" target="_blank">{ } OpenAPI JSON</a>
+      <a href="/api/users">👥 Users Arayüzü</a>
+      <a href="/api/health" target="_blank">🩺 Health Check</a>
+      <a href="/">🏠 Anasayfa</a>
+    </div>
+  </div>
+
+  <div id="swagger-ui"></div>
+
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-bundle.js"></script>
+  <script src="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui-standalone-preset.js"></script>
+  <script>
+    window.onload = function() {
+      const spec = ${JSON.stringify(spec)};
+      window.ui = SwaggerUIBundle({
+        spec: spec,
+        dom_id: '#swagger-ui',
+        deepLinking: true,
+        presets: [
+          SwaggerUIBundle.presets.apis,
+          SwaggerUIStandalonePreset
+        ],
+        plugins: [
+          SwaggerUIBundle.plugins.DownloadUrl
+        ],
+        layout: "BaseLayout",
+        defaultModelsExpandDepth: 1,
+        defaultModelExpandDepth: 1,
+        docExpansion: "list"
+      });
+    };
+  </script>
+</body>
+</html>`;
+
+// Swagger Documentation Handler
+const handleSwagger = (req, res) => {
+  const isJson = req.query.format === 'json' ||
+    req.path.endsWith('.json') ||
+    (req.headers.accept && req.headers.accept.includes('application/json') && !req.headers.accept.includes('text/html'));
+
+  if (isJson) {
+    return res.json(swaggerDocument);
+  }
+
+  res.send(renderSwaggerUI(swaggerDocument));
+};
+
+app.get('/api/swagger', handleSwagger);
+app.get('/api/swagger.json', (req, res) => res.json(swaggerDocument));
+app.get('/swagger', handleSwagger);
+app.get('/swagger.json', (req, res) => res.json(swaggerDocument));
+app.get('/api/docs', handleSwagger);
 
 // Statistics Endpoint
 app.get('/api/stats', (req, res) => {

@@ -19,6 +19,13 @@ app.get(['/api/health', '/health'], (req, res) => {
   });
 });
 
+// Swagger documentation route redirect
+app.get(['/api/swagger', '/swagger', '/api/docs'], (req, res) => {
+  const backendPort = process.env.BACKEND_PORT || 5001;
+  const queryString = req.url.includes('?') ? req.url.substring(req.url.indexOf('?')) : '';
+  res.redirect(`http://localhost:${backendPort}/api/swagger${queryString}`);
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

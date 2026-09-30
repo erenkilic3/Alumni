@@ -155,7 +155,48 @@ docker compose up --build
 ### 3. Service Endpoints
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
 - **Backend API**: [http://localhost:5001/api](http://localhost:5001/api)
+- **Swagger API Dokümantasyonu**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
+- **Kullanıcı Yönetim Arayüzü**: [http://localhost:5001/api/users](http://localhost:5001/api/users)
+- **Sistem Sağlık Kontrolü (Health)**: [http://localhost:5001/api/health](http://localhost:5001/api/health)
 - **PostgreSQL**: `localhost:5432`
+
+---
+
+## 📖 API Dokümantasyonu (Swagger / OpenAPI)
+
+Projedeki tüm RESTful API endpoint'leri OpenAPI 3.0 standardında tanımlanmış olup, tarayıcı üzerinden interaktif olarak test edilebilecek modern **Swagger UI** arayüzü ile sunulmaktadır.
+
+- **Swagger UI (İnteraktif Arayüz)**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
+- **OpenAPI JSON Şeması**: [http://localhost:5001/api/swagger?format=json](http://localhost:5001/api/swagger?format=json) veya [http://localhost:5001/api/swagger.json](http://localhost:5001/api/swagger.json)
+
+### Mevcut API Endpoint'leri
+
+| Metot | Endpoint | Açıklama |
+| :--- | :--- | :--- |
+| `GET` | `/api/swagger` | İnteraktif Swagger UI arayüzü ve API dokümantasyonu |
+| `GET` | `/api/swagger?format=json` | OpenAPI 3.0.3 JSON şeması |
+| `GET` | `/api/health` | Sunucu ve sistem durumu JSON sağlık kontrolü |
+| `GET` | `/api/users` | In-Memory kayıtlı tüm kullanıcıları listele (HTML Arayüz veya `?format=json`) |
+| `POST` | `/api/users` | Veritabanı olmadan yeni kullanıcı ekle (RAM store) |
+| `GET` | `/api/user/{id}` | Belirli bir kullanıcıyı ID ile sorgula |
+| `PUT` | `/api/user/{id}` | Kullanıcı verilerini tamamen güncelle (`name`, `email`, `role`, `department`) |
+| `PATCH` | `/api/user/{id}` | Kullanıcı verilerini kısmi güncelle |
+| `DELETE` | `/api/users/{id}` | Kullanıcıyı bellekten sil |
+| `GET` | `/api/alumni` | Mezun profillerini listele ve filtrele (`search`, `department`, `year`, `mentorOnly`) |
+| `POST` | `/api/alumni` | Yeni mezun profili oluştur |
+| `GET` | `/api/stats` | Mezun sayısı, istihdam oranı ve sektör istatistikleri |
+| `GET` | `/api/jobs` | İş ve staj ilanlarını listele |
+| `GET` | `/sum` | İki sayıyı topla (`?number1=X&number2=Y`) |
+| `GET` | `/homepage` | Bağımsız anasayfa ve hakkımızda sayfası |
+
+#### cURL ile Test Etme:
+```bash
+# Swagger UI HTML'ini getir
+curl -i http://localhost:5001/api/swagger
+
+# OpenAPI JSON şemasını getir
+curl -s http://localhost:5001/api/swagger?format=json | jq .
+```
 
 ---
 
