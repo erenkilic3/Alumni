@@ -515,7 +515,10 @@ const renderUsersPage = (users, message = null, error = null) => {
       </td>
       <td class="text-muted">${new Date(u.createdAt).toLocaleString('tr-TR')}</td>
       <td>
-        <button type="button" class="btn-action" onclick="editUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}', '${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.department || '')}')" title="PUT/PATCH ile Güncelle">✏️ Düzenle</button>
+        <div style="display:flex; gap:0.4rem;">
+          <button type="button" class="btn-action" onclick="editUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}', '${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.department || '')}')" title="PUT/PATCH ile Güncelle">✏️ Düzenle</button>
+          <button type="button" class="btn-action btn-danger" onclick="deleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}')" title="DELETE ile Sil">🗑️ Sil</button>
+        </div>
       </td>
     </tr>
   `).join('');
@@ -813,6 +816,14 @@ const renderUsersPage = (users, message = null, error = null) => {
       background: var(--accent);
       color: #0f172a;
     }
+    .btn-danger {
+      border-color: rgba(239, 68, 68, 0.4);
+      color: #f87171;
+    }
+    .btn-danger:hover {
+      background: #ef4444;
+      color: white;
+    }
     .table-container {
       overflow-x: auto;
     }
@@ -945,6 +956,28 @@ const renderUsersPage = (users, message = null, error = null) => {
           setTimeout(() => location.reload(), 600);
         } else {
           liveAlert.innerHTML = '<div class="alert alert-danger">⚠️ ' + (data.error || 'Güncelleme hatası') + '</div>';
+        }
+      } catch (err) {
+        alert('Hata: ' + err.message);
+      }
+    };
+
+    window.deleteUser = async (id, name) => {
+      if (!confirm('"' + name + '" adlı kullanıcıyı silmek istediğinize emin misiniz? (DELETE /api/users/' + id + ')')) {
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/users/' + id, {
+          method: 'DELETE',
+          headers: { 'Accept': 'application/json' }
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          liveAlert.innerHTML = '<div class="alert alert-success">🗑️ ' + data.message + '</div>';
+          setTimeout(() => location.reload(), 600);
+        } else {
+          liveAlert.innerHTML = '<div class="alert alert-danger">⚠️ ' + (data.error || 'Silme hatası') + '</div>';
         }
       } catch (err) {
         alert('Hata: ' + err.message);
@@ -1139,6 +1172,32 @@ app.put('/user/:id', handleUpdateUser);
 app.patch('/user/:id', handleUpdateUser);
 app.put('/users/:id', handleUpdateUser);
 app.patch('/users/:id', handleUpdateUser);
+
+const handleDeleteUser = (req, res) => {
+  const userId = req.params.id;
+  const userIndex = inMemoryUsers.findIndex(u => u.id === userId.toString());
+
+  if (userIndex === -1) {
+    return res.status(404).json({
+      success: false,
+      error: `Kullanıcı bulunamadı (ID: ${userId})`
+    });
+  }
+
+  const [deletedUser] = inMemoryUsers.splice(userIndex, 1);
+
+  res.json({
+    success: true,
+    message: `Kullanıcı #${userId} (${deletedUser.name}) başarıyla silindi.`,
+    deletedUser,
+    remainingUsers: inMemoryUsers.length
+  });
+};
+
+app.delete('/api/users/:id', handleDeleteUser);
+app.delete('/api/user/:id', handleDeleteUser);
+app.delete('/users/:id', handleDeleteUser);
+app.delete('/user/:id', handleDeleteUser);
 
 // Statistics Endpoint
 app.get('/api/stats', (req, res) => {
