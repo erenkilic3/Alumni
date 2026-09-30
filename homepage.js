@@ -67,6 +67,22 @@ app.get('/homepage', (req, res) => {
 </html>`);
 });
 
+// Health Check Endpoint
+const handleHealth = (req, res) => {
+  res.json({
+    status: 'ok',
+    message: 'healthy',
+    online: true,
+    timestamp: new Date().toISOString(),
+    service: 'alumni-homepage',
+    environment: process.env.NODE_ENV || 'development',
+    serverVersion: '1.0.0'
+  });
+};
+
+app.get('/api/health', handleHealth);
+app.get('/health', handleHealth);
+
 // Root endpoint de homepage'e yönlendirir
 app.get('/', (req, res) => {
   res.redirect('/homepage');

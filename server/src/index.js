@@ -408,15 +408,20 @@ app.get('/', (req, res) => {
 });
 
 // Health Check Endpoint
-app.get('/api/health', (req, res) => {
+const handleHealth = (req, res) => {
   res.json({
-    status: 'online',
+    status: 'ok',
+    message: 'healthy',
+    online: true,
     timestamp: new Date().toISOString(),
     postgresConnected: isDbConnected,
     environment: process.env.NODE_ENV || 'development',
     serverVersion: '1.0.0'
   });
-});
+};
+
+app.get('/api/health', handleHealth);
+app.get('/health', handleHealth);
 
 // Statistics Endpoint
 app.get('/api/stats', (req, res) => {
