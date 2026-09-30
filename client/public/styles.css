@@ -245,8 +245,27 @@ body {
 .theme-toggle-btn .sun-icon { display: none; }
 .theme-toggle-btn .moon-icon { display: block; }
 
-[data-theme="light"] .theme-toggle-btn .sun-icon { display: block; color: var(--warning); }
-[data-theme="light"] .theme-toggle-btn .moon-icon { display: none; }
+.btn-users-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(56, 189, 248, 0.1);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  color: var(--accent-cyan);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.btn-users-link:hover {
+  background: rgba(56, 189, 248, 0.2);
+  border-color: var(--accent-cyan);
+  color: white;
+  transform: translateY(-1px);
+}
 
 .btn {
   display: inline-flex;
