@@ -451,6 +451,38 @@ let inMemoryUsers = [
     role: "STUDENT",
     department: "Industrial Engineering",
     createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+  },
+  {
+    id: "4",
+    name: "Mehmet Öz",
+    email: "mehmet@tesla.com",
+    role: "ALUMNI",
+    department: "Electrical Engineering",
+    createdAt: "2026-09-30T06:46:36.548Z"
+  },
+  {
+    id: "5",
+    name: "Fatma Kaya",
+    email: "fatma@alumni.edu",
+    role: "STUDENT",
+    department: "Architecture",
+    createdAt: "2026-09-30T06:47:18.171Z"
+  },
+  {
+    id: "6",
+    name: "hakan tosun",
+    email: "hakatosun@student.com",
+    role: "STUDENT",
+    department: "doctor",
+    createdAt: "2026-09-30T07:11:12.528Z"
+  },
+  {
+    id: "7",
+    name: "memet raşit famoushand",
+    email: "memetk3@student.com",
+    role: "STUDENT",
+    department: "barber",
+    createdAt: "2026-09-30T07:12:05.575Z"
   }
 ];
 
@@ -918,30 +950,36 @@ const renderUsersPage = (users, message = null, error = null) => {
 
 // Users Handlers
 const handleGetUsers = (req, res) => {
-  const wantsJson = req.query.format === 'json' ||
-    (req.headers.accept && req.headers.accept.includes('application/json') && !req.headers.accept.includes('text/html'));
+  const isBrowserHtml = req.headers.accept &&
+    req.headers.accept.includes('text/html') &&
+    req.query.format !== 'json' &&
+    !req.headers.accept.includes('application/json');
 
-  if (wantsJson) {
-    return res.json({
-      count: inMemoryUsers.length,
-      users: inMemoryUsers
-    });
+  if (isBrowserHtml) {
+    return res.send(renderUsersPage(inMemoryUsers));
   }
 
-  res.send(renderUsersPage(inMemoryUsers));
+  // Default for API clients, curl, Postman, test suites: JSON
+  res.json({
+    count: inMemoryUsers.length,
+    users: inMemoryUsers
+  });
 };
 
 const handleCreateUser = (req, res) => {
   const { name, email, role, department } = req.body || {};
+  const isBrowserHtml = req.headers.accept &&
+    req.headers.accept.includes('text/html') &&
+    !req.headers.accept.includes('application/json');
 
   if (!name || !email) {
-    if (req.headers.accept && req.headers.accept.includes('application/json')) {
-      return res.status(400).json({
-        success: false,
-        error: 'name ve email alanları zorunludur.'
-      });
+    if (isBrowserHtml) {
+      return res.status(400).send(renderUsersPage(inMemoryUsers, null, 'Ad (name) ve e-posta (email) alanları zorunludur.'));
     }
-    return res.status(400).send(renderUsersPage(inMemoryUsers, null, 'Ad (name) ve e-posta (email) alanları zorunludur.'));
+    return res.status(400).json({
+      success: false,
+      error: 'name ve email alanları zorunludur.'
+    });
   }
 
   const newUser = {
@@ -955,16 +993,16 @@ const handleCreateUser = (req, res) => {
 
   inMemoryUsers.unshift(newUser);
 
-  if (req.headers.accept && req.headers.accept.includes('application/json')) {
-    return res.status(201).json({
-      success: true,
-      message: 'Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu.',
-      user: newUser,
-      totalUsers: inMemoryUsers.length
-    });
+  if (isBrowserHtml) {
+    return res.status(201).send(renderUsersPage(inMemoryUsers, `Kullanıcı "${newUser.name}" başarıyla eklendi!`));
   }
 
-  res.status(201).send(renderUsersPage(inMemoryUsers, `Kullanıcı "${newUser.name}" başarıyla eklendi!`));
+  return res.status(201).json({
+    success: true,
+    message: 'Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu.',
+    user: newUser,
+    totalUsers: inMemoryUsers.length
+  });
 };
 
 app.get('/api/users', handleGetUsers);
