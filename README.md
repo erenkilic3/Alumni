@@ -110,10 +110,14 @@ Alumni/
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── server/                                  # ⚙️ [CONTROLLER & MODEL] Backend API & Data Service
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
+│   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
+│   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
+│   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER & SSR VIEW] Web / HTML User Controller
+│   │   │   └── api-user.controller.js       # ⚙️ [CONTROLLER] Pure JSON REST API User Controller
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
 │   │   │   └── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
-│   │   └── index.js                         # 🧠 [CONTROLLER & SSR VIEW] Primary API Server (Port 5001)
+│   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
@@ -134,13 +138,16 @@ Alumni/
 | Directory / Folder / File | MVC Role | Layer | Responsibility & Scope |
 | :--- | :--- | :--- | :--- |
 | `server/src/models/user.model.js` | **Model (M)** | Backend | Standalone in-memory User entity repository with full CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`), without requiring a database. |
+| `server/src/controllers/api-user.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`) with standard HTTP status codes. |
+| `server/src/controllers/user.controller.js` | **Controller (C) & SSR View (V)** | Backend | Web/HTML controller; renders the interactive user management dashboard (`renderUsersPage`), processes web form submissions, and powers inline CRUD interactions. |
 | `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
 | `client/public/styles.css` | **View (V)** | Frontend | Visual styling system: CSS variable design tokens for Dark/Light modes, glassmorphism backdrop blurs, responsive CSS Grid layouts, and animations. |
 | `client/public/app.js` (Render Methods) | **View (V)** | Frontend | Dynamic DOM rendering logic: `renderAlumniList()`, `renderJobsList()`, `renderStats()`, `showNotification()`, `openModal()`, `closeModal()`. |
-| `server/src/index.js` (SSR Templates) | **View (V)** | Backend | Server-side rendered HTML templates: `renderUsersPage()` (User CRUD dashboard table), `renderSwaggerUI()` (Swagger UI view), `handleHomepage()`, `handleSum()`. |
-| `server/src/index.js` (Routes & Handlers) | **Controller (C)** | Backend | RESTful routing, parameter extraction, Content Negotiation (HTML vs JSON), CRUD business logic (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), and error dispatching. |
+| `server/src/controllers/user.controller.js` (HTML UI) | **View (V)** | Backend | Server-side rendered HTML dashboard: `renderUsersPage()` featuring inline edit/delete prompt triggers, responsive table, and live alert banners. |
+| `server/src/index.js` (SSR Templates) | **View (V)** | Backend | Server-side rendered HTML templates: `renderSwaggerUI()` (Swagger UI view), `handleHomepage()`, `handleSum()`. |
+| `server/src/index.js` (Router & Dispatcher) | **Controller (C)** | Backend | Central application router mounting API endpoints, delegating user routes to controllers, content negotiation, and error handling. |
 | `client/server.js` | **Controller (C)** | Frontend | Express web server; static file delivery (`express.static`), health monitoring (`/api/health`), documentation redirection (`/api/swagger`), and SPA fallback routing (`GET *`). |
 | `client/public/app.js` (Event & Fetch) | **Controller (C)** | Frontend | Event interception (`keyup`, `change`, `submit`, `click`), form input validation, and asynchronous backend communication via `fetch()`. |
 | `homepage.js` | **Controller & SSR View** | Root | Standalone server script (`npm run homepage`) serving `/homepage`, `/api/users`, and `/api/health` endpoints with embedded HTML views. |
@@ -157,7 +164,7 @@ The Model layer oversees business entities, validation rules, data stores, and p
   - Maps relational entities; defines relationships between `USERS`, `ALUMNI_PROFILES`, `CAREER_HISTORIES`, and `JOB_POSTINGS`.
 - **Resilient In-Memory Data Models (RAM Store)**:
   - Ensures continuous availability during testing or before the database container is initialized:
-    - **User Model (`inMemoryUsers`)**: Tracks identifier (`id`), full name (`name`), unique email (`email`), authorization role (`ADMIN | ALUMNI | STUDENT`), academic department (`department`), and creation/update timestamps (`createdAt`, `updatedAt`).
+    - **User Model (`server/src/models/user.model.js`)**: Encapsulates all User CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`, `clear`), automatic ID sequencing, validation, role constraints, and ISO timestamps.
     - **Alumni Model (`mockAlumni`)**: Graduation year, company, role, industry, technical skills array (`skills`), avatar, bio, and mentorship status (`isMentor`).
     - **Job Model (`mockJobs`)**: Opportunity title, company, location, employment type, poster, and application deadline.
 - **Client-Side Reactive State (Client State)**:
@@ -171,28 +178,30 @@ The View layer delivers an interactive, modern, and accessible user experience:
 - **Client-Side Dynamic DOM Rendering**:
   - `client/public/app.js`: Consumes API JSON payloads and dynamically generates DOM nodes using `renderAlumniList()`, `renderJobsList()`, and `renderStats()`.
 - **Server-Side Rendered (SSR) Views**:
-  - `renderUsersPage()` in `server/src/index.js`: Interactive HTML dashboard for `GET /api/users` featuring inline edit (`✏️ Edit` via PUT/PATCH) and delete (`🗑️ Delete` via DELETE) controls, live alert notices, and a user registration form.
+  - `renderUsersPage()` in `server/src/controllers/user.controller.js`: Interactive HTML dashboard for `/users` and browser `/api/users` featuring inline edit (`✏️ Edit` via PUT/PATCH) and delete (`🗑️ Delete` via DELETE) controls, live alert notices, and a user registration form.
   - `renderSwaggerUI()`: Embedded Swagger UI client presenting the OpenAPI 3.0 specification (`/api/swagger`).
   - `handleHomepage()` & `handleSum()`: Dedicated server-rendered HTML presentation pages.
 
 #### 3. Controller (C) - Routing, Business Logic & Request Dispatching
 The Controller layer handles client requests, enforces input validation, mutates or queries Models, and formats output views:
-- **Backend API Controllers (`server/src/index.js`)**:
-  - **User Controller**:
-    - `handleGetUsers`: Performs Content Negotiation based on HTTP `Accept` headers; serves an HTML management dashboard for browser navigation or JSON for API clients.
-    - `handleCreateUser`: Validates required fields (`name`, `email`), instantiates a new User entity, and inserts it into the Model store (`201 Created`).
-    - `handleGetUserById`: Looks up a specific user by route parameter; returns `404 Not Found` if missing.
-    - `handleUpdateUser`: Dispatches full replacement (`PUT`) or partial attribute updates (`PATCH`) to mutate the targeted user model.
-    - `handleDeleteUser`: Removes a user by ID from the Model store (`DELETE /api/users/:id`).
-  - **Alumni Controller**:
-    - `GET /api/alumni`: Executes multi-parameter filtering (text search, department, graduation year, mentor flag).
-    - `POST /api/alumni`: Validates profile inputs, parses skill tags, and registers new alumni records.
-  - **Jobs & Analytics Controllers**:
-    - `GET /api/stats`: Computes employment rates (94.8%), mentor counts, and industry distributions.
-    - `GET /api/jobs`: Retrieves active employment and internship opportunities.
-  - **System & Swagger Controllers**:
-    - `handleHealth`: Verifies Node.js server status and PostgreSQL pool connectivity.
-    - `handleSwagger`: Delivers either OpenAPI 3.0 JSON or interactive Swagger UI HTML.
+- **Dedicated User Controllers (`server/src/controllers/`)**:
+  - **`ApiUserController` (`server/src/controllers/api-user.controller.js`)**:
+    - `getAll`: Retrieves all users in JSON, supporting query filters (`role`, `department`, `search`).
+    - `getById`: Returns a single user by ID as JSON (`200 OK`) or `404 Not Found`.
+    - `create`: Validates payload (`name`, `email`), delegates to `UserModel.create()`, and returns `201 Created` with the new user object.
+    - `update`: Handles full updates (`PUT`) and partial updates (`PATCH`), returning updated user JSON.
+    - `delete`: Deletes a user by ID and returns remaining user count.
+    - `count`: Quick endpoint returning current user count.
+  - **`UserController` (`server/src/controllers/user.controller.js`)**:
+    - `index`: Renders the full interactive HTML management dashboard (`renderUsersPage`).
+    - `show`: Displays single user details page.
+    - `create`: Processes HTML form submissions (`POST /users`), re-rendering with alerts.
+    - `update`: Handles web updates via modal prompts or PUT/PATCH requests.
+    - `delete`: Handles web deletion via inline action buttons.
+- **Other Controllers & Handlers (`server/src/index.js`)**:
+  - **Alumni Controller**: `GET /api/alumni` (multi-filter search), `POST /api/alumni` (alumni registration).
+  - **Jobs & Analytics Controllers**: `GET /api/stats` (employment rates, metrics), `GET /api/jobs` (opportunities).
+  - **System & Swagger Controllers**: `handleHealth` (status check), `handleSwagger` (OpenAPI schema & UI).
 - **Frontend Web Server Controller (`client/server.js`)**:
   - Serves static assets via `express.static`, redirects documentation traffic to the API server, and forwards unknown routes to `index.html` for client-side routing.
 - **Client Event Controllers (`client/public/app.js`)**:
