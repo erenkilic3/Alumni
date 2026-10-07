@@ -43,41 +43,174 @@ A modern, containerized platform designed for universities and educational insti
 
 ```mermaid
 graph TD
-    User([Web Client / Mobile Browser]) -->|HTTP / REST / WebSocket| Frontend[Frontend: Next.js / React\n:3000]
-    Frontend -->|API Requests| Backend[Backend API: Node.js / Express\n:5001]
-    Backend -->|Queries via Prisma ORM| DB[(PostgreSQL Database\n:5432)]
-    Backend -->|Cache / Sessions| Redis[(Redis Cache\n:6379)]
+    User([Web Client / Mobile Browser]) -->|HTTP / SPA Navigation :3000| Frontend[Frontend: Express Web Client & Static SPA\n:3000]
+    Frontend -->|REST API Requests / JSON| Backend[Backend API: Node.js / Express\n:5001]
+    Backend -->|Connection Pool via pg| DB[(PostgreSQL Database\n:5432)]
+    Backend -.->|In-Memory Resilient Fallback| RAMStore[(RAM Store: Users, Alumni, Jobs)]
 ```
 
 ---
 
-## 📁 Proposed Project Structure
+## 🏗️ MVC (Model-View-Controller) Architecture
+
+The Alumni Tracking System (AlumniSphere) is architected around the industry-standard **MVC (Model-View-Controller)** pattern. This architectural pattern strictly decouples data persistence and state management (Model), user interface and presentation (View), and routing, request dispatching, and business logic (Controller)—ensuring high maintainability, modularity, and testability.
+
+### 🔄 MVC Components & Interaction Diagram
+
+```mermaid
+graph TD
+    subgraph ViewLayer ["🖥️ VIEW (Presentation & UI Layer)"]
+        HTML["client/public/index.html\n(SPA Dashboard, Modals, Metric Cards)"]
+        CSS["client/public/styles.css\n(Glassmorphism, Dark/Light Mode Themes)"]
+        ClientRender["client/public/app.js (Render Methods)\n(renderAlumniList, renderJobsList, renderStats)"]
+        SSRUsers["server/src/index.js: renderUsersPage()\n(User Management HTML Interface & CRUD Table)"]
+        SSRSwagger["server/src/index.js: renderSwaggerUI()\n(Interactive OpenAPI / Swagger UI Interface)"]
+        SSRHomepage["server/src/index.js: handleHomepage()\n(Standalone Landing & About View)"]
+    end
+
+    subgraph ControllerLayer ["⚙️ CONTROLLER (Routing & Business Logic)"]
+        ServerCtrl["server/src/index.js (API Handlers)\n- Users CRUD: GET, POST, PUT, PATCH, DELETE\n- Alumni Controller: Search, Filter, Registration\n- Jobs, Stats, Health & Calculator Handlers"]
+        ClientServerCtrl["client/server.js\n- Static Asset File Server (express.static)\n- Swagger Reverse Redirect (/api/swagger)\n- SPA Fallback Route Controller (GET *)"]
+        ClientEventCtrl["client/public/app.js (Event & API Handlers)\n- Dynamic Filter & Search Listeners\n- Modal & Theme State Handlers\n- Async Fetch API Dispatchers"]
+    end
+
+    subgraph ModelLayer ["🗄️ MODEL (Data & State Management)"]
+        PG["PostgreSQL Database\n(pg.Pool Connection Pool)"]
+        RAM_Users["In-Memory Users Store\n(inMemoryUsers Collection)"]
+        RAM_Alumni["In-Memory Alumni Catalog\n(mockAlumni Collection)"]
+        RAM_Jobs["In-Memory Jobs & Stats Store\n(mockJobs, Platform Metrics)"]
+        ClientState["Client Reactive State\n(alumniData, activeTab, theme)"]
+    end
+
+    %% Interaction Lifecycle
+    User([👤 End User / Web Browser]) -->|1. UI Interaction (Click, Input, Form Submit)| ViewLayer
+    ViewLayer -->|2. Event Trigger / Async API Fetch Call| ControllerLayer
+    ControllerLayer -->|3. Data Validation, Query & Mutation (CRUD)| ModelLayer
+    ModelLayer -->|4. Data Result / State Update| ControllerLayer
+    ControllerLayer -->|5. JSON Payload or Server-Rendered HTML| ViewLayer
+    ViewLayer -->|6. DOM Re-render & Dynamic Notifications| User
+```
+
+---
+
+### 📁 Directory, Folder & File Map (Directories, Folders & Files)
+
+All directories, folders, and files across the repository are annotated with their designated role in the MVC architecture:
 
 ```text
 Alumni/
-├── docker-compose.yml          # Multi-container orchestration
-├── .env.example                # Sample environment configuration
-├── client/                     # Frontend application (Next.js / React)
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── src/
-│   │   ├── app/                # Pages and routes
-│   │   ├── components/         # Reusable UI components (Navbar, DarkModeToggle, etc.)
-│   │   └── styles/
-│   └── tsconfig.json
-├── server/                     # Backend API (Node.js / Express / NestJS)
-│   ├── Dockerfile
-│   ├── package.json
-│   ├── prisma/                 # Database schema & migrations
-│   │   └── schema.prisma
-│   ├── src/
-│   │   ├── controllers/        # Route controllers
-│   │   ├── services/           # Business logic
-│   │   ├── routes/             # API route definitions
-│   │   └── middlewares/        # Authentication & error handling
-│   └── tsconfig.json
-└── README.md
+├── client/                                  # 🖥️ [VIEW & CLIENT CONTROLLER] Frontend Client Service
+│   ├── public/                              # 🎨 [VIEW] Client Presentation & Static Assets
+│   │   ├── index.html                       # 📄 [VIEW] Main Single Page Application (SPA) HTML Layout
+│   │   ├── styles.css                       # 🎨 [VIEW] Glassmorphism Design System, Dark/Light Themes
+│   │   └── app.js                           # ⚙️ [CONTROLLER & VIEW RENDERER] Client Logic & DOM Renderer
+│   ├── server.js                            # ⚙️ [CONTROLLER] Frontend Web Server & Reverse Router (Port 3000)
+│   ├── Dockerfile                           # 🐳 [INFRA] Frontend Container Definition (Node.js 18-alpine)
+│   ├── package.json                         # 📦 [CONFIG] Frontend Dependencies (express) & Scripts
+│   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
+├── server/                                  # ⚙️ [CONTROLLER & MODEL] Backend API & Data Service
+│   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
+│   │   └── index.js                         # 🧠 [CONTROLLER, MODEL & SSR VIEW] Primary API Server (Port 5001)
+│   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
+│   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
+│   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
+├── postman/                                 # 🧪 [TEST & DOCS] API Testing Collections & Environments
+│   ├── collections/                         # API Request Blueprints (CRUD test scenarios)
+│   └── globals/                             # Postman Global Workspace Variables
+├── homepage.js                              # 📄 [CONTROLLER & SSR VIEW] Standalone Lightweight Server Script (Port 3000)
+├── docker-compose.yml                       # 🐳 [INFRA] Multi-Container Orchestration (db, server, client)
+├── package.json                             # 📦 [CONFIG] Root Workspace Automation Scripts
+├── .env / .env.example                      # ⚙️ [CONFIG] Environment Variables (DATABASE_URL, Ports)
+└── README.md                                # 📖 [DOCS] Architecture, MVC Blueprint & API Documentation
 ```
+
+---
+
+### 📊 MVC Role & Responsibility Matrix
+
+| Directory / Folder / File | MVC Role | Layer | Responsibility & Scope |
+| :--- | :--- | :--- | :--- |
+| `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory stores (`inMemoryUsers`, `mockAlumni`, `mockJobs`), and metric calculation aggregators. |
+| `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
+| `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
+| `client/public/styles.css` | **View (V)** | Frontend | Visual styling system: CSS variable design tokens for Dark/Light modes, glassmorphism backdrop blurs, responsive CSS Grid layouts, and animations. |
+| `client/public/app.js` (Render Methods) | **View (V)** | Frontend | Dynamic DOM rendering logic: `renderAlumniList()`, `renderJobsList()`, `renderStats()`, `showNotification()`, `openModal()`, `closeModal()`. |
+| `server/src/index.js` (SSR Templates) | **View (V)** | Backend | Server-side rendered HTML templates: `renderUsersPage()` (User CRUD dashboard table), `renderSwaggerUI()` (Swagger UI view), `handleHomepage()`, `handleSum()`. |
+| `server/src/index.js` (Routes & Handlers) | **Controller (C)** | Backend | RESTful routing, parameter extraction, Content Negotiation (HTML vs JSON), CRUD business logic (`GET`, `POST`, `PUT`, `PATCH`, `DELETE`), and error dispatching. |
+| `client/server.js` | **Controller (C)** | Frontend | Express web server; static file delivery (`express.static`), health monitoring (`/api/health`), documentation redirection (`/api/swagger`), and SPA fallback routing (`GET *`). |
+| `client/public/app.js` (Event & Fetch) | **Controller (C)** | Frontend | Event interception (`keyup`, `change`, `submit`, `click`), form input validation, and asynchronous backend communication via `fetch()`. |
+| `homepage.js` | **Controller & SSR View** | Root | Standalone server script (`npm run homepage`) serving `/homepage`, `/api/users`, and `/api/health` endpoints with embedded HTML views. |
+| `docker-compose.yml` | **Infrastructure (Infra)** | DevOps | Orchestrates Model (PostgreSQL), Controller (Node.js API), and View (Frontend Client) in isolated container networks. |
+
+---
+
+### 🧠 In-Depth Layer Breakdown
+
+#### 1. Model (M) - Data, Entities & State Management
+The Model layer oversees business entities, validation rules, data stores, and persistence mechanisms:
+- **Database Persistence (PostgreSQL Connection Pool)**:
+  - Managed via `pg.Pool` inside `server/src/index.js`.
+  - Maps relational entities; defines relationships between `USERS`, `ALUMNI_PROFILES`, `CAREER_HISTORIES`, and `JOB_POSTINGS`.
+- **Resilient In-Memory Data Models (RAM Store)**:
+  - Ensures continuous availability during testing or before the database container is initialized:
+    - **User Model (`inMemoryUsers`)**: Tracks identifier (`id`), full name (`name`), unique email (`email`), authorization role (`ADMIN | ALUMNI | STUDENT`), academic department (`department`), and creation/update timestamps (`createdAt`, `updatedAt`).
+    - **Alumni Model (`mockAlumni`)**: Graduation year, company, role, industry, technical skills array (`skills`), avatar, bio, and mentorship status (`isMentor`).
+    - **Job Model (`mockJobs`)**: Opportunity title, company, location, employment type, poster, and application deadline.
+- **Client-Side Reactive State (Client State)**:
+  - `client/public/app.js` holds active filtering state, `alumniData` cache, current tab selection, and user theme preferences in `localStorage`.
+
+#### 2. View (V) - Presentation & User Interface Layer
+The View layer delivers an interactive, modern, and accessible user experience:
+- **Single Page Application (SPA) Views**:
+  - `client/public/index.html`: Structured with semantic HTML5 elements. Features live architecture status pills (API, PostgreSQL, Docker), responsive hero section, multi-criteria filters, tab navigation, and registration modals.
+  - `client/public/styles.css`: Crafted with CSS Custom Properties, sleek glassmorphism effects, Dark / Light mode color schemes, and micro-animations.
+- **Client-Side Dynamic DOM Rendering**:
+  - `client/public/app.js`: Consumes API JSON payloads and dynamically generates DOM nodes using `renderAlumniList()`, `renderJobsList()`, and `renderStats()`.
+- **Server-Side Rendered (SSR) Views**:
+  - `renderUsersPage()` in `server/src/index.js`: Interactive HTML dashboard for `GET /api/users` featuring inline edit (`✏️ Edit` via PUT/PATCH) and delete (`🗑️ Delete` via DELETE) controls, live alert notices, and a user registration form.
+  - `renderSwaggerUI()`: Embedded Swagger UI client presenting the OpenAPI 3.0 specification (`/api/swagger`).
+  - `handleHomepage()` & `handleSum()`: Dedicated server-rendered HTML presentation pages.
+
+#### 3. Controller (C) - Routing, Business Logic & Request Dispatching
+The Controller layer handles client requests, enforces input validation, mutates or queries Models, and formats output views:
+- **Backend API Controllers (`server/src/index.js`)**:
+  - **User Controller**:
+    - `handleGetUsers`: Performs Content Negotiation based on HTTP `Accept` headers; serves an HTML management dashboard for browser navigation or JSON for API clients.
+    - `handleCreateUser`: Validates required fields (`name`, `email`), instantiates a new User entity, and inserts it into the Model store (`201 Created`).
+    - `handleGetUserById`: Looks up a specific user by route parameter; returns `404 Not Found` if missing.
+    - `handleUpdateUser`: Dispatches full replacement (`PUT`) or partial attribute updates (`PATCH`) to mutate the targeted user model.
+    - `handleDeleteUser`: Removes a user by ID from the Model store (`DELETE /api/users/:id`).
+  - **Alumni Controller**:
+    - `GET /api/alumni`: Executes multi-parameter filtering (text search, department, graduation year, mentor flag).
+    - `POST /api/alumni`: Validates profile inputs, parses skill tags, and registers new alumni records.
+  - **Jobs & Analytics Controllers**:
+    - `GET /api/stats`: Computes employment rates (94.8%), mentor counts, and industry distributions.
+    - `GET /api/jobs`: Retrieves active employment and internship opportunities.
+  - **System & Swagger Controllers**:
+    - `handleHealth`: Verifies Node.js server status and PostgreSQL pool connectivity.
+    - `handleSwagger`: Delivers either OpenAPI 3.0 JSON or interactive Swagger UI HTML.
+- **Frontend Web Server Controller (`client/server.js`)**:
+  - Serves static assets via `express.static`, redirects documentation traffic to the API server, and forwards unknown routes to `index.html` for client-side routing.
+- **Client Event Controllers (`client/public/app.js`)**:
+  - Attaches event listeners (`keyup`, `change`, `submit`, `click`) to trigger filter recalculations, modal toggles, theme switching, and asynchronous `fetch()` API calls.
+
+---
+
+### 🔁 End-to-End MVC Request Lifecycle Examples
+
+#### Scenario 1: Alumni Search & Filter Flow
+1. **View**: User types `"Google"` into the search bar or selects `"Computer Engineering"` from the department dropdown.
+2. **Client Controller (`app.js`)**: Captures the `keyup` or `change` event and dispatches an asynchronous `GET /api/alumni?search=google&department=...` request.
+3. **Backend Controller (`server/src/index.js`)**: Intercepts the route and extracts query parameters from `req.query`.
+4. **Model (`mockAlumni` / PostgreSQL)**: Filters records based on query parameters and returns the matched entities.
+5. **Backend Controller**: Formats the filtered records as JSON and responds with HTTP status 200.
+6. **Client Controller / View (`app.js`)**: Receives the JSON response, passes it to `renderAlumniList()`, and injects dynamically formatted HTML cards into `#alumniGrid`.
+
+#### Scenario 2: In-Memory User Creation & Mutation (CRUD Flow)
+1. **View (`renderUsersPage`)**: User completes the form (Name, Email, Role, Department) and clicks "Save & Submit".
+2. **Controller (`handleCreateUser`)**: Receives the `POST /api/users` request and validates `name` and `email` fields.
+3. **Model (`inMemoryUsers`)**: Constructs a new user record and prepends it to the in-memory array.
+4. **Controller -> View**: Based on request headers, returns a JSON object (for asynchronous SPA calls) or re-renders the HTML table with a green success banner (`alert-success`).
 
 ---
 
@@ -155,46 +288,46 @@ docker compose up --build
 ### 3. Service Endpoints
 - **Frontend App**: [http://localhost:3000](http://localhost:3000)
 - **Backend API**: [http://localhost:5001/api](http://localhost:5001/api)
-- **Swagger API Dokümantasyonu**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
-- **Kullanıcı Yönetim Arayüzü**: [http://localhost:5001/api/users](http://localhost:5001/api/users)
-- **Sistem Sağlık Kontrolü (Health)**: [http://localhost:5001/api/health](http://localhost:5001/api/health)
-- **PostgreSQL**: `localhost:5432`
+- **Swagger API Documentation**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
+- **User Management Interface**: [http://localhost:5001/api/users](http://localhost:5001/api/users)
+- **System Health Check**: [http://localhost:5001/api/health](http://localhost:5001/api/health)
+- **PostgreSQL Database**: `localhost:5432`
 
 ---
 
-## 📖 API Dokümantasyonu (Swagger / OpenAPI)
+## 📖 API Documentation (Swagger / OpenAPI)
 
-Projedeki tüm RESTful API endpoint'leri OpenAPI 3.0 standardında tanımlanmış olup, tarayıcı üzerinden interaktif olarak test edilebilecek modern **Swagger UI** arayüzü ile sunulmaktadır.
+All RESTful API endpoints across the project are defined according to the OpenAPI 3.0 standard and exposed via an interactive, modern **Swagger UI** interface for seamless in-browser testing and schema inspection.
 
-- **Swagger UI (İnteraktif Arayüz)**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
-- **OpenAPI JSON Şeması**: [http://localhost:5001/api/swagger?format=json](http://localhost:5001/api/swagger?format=json) veya [http://localhost:5001/api/swagger.json](http://localhost:5001/api/swagger.json)
+- **Swagger UI (Interactive Interface)**: [http://localhost:5001/api/swagger](http://localhost:5001/api/swagger)
+- **OpenAPI JSON Schema**: [http://localhost:5001/api/swagger?format=json](http://localhost:5001/api/swagger?format=json) or [http://localhost:5001/api/swagger.json](http://localhost:5001/api/swagger.json)
 
-### Mevcut API Endpoint'leri
+### Available API Endpoints
 
-| Metot | Endpoint | Açıklama |
+| Method | Endpoint | Description |
 | :--- | :--- | :--- |
-| `GET` | `/api/swagger` | İnteraktif Swagger UI arayüzü ve API dokümantasyonu |
-| `GET` | `/api/swagger?format=json` | OpenAPI 3.0.3 JSON şeması |
-| `GET` | `/api/health` | Sunucu ve sistem durumu JSON sağlık kontrolü |
-| `GET` | `/api/users` | In-Memory kayıtlı tüm kullanıcıları listele (HTML Arayüz veya `?format=json`) |
-| `POST` | `/api/users` | Veritabanı olmadan yeni kullanıcı ekle (RAM store) |
-| `GET` | `/api/user/{id}` | Belirli bir kullanıcıyı ID ile sorgula |
-| `PUT` | `/api/user/{id}` | Kullanıcı verilerini tamamen güncelle (`name`, `email`, `role`, `department`) |
-| `PATCH` | `/api/user/{id}` | Kullanıcı verilerini kısmi güncelle |
-| `DELETE` | `/api/users/{id}` | Kullanıcıyı bellekten sil |
-| `GET` | `/api/alumni` | Mezun profillerini listele ve filtrele (`search`, `department`, `year`, `mentorOnly`) |
-| `POST` | `/api/alumni` | Yeni mezun profili oluştur |
-| `GET` | `/api/stats` | Mezun sayısı, istihdam oranı ve sektör istatistikleri |
-| `GET` | `/api/jobs` | İş ve staj ilanlarını listele |
-| `GET` | `/sum` | İki sayıyı topla (`?number1=X&number2=Y`) |
-| `GET` | `/homepage` | Bağımsız anasayfa ve hakkımızda sayfası |
+| `GET` | `/api/swagger` | Interactive Swagger UI interface and API documentation |
+| `GET` | `/api/swagger?format=json` | Raw OpenAPI 3.0.3 JSON schema |
+| `GET` | `/api/health` | Server and database JSON health status report |
+| `GET` | `/api/users` | List all users (Interactive HTML dashboard or `?format=json`) |
+| `POST` | `/api/users` | Create a new user without database requirement (RAM store) |
+| `GET` | `/api/user/{id}` | Query a specific user by ID |
+| `PUT` | `/api/user/{id}` | Fully update user attributes (`name`, `email`, `role`, `department`) |
+| `PATCH` | `/api/user/{id}` | Partially update user attributes |
+| `DELETE` | `/api/users/{id}` | Delete a user from in-memory store by ID |
+| `GET` | `/api/alumni` | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
+| `POST` | `/api/alumni` | Register a new alumni profile |
+| `GET` | `/api/stats` | Platform statistics (total alumni, employment rate, industry breakdown) |
+| `GET` | `/api/jobs` | Career and internship opportunities list |
+| `GET` | `/sum` | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
+| `GET` | `/homepage` | Standalone landing page and about view |
 
-#### cURL ile Test Etme:
+#### Testing with cURL:
 ```bash
-# Swagger UI HTML'ini getir
+# Retrieve Swagger UI HTML
 curl -i http://localhost:5001/api/swagger
 
-# OpenAPI JSON şemasını getir
+# Retrieve OpenAPI JSON schema
 curl -s http://localhost:5001/api/swagger?format=json | jq .
 ```
 
