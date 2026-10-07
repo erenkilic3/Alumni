@@ -110,7 +110,10 @@ Alumni/
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── server/                                  # ⚙️ [CONTROLLER & MODEL] Backend API & Data Service
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
-│   │   └── index.js                         # 🧠 [CONTROLLER, MODEL & SSR VIEW] Primary API Server (Port 5001)
+│   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
+│   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
+│   │   │   └── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
+│   │   └── index.js                         # 🧠 [CONTROLLER & SSR VIEW] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
@@ -130,7 +133,8 @@ Alumni/
 
 | Directory / Folder / File | MVC Role | Layer | Responsibility & Scope |
 | :--- | :--- | :--- | :--- |
-| `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory stores (`inMemoryUsers`, `mockAlumni`, `mockJobs`), and metric calculation aggregators. |
+| `server/src/models/user.model.js` | **Model (M)** | Backend | Standalone in-memory User entity repository with full CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`), without requiring a database. |
+| `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
 | `client/public/styles.css` | **View (V)** | Frontend | Visual styling system: CSS variable design tokens for Dark/Light modes, glassmorphism backdrop blurs, responsive CSS Grid layouts, and animations. |

@@ -425,66 +425,9 @@ app.get('/api/health', handleHealth);
 app.get('/health', handleHealth);
 
 // ==========================================================================
-// In-Memory Users Module (Database Kullanılmadan / RAM Store)
+// In-Memory User Model (Database-Free Store with CRUD Operations)
 // ==========================================================================
-let inMemoryUsers = [
-  {
-    id: "1",
-    name: "Eren Kılıç",
-    email: "eren@alumni.edu",
-    role: "ADMIN",
-    department: "Software Engineering",
-    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
-  },
-  {
-    id: "2",
-    name: "Ayşe Yılmaz",
-    email: "ayse.yilmaz@google.com",
-    role: "ALUMNI",
-    department: "Computer Engineering",
-    createdAt: new Date(Date.now() - 3600000 * 12).toISOString()
-  },
-  {
-    id: "3",
-    name: "Burak Demir",
-    email: "burak.demir@peak.com",
-    role: "STUDENT",
-    department: "Industrial Engineering",
-    createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
-  },
-  {
-    id: "4",
-    name: "Mehmet Öz",
-    email: "mehmet@tesla.com",
-    role: "ALUMNI",
-    department: "Electrical Engineering",
-    createdAt: "2026-09-30T06:46:36.548Z"
-  },
-  {
-    id: "5",
-    name: "Fatma Kaya",
-    email: "fatma@alumni.edu",
-    role: "STUDENT",
-    department: "Architecture",
-    createdAt: "2026-09-30T06:47:18.171Z"
-  },
-  {
-    id: "6",
-    name: "hakan tosun",
-    email: "hakatosun@student.com",
-    role: "STUDENT",
-    department: "doctor",
-    createdAt: "2026-09-30T07:11:12.528Z"
-  },
-  {
-    id: "7",
-    name: "memet raşit famoushand",
-    email: "memetk3@student.com",
-    role: "STUDENT",
-    department: "barber",
-    createdAt: "2026-09-30T07:12:05.575Z"
-  }
-];
+const UserModel = require('./models/user.model');
 
 const escapeHtml = (str) => {
   if (!str) return '';
@@ -1039,21 +982,23 @@ const renderUsersPage = (users, message = null, error = null) => {
 </html>`;
 };
 
-// Users Handlers
+// Users Handlers (Delegated to UserModel)
 const handleGetUsers = (req, res) => {
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     req.query.format !== 'json' &&
     !req.headers.accept.includes('application/json');
 
+  const users = UserModel.findAll();
+
   if (isBrowserHtml) {
-    return res.send(renderUsersPage(inMemoryUsers));
+    return res.send(renderUsersPage(users));
   }
 
   // Default for API clients, curl, Postman, test suites: JSON
   res.json({
-    count: inMemoryUsers.length,
-    users: inMemoryUsers
+    count: users.length,
+    users
   });
 };
 
@@ -1065,7 +1010,7 @@ const handleCreateUser = (req, res) => {
 
   if (!name || !email) {
     if (isBrowserHtml) {
-      return res.status(400).send(renderUsersPage(inMemoryUsers, null, 'Ad (name) ve e-posta (email) alanları zorunludur.'));
+      return res.status(400).send(renderUsersPage(UserModel.findAll(), null, 'Ad (name) ve e-posta (email) alanları zorunludur.'));
     }
     return res.status(400).json({
       success: false,
@@ -1073,27 +1018,28 @@ const handleCreateUser = (req, res) => {
     });
   }
 
-  const newUser = {
-    id: (inMemoryUsers.length + 1).toString(),
-    name: name.trim(),
-    email: email.trim().toLowerCase(),
-    role: (role || 'STUDENT').toUpperCase(),
-    department: department ? department.trim() : 'Belirtilmedi',
-    createdAt: new Date().toISOString()
-  };
+  try {
+    const newUser = UserModel.create({ name, email, role, department });
 
-  inMemoryUsers.unshift(newUser);
+    if (isBrowserHtml) {
+      return res.status(201).send(renderUsersPage(UserModel.findAll(), `Kullanıcı "${newUser.name}" başarıyla eklendi!`));
+    }
 
-  if (isBrowserHtml) {
-    return res.status(201).send(renderUsersPage(inMemoryUsers, `Kullanıcı "${newUser.name}" başarıyla eklendi!`));
+    return res.status(201).json({
+      success: true,
+      message: 'Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu.',
+      user: newUser,
+      totalUsers: UserModel.count()
+    });
+  } catch (err) {
+    if (isBrowserHtml) {
+      return res.status(400).send(renderUsersPage(UserModel.findAll(), null, err.message));
+    }
+    return res.status(400).json({
+      success: false,
+      error: err.message
+    });
   }
-
-  return res.status(201).json({
-    success: true,
-    message: 'Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu.',
-    user: newUser,
-    totalUsers: inMemoryUsers.length
-  });
 };
 
 app.get('/api/users', handleGetUsers);
@@ -1104,7 +1050,7 @@ app.post('/users', handleCreateUser);
 // Single User Handlers (GET, PUT, PATCH)
 const handleGetUserById = (req, res) => {
   const userId = req.params.id;
-  const user = inMemoryUsers.find(u => u.id === userId.toString());
+  const user = UserModel.findById(userId);
 
   if (!user) {
     return res.status(404).json({
@@ -1121,16 +1067,6 @@ const handleGetUserById = (req, res) => {
 
 const handleUpdateUser = (req, res) => {
   const userId = req.params.id;
-  const userIndex = inMemoryUsers.findIndex(u => u.id === userId.toString());
-
-  if (userIndex === -1) {
-    return res.status(404).json({
-      success: false,
-      error: `Kullanıcı bulunamadı (ID: ${userId})`
-    });
-  }
-
-  const existing = inMemoryUsers[userIndex];
   const { name, email, role, department } = req.body || {};
 
   // For PUT requests: if neither name nor email is provided
@@ -1141,23 +1077,29 @@ const handleUpdateUser = (req, res) => {
     });
   }
 
-  const updatedUser = {
-    ...existing,
-    name: name !== undefined ? name.trim() : existing.name,
-    email: email !== undefined ? email.trim().toLowerCase() : existing.email,
-    role: role !== undefined ? role.toUpperCase() : existing.role,
-    department: department !== undefined ? department.trim() : existing.department,
-    updatedAt: new Date().toISOString()
-  };
+  try {
+    const isPartial = req.method === 'PATCH';
+    const updatedUser = UserModel.update(userId, { name, email, role, department }, isPartial);
 
-  inMemoryUsers[userIndex] = updatedUser;
+    if (!updatedUser) {
+      return res.status(404).json({
+        success: false,
+        error: `Kullanıcı bulunamadı (ID: ${userId})`
+      });
+    }
 
-  res.json({
-    success: true,
-    message: `Kullanıcı #${userId} (${req.method}) metoduyla başarıyla güncellendi.`,
-    method: req.method,
-    user: updatedUser
-  });
+    res.json({
+      success: true,
+      message: `Kullanıcı #${userId} (${req.method}) metoduyla başarıyla güncellendi.`,
+      method: req.method,
+      user: updatedUser
+    });
+  } catch (err) {
+    res.status(400).json({
+      success: false,
+      error: err.message
+    });
+  }
 };
 
 // Single User endpoints (PUT, PATCH, GET)
@@ -1178,22 +1120,20 @@ app.patch('/users/:id', handleUpdateUser);
 
 const handleDeleteUser = (req, res) => {
   const userId = req.params.id;
-  const userIndex = inMemoryUsers.findIndex(u => u.id === userId.toString());
+  const deletedUser = UserModel.delete(userId);
 
-  if (userIndex === -1) {
+  if (!deletedUser) {
     return res.status(404).json({
       success: false,
       error: `Kullanıcı bulunamadı (ID: ${userId})`
     });
   }
 
-  const [deletedUser] = inMemoryUsers.splice(userIndex, 1);
-
   res.json({
     success: true,
     message: `Kullanıcı #${userId} (${deletedUser.name}) başarıyla silindi.`,
     deletedUser,
-    remainingUsers: inMemoryUsers.length
+    remainingUsers: UserModel.count()
   });
 };
 
