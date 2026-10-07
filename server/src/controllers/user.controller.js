@@ -6,9 +6,14 @@ const { UserView } = require('../views');
  *
  * Web/View Controller for User management.
  * Coordinates between UserModel (Data Layer) and UserView (Presentation/View Layer).
- * Handles:
- * - GET /users  (Users Listing View)
- * - POST /users (Users Creating Action & View Render)
+ * Implements complete CRUD operations:
+ * - READ ALL:    index()   -> GET /users
+ * - READ ONE:    show()    -> GET /users/:id
+ * - CREATE FORM: new()     -> GET /users/new & GET /users/create
+ * - CREATE POST: create()  -> POST /users
+ * - UPDATE FORM: edit()    -> GET /users/:id/edit
+ * - UPDATE POST: update()  -> PUT /users/:id, PATCH /users/:id, POST /users/:id
+ * - DELETE:      delete()  -> DELETE /users/:id, POST /users/:id/delete
  */
 class UserController {
   constructor(model = UserModel, view = UserView) {
@@ -18,7 +23,9 @@ class UserController {
     // Bind methods for Express route dispatching
     this.index = this.index.bind(this);
     this.show = this.show.bind(this);
+    this.new = this.new.bind(this);
     this.create = this.create.bind(this);
+    this.edit = this.edit.bind(this);
     this.update = this.update.bind(this);
     this.delete = this.delete.bind(this);
     this.renderUsersPage = this.renderUsersPage.bind(this);
@@ -39,22 +46,22 @@ class UserController {
   }
 
   /**
-   * GET /users or browser GET /api/users
-   * Route 1: Users Listing View
+   * 1. READ ALL: GET /users or browser GET /api/users
    * Retrieves users from the model and renders the user management dashboard view
    */
   index(req, res) {
     try {
       const users = this.model.findAll();
-      return res.status(200).send(this.view.renderUsersList(users));
+      const flashMsg = req.query.msg || null;
+      return res.status(200).send(this.view.renderUsersList(users, flashMsg));
     } catch (err) {
       return res.status(500).send(this.view.renderUsersList([], null, `Error loading users: ${err.message}`));
     }
   }
 
   /**
-   * GET /users/:id
-   * READ ONE: Display single user view or return JSON
+   * 2. READ ONE: GET /users/:id
+   * Displays the dedicated profile card view for a single user
    */
   show(req, res) {
     try {
@@ -62,23 +69,31 @@ class UserController {
       const user = this.model.findById(id);
 
       if (!user) {
-        return res.status(404).send(this.view.renderUsersList(this.model.findAll(), null, `User not found (ID: #${id})`));
+        return res.status(404).send(this.view.renderUsersList(this.model.findAll(), null, `User #${id} not found.`));
       }
 
       if (req.headers.accept && req.headers.accept.includes('application/json')) {
         return res.json({ success: true, user });
       }
 
-      return res.status(200).send(this.view.renderUsersList([user], `Viewing single user: ${user.name}`));
+      const flashMsg = req.query.msg || null;
+      return res.status(200).send(this.view.renderUserDetails(user, flashMsg));
     } catch (err) {
       return res.status(500).send(this.view.renderUsersList(this.model.findAll(), null, err.message));
     }
   }
 
   /**
-   * POST /users or browser form POST /api/users
-   * Route 2: Users Creating View / Action
-   * Processes form submission, creates new user, and re-renders view with success notification
+   * 3. CREATE FORM: GET /users/new or GET /users/create
+   * Renders the dedicated "Add New User" HTML form view
+   */
+  new(req, res) {
+    return res.status(200).send(this.view.renderCreateForm());
+  }
+
+  /**
+   * 4. CREATE ACTION: POST /users
+   * Processes form submission, creates new user in model, and renders response
    */
   create(req, res) {
     const { name, email, role, department } = req.body || {};
@@ -91,7 +106,7 @@ class UserController {
       if (wantsJson) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
-      return res.status(400).send(this.view.renderUsersList(this.model.findAll(), null, errorMsg));
+      return res.status(400).send(this.view.renderCreateForm(req.body, null, errorMsg));
     }
 
     try {
@@ -106,6 +121,7 @@ class UserController {
         });
       }
 
+      // Re-render user listing with success banner
       return res.status(201).send(
         this.view.renderUsersList(this.model.findAll(), `User "${newUser.name}" was successfully registered!`)
       );
@@ -113,13 +129,28 @@ class UserController {
       if (wantsJson) {
         return res.status(400).json({ success: false, error: err.message });
       }
-      return res.status(400).send(this.view.renderUsersList(this.model.findAll(), null, err.message));
+      return res.status(400).send(this.view.renderCreateForm(req.body, null, err.message));
     }
   }
 
   /**
-   * PUT /users/:id or PATCH /users/:id
-   * UPDATE: Process update request and return response or updated view
+   * 5. UPDATE FORM: GET /users/:id/edit
+   * Renders the dedicated "Edit User" HTML form view prefilled with current user attributes
+   */
+  edit(req, res) {
+    const { id } = req.params;
+    const user = this.model.findById(id);
+
+    if (!user) {
+      return res.status(404).send(this.view.renderUsersList(this.model.findAll(), null, `User #${id} not found.`));
+    }
+
+    return res.status(200).send(this.view.renderEditForm(user));
+  }
+
+  /**
+   * 6. UPDATE ACTION: PUT /users/:id, PATCH /users/:id, or POST /users/:id
+   * Processes update submission, updates model, and renders the updated profile view
    */
   update(req, res) {
     const { id } = req.params;
@@ -128,18 +159,19 @@ class UserController {
     const wantsJson = (req.headers.accept && req.headers.accept.includes('application/json')) || req.xhr;
 
     if (!isPartial && (!name || !email)) {
-      const errorMsg = 'PUT request requires both name and email fields.';
+      const errorMsg = 'Full name and email address are required fields.';
+      const user = this.model.findById(id) || { id, name, email, role, department };
       if (wantsJson) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
-      return res.status(400).send(this.view.renderUsersList(this.model.findAll(), null, errorMsg));
+      return res.status(400).send(this.view.renderEditForm(user, null, errorMsg));
     }
 
     try {
       const updatedUser = this.model.update(id, { name, email, role, department }, isPartial);
 
       if (!updatedUser) {
-        const errorMsg = `User not found (ID: ${id})`;
+        const errorMsg = `User #${id} not found.`;
         if (wantsJson) {
           return res.status(404).json({ success: false, error: errorMsg });
         }
@@ -149,24 +181,27 @@ class UserController {
       if (wantsJson) {
         return res.json({
           success: true,
-          message: `User #${id} successfully updated via ${req.method}.`,
-          method: req.method,
+          message: `User #${id} successfully updated.`,
           user: updatedUser
         });
       }
 
-      return res.status(200).send(this.view.renderUsersList(this.model.findAll(), `User #${id} was successfully updated.`));
+      // Render updated profile view with success message
+      return res.status(200).send(
+        this.view.renderUserDetails(updatedUser, `User #${id} (${updatedUser.name}) was successfully updated!`)
+      );
     } catch (err) {
+      const user = this.model.findById(id) || { id, name, email, role, department };
       if (wantsJson) {
         return res.status(400).json({ success: false, error: err.message });
       }
-      return res.status(400).send(this.view.renderUsersList(this.model.findAll(), null, err.message));
+      return res.status(400).send(this.view.renderEditForm(user, null, err.message));
     }
   }
 
   /**
-   * DELETE /users/:id
-   * DELETE: Remove user and render updated interface or return JSON
+   * 7. DELETE ACTION: DELETE /users/:id or POST /users/:id/delete
+   * Removes user from the model and re-renders the user listing dashboard view
    */
   delete(req, res) {
     const { id } = req.params;
@@ -176,7 +211,7 @@ class UserController {
       const deletedUser = this.model.delete(id);
 
       if (!deletedUser) {
-        const errorMsg = `User not found (ID: ${id})`;
+        const errorMsg = `User #${id} not found.`;
         if (wantsJson) {
           return res.status(404).json({ success: false, error: errorMsg });
         }
@@ -192,7 +227,10 @@ class UserController {
         });
       }
 
-      return res.status(200).send(this.view.renderUsersList(this.model.findAll(), `User #${id} (${deletedUser.name}) was successfully removed.`));
+      // Re-render user listing view with deletion confirmation
+      return res.status(200).send(
+        this.view.renderUsersList(this.model.findAll(), `User #${id} (${deletedUser.name}) was successfully deleted.`)
+      );
     } catch (err) {
       if (wantsJson) {
         return res.status(500).json({ success: false, error: err.message });

@@ -858,7 +858,7 @@ const swaggerDocument = {
       get: {
         tags: ["User"],
         summary: "Render User Management Dashboard (Web UI)",
-        description: "Server-side rendered HTML dashboard for viewing, searching, and managing users with interactive forms (handled by UserController.index).",
+        description: "Server-side rendered HTML dashboard for viewing, searching, and managing users with interactive forms (handled by UserController.index & UserView.renderUsersList).",
         responses: {
           "200": {
             description: "HTML user dashboard page",
@@ -892,11 +892,24 @@ const swaggerDocument = {
         }
       }
     },
+    "/users/new": {
+      get: {
+        tags: ["User"],
+        summary: "Render Create User Form (Web UI)",
+        description: "Renders the dedicated server-side HTML form for registering a new user (handled by UserController.new & UserView.renderCreateForm).",
+        responses: {
+          "200": {
+            description: "HTML create user form page",
+            content: { "text/html": { schema: { type: "string" } } }
+          }
+        }
+      }
+    },
     "/users/{id}": {
       get: {
         tags: ["User"],
         summary: "Display User Detail View (Web UI)",
-        description: "Renders single user details or returns JSON user data (handled by UserController.show).",
+        description: "Renders single user profile details page (handled by UserController.show & UserView.renderUserDetails).",
         parameters: [
           { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
         ],
@@ -929,6 +942,25 @@ const swaggerDocument = {
           "404": { description: "User not found" }
         }
       },
+      post: {
+        tags: ["User"],
+        summary: "Update User via HTML Form (Web UI)",
+        description: "Processes user update form submission (handled by UserController.update).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/x-www-form-urlencoded": { schema: { $ref: "#/components/schemas/UpdateUserRequest" } },
+            "application/json": { schema: { $ref: "#/components/schemas/UpdateUserRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "User updated successfully" },
+          "404": { description: "User not found" }
+        }
+      },
       patch: {
         tags: ["User"],
         summary: "Partially Update User (Web UI)",
@@ -950,12 +982,29 @@ const swaggerDocument = {
       delete: {
         tags: ["User"],
         summary: "Delete User (Web UI Action)",
-        description: "Removes user and returns HTML dashboard or JSON confirmation (handled by UserController.delete).",
+        description: "Removes user and returns updated HTML view or JSON confirmation (handled by UserController.delete).",
         parameters: [
           { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
         ],
         responses: {
           "200": { description: "User deleted successfully" },
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/users/{id}/edit": {
+      get: {
+        tags: ["User"],
+        summary: "Render Edit User Form (Web UI)",
+        description: "Renders the dedicated server-side HTML form prefilled with user data for editing (handled by UserController.edit & UserView.renderEditForm).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID to edit" }
+        ],
+        responses: {
+          "200": {
+            description: "HTML edit user form page",
+            content: { "text/html": { schema: { type: "string" } } }
+          },
           "404": { description: "User not found" }
         }
       }

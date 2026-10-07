@@ -328,29 +328,31 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 
 ### Available API Endpoints
 
-| Method | Endpoint | Controller | Description |
-| :--- | :--- | :--- | :--- |
-| `GET` | `/api/swagger` | Native | Interactive Swagger UI interface and OpenAPI specification |
-| `GET` | `/api/swagger?format=json` | Native | Raw OpenAPI 3.0.3 JSON schema |
-| `GET` | `/api/health` | Native | Server and database JSON health status report |
-| `GET` | `/users` | `UserController` | Interactive User Management Dashboard (Web UI / HTML SSR) |
-| `POST` | `/users` | `UserController` | Process Web Form User Registration (HTML form submit) |
-| `GET` | `/users/{id}` | `UserController` | Single user profile HTML detail view |
-| `PUT` / `PATCH` | `/users/{id}` | `UserController` | Web user profile update action |
-| `DELETE` | `/users/{id}` | `UserController` | Delete user via web management action |
-| `GET` | `/api/users` | `ApiUserController` | List all users (JSON with browser HTML fallback; `role`, `department`, `search`) |
-| `POST` | `/api/users` | `ApiUserController` | Create a new user without database requirement (JSON API) |
-| `GET` | `/api/users/count` | `ApiUserController` | Get total count of registered users |
-| `GET` | `/api/user/{id}` | `ApiUserController` | Query a specific user by ID |
-| `PUT` | `/api/user/{id}` | `ApiUserController` | Fully update user attributes (`name`, `email`, `role`, `department`) |
-| `PATCH` | `/api/user/{id}` | `ApiUserController` | Partially update user attributes |
-| `DELETE` | `/api/users/{id}` | `ApiUserController` | Delete a user from in-memory store by ID |
-| `GET` | `/api/alumni` | Native | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
-| `POST` | `/api/alumni` | Native | Register a new alumni profile |
-| `GET` | `/api/stats` | Native | Platform statistics (total alumni, employment rate, industry breakdown) |
-| `GET` | `/api/jobs` | Native | Career and internship opportunities list |
-| `GET` | `/sum` | Native | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
-| `GET` | `/homepage` | Native | Standalone landing page and about view |
+| Method | Endpoint | Controller | View / Handler | Description |
+| :--- | :--- | :--- | :--- | :--- |
+| `GET` | `/api/swagger` | Native | Swagger UI | Interactive Swagger UI interface and OpenAPI specification |
+| `GET` | `/api/swagger?format=json` | Native | OpenAPI JSON | Raw OpenAPI 3.0.3 JSON schema |
+| `GET` | `/api/health` | Native | JSON | Server and database JSON health status report |
+| `GET` | `/users` | `UserController` | `UserView.renderUsersList` | **Read All**: Interactive User Management Dashboard (Web UI / HTML SSR) |
+| `GET` | `/users/new` | `UserController` | `UserView.renderCreateForm` | **Create Form**: Dedicated Add User HTML Form View |
+| `POST` | `/users` | `UserController` | `UserView.renderUsersList` | **Create Action**: Process user creation and re-render dashboard view |
+| `GET` | `/users/{id}` | `UserController` | `UserView.renderUserDetails` | **Read One**: Single user profile card HTML view |
+| `GET` | `/users/{id}/edit` | `UserController` | `UserView.renderEditForm` | **Update Form**: Dedicated Edit User HTML Form View (prefilled) |
+| `POST` / `PUT` / `PATCH` | `/users/{id}` | `UserController` | `UserView.renderUserDetails` | **Update Action**: Process user update and render updated profile view |
+| `POST` / `DELETE` | `/users/{id}/delete` | `UserController` | `UserView.renderUsersList` | **Delete Action**: Process user deletion and re-render dashboard view |
+| `GET` | `/api/users` | `ApiUserController` | JSON | List all users (JSON with browser HTML fallback; `role`, `department`, `search`) |
+| `POST` | `/api/users` | `ApiUserController` | JSON | Create a new user without database requirement (JSON API) |
+| `GET` | `/api/users/count` | `ApiUserController` | JSON | Get total count of registered users |
+| `GET` | `/api/user/{id}` | `ApiUserController` | JSON | Query a specific user by ID |
+| `PUT` | `/api/user/{id}` | `ApiUserController` | JSON | Fully update user attributes (`name`, `email`, `role`, `department`) |
+| `PATCH` | `/api/user/{id}` | `ApiUserController` | JSON | Partially update user attributes |
+| `DELETE` | `/api/users/{id}` | `ApiUserController` | JSON | Delete a user from in-memory store by ID |
+| `GET` | `/api/alumni` | Native | JSON | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
+| `POST` | `/api/alumni` | Native | JSON | Register a new alumni profile |
+| `GET` | `/api/stats` | Native | JSON | Platform statistics (total alumni, employment rate, industry breakdown) |
+| `GET` | `/api/jobs` | Native | JSON | Career and internship opportunities list |
+| `GET` | `/sum` | Native | Form / JSON | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
+| `GET` | `/homepage` | Native | HTML | Standalone landing page and about view |
 
 #### Testing with cURL:
 ```bash
