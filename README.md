@@ -112,7 +112,7 @@ Alumni/
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
 │   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
-│   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER & SSR VIEW] Web / HTML User Controller
+│   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (GET /users, POST /users)
 │   │   │   └── api-user.controller.js       # ⚙️ [CONTROLLER] Pure JSON REST API User Controller
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
@@ -121,6 +121,9 @@ Alumni/
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
 │   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users, /users/:id -> UserController)
 │   │   │   └── api-user.routes.js           # 🚦 [ROUTER] REST API User Routes (/api/users, /api/user/:id -> ApiUserController)
+│   │   ├── views/                           # 🎨 [VIEW] Server-Side Rendered Presentation Layer
+│   │   │   ├── index.js                     # 🎨 [VIEW] Barrel Export for Views
+│   │   │   └── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (GET /users & POST /users)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
@@ -142,17 +145,18 @@ Alumni/
 | Directory / Folder / File | MVC Role | Layer | Responsibility & Scope |
 | :--- | :--- | :--- | :--- |
 | `server/src/models/user.model.js` | **Model (M)** | Backend | Standalone in-memory User entity repository with full CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`), without requiring a database. |
+| `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `escapeHtml`); renders interactive user dashboard, metric cards, create form, and client-side filtering script for `GET /users` and `POST /users`. |
+| `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views. |
 | `server/src/controllers/api-user.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`) with standard HTTP status codes. |
-| `server/src/controllers/user.controller.js` | **Controller (C) & SSR View (V)** | Backend | Web/HTML controller; renders the interactive user management dashboard (`renderUsersPage`), processes web form submissions, and powers inline CRUD interactions. |
+| `server/src/controllers/user.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `UserModel` (Data) and `UserView` (Presentation), managing `GET /users` listing and `POST /users` creation workflows. |
 | `server/src/routes/api-user.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/users`, `/api/users/count`, `/api/user/:id`, `/api/users/:id`) to `ApiUserController`. |
-| `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Dispatches Web UI requests (`/users`, `/users/:id`) to `UserController`. |
+| `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Defines the 2 view-connected web routes (`GET /users`, `POST /users`) and resource routes (`/users/:id`) mapped to `UserController`. |
 | `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting `userRoutes` and `apiUserRoutes` modules. |
 | `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
 | `client/public/styles.css` | **View (V)** | Frontend | Visual styling system: CSS variable design tokens for Dark/Light modes, glassmorphism backdrop blurs, responsive CSS Grid layouts, and animations. |
 | `client/public/app.js` (Render Methods) | **View (V)** | Frontend | Dynamic DOM rendering logic: `renderAlumniList()`, `renderJobsList()`, `renderStats()`, `showNotification()`, `openModal()`, `closeModal()`. |
-| `server/src/controllers/user.controller.js` (HTML UI) | **View (V)** | Backend | Server-side rendered HTML dashboard: `renderUsersPage()` featuring inline edit/delete prompt triggers, responsive table, and live alert banners. |
 | `server/src/index.js` (SSR Templates) | **View (V)** | Backend | Server-side rendered HTML templates: `renderSwaggerUI()` (Swagger UI view), `handleHomepage()`, `handleSum()`. |
 | `server/src/index.js` (Server & Mounting) | **Controller (C)** | Backend | Central application entry point; initializes Express, middleware, mounts routes, serves OpenAPI specification, and handles errors. |
 | `client/server.js` | **Controller (C)** | Frontend | Express web server; static file delivery (`express.static`), health monitoring (`/api/health`), documentation redirection (`/api/swagger`), and SPA fallback routing (`GET *`). |

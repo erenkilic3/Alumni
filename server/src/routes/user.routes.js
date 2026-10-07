@@ -3,26 +3,25 @@ const router = express.Router();
 const { UserController } = require('../controllers');
 
 /**
- * User Web Routes (HTML UI / SSR Views)
- * Mapped to UserController
+ * ============================================================================
+ * User Web Routes (View Layer Integration)
+ * ============================================================================
+ * Defines the 2 core web routes connected to UserController & UserView:
+ * 
+ * 1. GET  /users -> Users Listing (renders the User Management Dashboard view)
+ * 2. POST /users -> Users Creating (processes web form submission & re-renders view)
  */
 
-// GET /users - Render the interactive User Management Dashboard
+// Route 1: GET /users - Users Listing (View Layer)
 router.get('/users', UserController.index);
 
-// POST /users - Process Web Form User Registration
+// Route 2: POST /users - Users Creating (View Layer)
 router.post('/users', UserController.create);
 
-// GET /users/:id - Show details for a single user
+// Supplementary Web detail and mutation routes
 router.get('/users/:id', UserController.show);
-
-// PUT /users/:id - Update user attributes
 router.put('/users/:id', UserController.update);
-
-// PATCH /users/:id - Partially update user attributes
 router.patch('/users/:id', UserController.update);
-
-// DELETE /users/:id - Delete user from interface
 router.delete('/users/:id', UserController.delete);
 
 module.exports = router;
