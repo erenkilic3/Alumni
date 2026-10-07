@@ -425,61 +425,15 @@ app.get('/api/health', handleHealth);
 app.get('/health', handleHealth);
 
 // ==========================================================================
-// User Controllers (Web & API Controllers for User Management)
+// Route Modules (User Web Routes & ApiUser REST API Routes)
 // ==========================================================================
-const { UserController, ApiUserController } = require('./controllers');
+const { userRoutes, apiUserRoutes } = require('./routes');
 
-// Content-negotiating handler for /api/users
-const handleGetUsers = (req, res) => {
-  const isBrowserHtml = req.headers.accept &&
-    req.headers.accept.includes('text/html') &&
-    req.query.format !== 'json' &&
-    !req.headers.accept.includes('application/json');
+// Mount Web UI User routes (/users, /users/:id)
+app.use(userRoutes);
 
-  if (isBrowserHtml) {
-    return UserController.index(req, res);
-  }
-  return ApiUserController.getAll(req, res);
-};
-
-const handleCreateUser = (req, res) => {
-  const isBrowserHtml = req.headers.accept &&
-    req.headers.accept.includes('text/html') &&
-    !req.headers.accept.includes('application/json');
-
-  if (isBrowserHtml) {
-    return UserController.create(req, res);
-  }
-  return ApiUserController.create(req, res);
-};
-
-// Web User Routes (HTML UI)
-app.get('/users', UserController.index);
-app.post('/users', UserController.create);
-app.get('/users/:id', UserController.show);
-app.put('/users/:id', UserController.update);
-app.patch('/users/:id', UserController.update);
-app.delete('/users/:id', UserController.delete);
-
-// REST API User Routes (JSON)
-app.get('/api/users', handleGetUsers);
-app.post('/api/users', handleCreateUser);
-app.get('/api/users/count', ApiUserController.count);
-
-app.get('/api/user/:id', ApiUserController.getById);
-app.get('/api/users/:id', ApiUserController.getById);
-app.get('/user/:id', ApiUserController.getById);
-
-app.put('/api/user/:id', ApiUserController.update);
-app.patch('/api/user/:id', ApiUserController.update);
-app.put('/api/users/:id', ApiUserController.update);
-app.patch('/api/users/:id', ApiUserController.update);
-app.put('/user/:id', ApiUserController.update);
-app.patch('/user/:id', ApiUserController.update);
-
-app.delete('/api/users/:id', ApiUserController.delete);
-app.delete('/api/user/:id', ApiUserController.delete);
-app.delete('/user/:id', ApiUserController.delete);
+// Mount REST API User routes (/api/users, /api/user/:id, /api/users/count, etc.)
+app.use(apiUserRoutes);
 
 // ==========================================================================
 // Swagger / OpenAPI 3.0 Documentation Module
@@ -489,7 +443,7 @@ const swaggerDocument = {
   info: {
     title: "Alumni Tracking System REST API",
     version: "1.0.0",
-    description: "Alumni Sphere - Mezun Takip ve Ağ Sistemi RESTful API Dokümantasyonu (Swagger / OpenAPI)",
+    description: "Alumni Sphere - Alumni Tracking and Networking System RESTful API Documentation (Swagger / OpenAPI 3.0)",
     contact: {
       name: "Eren Kılıç",
       url: "https://github.com/erenkilic3/Alumni"
@@ -506,32 +460,33 @@ const swaggerDocument = {
     }
   ],
   tags: [
-    { name: "Swagger", description: "API Dokümantasyonu ve Şeması" },
-    { name: "Health", description: "Sistem ve Veritabanı Sağlık Kontrolü" },
-    { name: "Users", description: "In-Memory Kullanıcı Yönetimi (CRUD)" },
-    { name: "Alumni", description: "Mezun Profilleri ve Arama" },
-    { name: "Jobs", description: "Kariyer ve İş İlanları" },
-    { name: "Stats", description: "Platform İstatistikleri" },
-    { name: "Calculator", description: "Toplama ve Yardımcı İşlemler" }
+    { name: "Swagger", description: "API documentation and OpenAPI schema endpoints" },
+    { name: "Health", description: "System and database health check" },
+    { name: "ApiUser", description: "REST API JSON endpoints for in-memory user CRUD operations (ApiUserController)" },
+    { name: "User", description: "Web UI and SSR endpoints for user dashboard management (UserController)" },
+    { name: "Alumni", description: "Alumni directory and search endpoints" },
+    { name: "Jobs", description: "Career opportunities and job postings" },
+    { name: "Stats", description: "Platform overview and alumni statistics" },
+    { name: "Calculator", description: "Utility arithmetic and legacy helper endpoints" }
   ],
   paths: {
     "/api/swagger": {
       get: {
         tags: ["Swagger"],
-        summary: "Swagger UI ve OpenAPI Belgelendirmesi",
-        description: "Tarayıcıda interaktif Swagger UI arayüzünü, API istemcilerinde veya ?format=json ile OpenAPI JSON şemasını sunar.",
+        summary: "Swagger UI and OpenAPI Specification",
+        description: "Serves interactive Swagger UI HTML in the browser, or returns raw OpenAPI 3.0 JSON specification when requested with ?format=json or Accept: application/json.",
         parameters: [
           {
             name: "format",
             in: "query",
             required: false,
             schema: { type: "string", enum: ["json"] },
-            description: "JSON şemasını doğrudan almak için 'json' girin"
+            description: "Pass 'json' to directly retrieve the JSON schema"
           }
         ],
         responses: {
           "200": {
-            description: "Swagger UI HTML veya OpenAPI 3.0 JSON şeması"
+            description: "Swagger UI HTML or OpenAPI 3.0 JSON schema"
           }
         }
       }
@@ -539,11 +494,11 @@ const swaggerDocument = {
     "/api/health": {
       get: {
         tags: ["Health"],
-        summary: "Sistem sağlık durumunu kontrol et",
-        description: "API sunucusu ve veritabanı durumunu JSON formatında döndürür.",
+        summary: "Check system health status",
+        description: "Returns API server status and database connectivity in JSON format.",
         responses: {
           "200": {
-            description: "Sağlık durumu yanıtı",
+            description: "Health status response",
             content: {
               "application/json": {
                 schema: {
@@ -566,26 +521,48 @@ const swaggerDocument = {
     },
     "/api/users": {
       get: {
-        tags: ["Users"],
-        summary: "Tüm kullanıcıları listele (In-Memory)",
-        description: "Bellekte (RAM) saklanan tüm kullanıcıların listesini döndürür.",
+        tags: ["ApiUser"],
+        summary: "List all users (JSON with browser fallback)",
+        description: "Retrieves all users stored in memory. Supports optional query parameters for role, department, and search keywords.",
         parameters: [
+          {
+            name: "role",
+            in: "query",
+            required: false,
+            schema: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"] },
+            description: "Filter users by role"
+          },
+          {
+            name: "department",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Filter users by academic department"
+          },
+          {
+            name: "search",
+            in: "query",
+            required: false,
+            schema: { type: "string" },
+            description: "Search keyword matching name or email"
+          },
           {
             name: "format",
             in: "query",
             required: false,
             schema: { type: "string", enum: ["json"] },
-            description: "JSON çıktısı için 'json' verilebilir"
+            description: "Force JSON output format"
           }
         ],
         responses: {
           "200": {
-            description: "Kullanıcı listesi",
+            description: "List of users",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
+                    success: { type: "boolean", example: true },
                     count: { type: "integer", example: 5 },
                     users: {
                       type: "array",
@@ -599,9 +576,9 @@ const swaggerDocument = {
         }
       },
       post: {
-        tags: ["Users"],
-        summary: "Yeni kullanıcı ekle (No Database)",
-        description: "Belleğe (RAM) veritabanı kullanmadan yeni kullanıcı ekler.",
+        tags: ["ApiUser"],
+        summary: "Create a new user (JSON API)",
+        description: "Adds a new user to the in-memory data store without requiring a database connection.",
         requestBody: {
           required: true,
           content: {
@@ -615,14 +592,14 @@ const swaggerDocument = {
         },
         responses: {
           "201": {
-            description: "Kullanıcı oluşturuldu",
+            description: "User created successfully",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
                     success: { type: "boolean", example: true },
-                    message: { type: "string", example: "Kullanıcı veritabanı olmadan (in-memory) başarıyla oluşturuldu." },
+                    message: { type: "string", example: "User successfully created (in-memory, no database)." },
                     user: { $ref: "#/components/schemas/User" },
                     totalUsers: { type: "integer", example: 6 }
                   }
@@ -631,21 +608,45 @@ const swaggerDocument = {
             }
           },
           "400": {
-            description: "Ad veya e-posta alanı eksik"
+            description: "Name or email field missing, or email already registered"
+          }
+        }
+      }
+    },
+    "/api/users/count": {
+      get: {
+        tags: ["ApiUser"],
+        summary: "Get total user count",
+        description: "Returns the total number of registered users currently stored in memory.",
+        responses: {
+          "200": {
+            description: "Total user count",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    count: { type: "integer", example: 5 }
+                  }
+                }
+              }
+            }
           }
         }
       }
     },
     "/api/user/{id}": {
       get: {
-        tags: ["Users"],
-        summary: "ID'ye göre kullanıcı getir",
+        tags: ["ApiUser"],
+        summary: "Get user by ID",
+        description: "Retrieves a single user by their unique identifier.",
         parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
         ],
         responses: {
           "200": {
-            description: "Kullanıcı bulundu",
+            description: "User found",
             content: {
               "application/json": {
                 schema: {
@@ -658,15 +659,15 @@ const swaggerDocument = {
               }
             }
           },
-          "404": { description: "Kullanıcı bulunamadı" }
+          "404": { description: "User not found" }
         }
       },
       put: {
-        tags: ["Users"],
-        summary: "Kullanıcıyı tamamen güncelle (PUT)",
-        description: "Kullanıcı verilerini günceller (name ve email zorunludur).",
+        tags: ["ApiUser"],
+        summary: "Update user completely (PUT)",
+        description: "Updates all attributes of a user (name and email are required).",
         parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
         ],
         requestBody: {
           required: true,
@@ -677,17 +678,31 @@ const swaggerDocument = {
           }
         },
         responses: {
-          "200": { description: "Kullanıcı güncellendi" },
-          "400": { description: "Eksik zorunlu alanlar" },
-          "404": { description: "Kullanıcı bulunamadı" }
+          "200": {
+            description: "User updated successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "User #1 updated successfully." },
+                    user: { $ref: "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "400": { description: "Missing required fields" },
+          "404": { description: "User not found" }
         }
       },
       patch: {
-        tags: ["Users"],
-        summary: "Kullanıcıyı kısmi güncelle (PATCH)",
-        description: "Yalnızca gönderilen alanları günceller.",
+        tags: ["ApiUser"],
+        summary: "Partially update user (PATCH)",
+        description: "Updates only the supplied fields of an existing user.",
         parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Kullanıcı ID'si" }
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
         ],
         requestBody: {
           required: true,
@@ -698,29 +713,41 @@ const swaggerDocument = {
           }
         },
         responses: {
-          "200": { description: "Kullanıcı güncellendi" },
-          "404": { description: "Kullanıcı bulunamadı" }
-        }
-      }
-    },
-    "/api/users/{id}": {
-      delete: {
-        tags: ["Users"],
-        summary: "Kullanıcıyı sil (DELETE)",
-        description: "Kullanıcıyı in-memory veri deposundan siler.",
-        parameters: [
-          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Silinecek Kullanıcı ID" }
-        ],
-        responses: {
           "200": {
-            description: "Kullanıcı silindi",
+            description: "User partially updated",
             content: {
               "application/json": {
                 schema: {
                   type: "object",
                   properties: {
                     success: { type: "boolean", example: true },
-                    message: { type: "string", example: "Kullanıcı #1 başarıyla silindi." },
+                    message: { type: "string", example: "User #1 updated successfully." },
+                    user: { $ref: "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "User not found" }
+        }
+      },
+      delete: {
+        tags: ["ApiUser"],
+        summary: "Delete user by ID (DELETE)",
+        description: "Removes a user from the in-memory data store.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID to delete" }
+        ],
+        responses: {
+          "200": {
+            description: "User deleted successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "User #1 deleted successfully." },
                     deletedUser: { $ref: "#/components/schemas/User" },
                     remainingUsers: { type: "integer", example: 4 }
                   }
@@ -728,27 +755,230 @@ const swaggerDocument = {
               }
             }
           },
-          "404": { description: "Kullanıcı bulunamadı" }
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/api/users/{id}": {
+      get: {
+        tags: ["ApiUser"],
+        summary: "Get user by ID (Plural route alias)",
+        description: "Alias for GET /api/user/{id}.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": {
+            description: "User found",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    user: { $ref: "#/components/schemas/User" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "User not found" }
+        }
+      },
+      put: {
+        tags: ["ApiUser"],
+        summary: "Update user completely (Plural route alias)",
+        description: "Alias for PUT /api/user/{id}.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "User updated successfully" },
+          "400": { description: "Missing required fields" },
+          "404": { description: "User not found" }
+        }
+      },
+      patch: {
+        tags: ["ApiUser"],
+        summary: "Partially update user (Plural route alias)",
+        description: "Alias for PATCH /api/user/{id}.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PatchUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "User partially updated" },
+          "404": { description: "User not found" }
+        }
+      },
+      delete: {
+        tags: ["ApiUser"],
+        summary: "Delete user by ID (Plural route alias)",
+        description: "Alias for DELETE /api/user/{id}.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID to delete" }
+        ],
+        responses: {
+          "200": {
+            description: "User deleted successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "User #1 deleted successfully." },
+                    deletedUser: { $ref: "#/components/schemas/User" },
+                    remainingUsers: { type: "integer", example: 4 }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/users": {
+      get: {
+        tags: ["User"],
+        summary: "Render User Management Dashboard (Web UI)",
+        description: "Server-side rendered HTML dashboard for viewing, searching, and managing users with interactive forms (handled by UserController.index).",
+        responses: {
+          "200": {
+            description: "HTML user dashboard page",
+            content: {
+              "text/html": {
+                schema: { type: "string" }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ["User"],
+        summary: "Process Web Form User Registration (Web UI)",
+        description: "Processes standard URL-encoded form data or JSON submitted from the web dashboard and redirects to /users with status message (handled by UserController.create).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/x-www-form-urlencoded": {
+              schema: { $ref: "#/components/schemas/CreateUserRequest" }
+            },
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateUserRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "HTML page re-rendered with new user" },
+          "302": { description: "Redirect to /users upon successful creation" },
+          "400": { description: "Validation error (missing name or email)" }
+        }
+      }
+    },
+    "/users/{id}": {
+      get: {
+        tags: ["User"],
+        summary: "Display User Detail View (Web UI)",
+        description: "Renders single user details or returns JSON user data (handled by UserController.show).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": {
+            description: "HTML profile view or JSON user details",
+            content: {
+              "text/html": { schema: { type: "string" } }
+            }
+          },
+          "404": { description: "User not found" }
+        }
+      },
+      put: {
+        tags: ["User"],
+        summary: "Update User (Web UI / Form Action)",
+        description: "Processes user update request (handled by UserController.update).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/UpdateUserRequest" } },
+            "application/x-www-form-urlencoded": { schema: { $ref: "#/components/schemas/UpdateUserRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "User updated successfully" },
+          "404": { description: "User not found" }
+        }
+      },
+      patch: {
+        tags: ["User"],
+        summary: "Partially Update User (Web UI)",
+        description: "Processes partial user update (handled by UserController.update).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/PatchUserRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "User updated successfully" },
+          "404": { description: "User not found" }
+        }
+      },
+      delete: {
+        tags: ["User"],
+        summary: "Delete User (Web UI Action)",
+        description: "Removes user and returns HTML dashboard or JSON confirmation (handled by UserController.delete).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": { description: "User deleted successfully" },
+          "404": { description: "User not found" }
         }
       }
     },
     "/api/alumni": {
       get: {
         tags: ["Alumni"],
-        summary: "Mezunları filtrele ve listele",
+        summary: "Filter and list alumni profiles",
+        description: "Search and filter alumni profiles by keyword, academic department, graduation year, or mentorship status.",
         parameters: [
-          { name: "search", in: "query", required: false, schema: { type: "string" }, description: "İsim, şirket, yetenek arama" },
-          { name: "department", in: "query", required: false, schema: { type: "string" }, description: "Bölüm filtresi" },
-          { name: "year", in: "query", required: false, schema: { type: "string" }, description: "Mezuniyet yılı" },
-          { name: "mentorOnly", in: "query", required: false, schema: { type: "boolean" }, description: "Yalnızca mentor olanlar" }
+          { name: "search", in: "query", required: false, schema: { type: "string" }, description: "Name, company, role, or skill search query" },
+          { name: "department", in: "query", required: false, schema: { type: "string" }, description: "Academic department filter" },
+          { name: "year", in: "query", required: false, schema: { type: "string" }, description: "Graduation year" },
+          { name: "mentorOnly", in: "query", required: false, schema: { type: "boolean" }, description: "Filter mentors only" }
         ],
         responses: {
-          "200": { description: "Mezun listesi" }
+          "200": { description: "List of filtered alumni" }
         }
       },
       post: {
         tags: ["Alumni"],
-        summary: "Yeni mezun profili ekle",
+        summary: "Create a new alumni profile",
+        description: "Adds a new alumni profile to the system.",
         requestBody: {
           required: true,
           content: {
@@ -765,7 +995,7 @@ const swaggerDocument = {
                   location: { type: "string", example: "Istanbul, Turkey" },
                   industry: { type: "string", example: "Management Consulting" },
                   skills: { type: "array", items: { type: "string" }, example: ["Strategy", "Financial Modeling"] },
-                  bio: { type: "string", example: "Danışmanlık sektörü mezunu." },
+                  bio: { type: "string", example: "Consulting alumni open for networking." },
                   isMentor: { type: "boolean", example: true }
                 }
               }
@@ -773,47 +1003,51 @@ const swaggerDocument = {
           }
         },
         responses: {
-          "201": { description: "Mezun profili eklendi" }
+          "201": { description: "Alumni profile created successfully" }
         }
       }
     },
     "/api/stats": {
       get: {
         tags: ["Stats"],
-        summary: "Platform istatistikleri",
+        summary: "Platform statistics",
+        description: "Returns platform overview metrics including alumni count, employment rate, active mentors, and industry distribution.",
         responses: {
-          "200": { description: "Mezun, istihdam ve sektör oranları" }
+          "200": { description: "Alumni and employment statistics" }
         }
       }
     },
     "/api/jobs": {
       get: {
         tags: ["Jobs"],
-        summary: "İş ve staj ilanları",
+        summary: "Career and internship opportunities",
+        description: "Returns active job and internship openings for alumni and students.",
         responses: {
-          "200": { description: "İş listesi" }
+          "200": { description: "List of jobs and internships" }
         }
       }
     },
     "/sum": {
       get: {
         tags: ["Calculator"],
-        summary: "İki sayıyı topla (query parametreleri)",
+        summary: "Sum two numbers (query parameters)",
+        description: "Calculates the sum of number1 and number2 query parameters, returning either JSON or an interactive HTML calculator.",
         parameters: [
           { name: "number1", in: "query", required: false, schema: { type: "number" }, example: 5 },
           { name: "number2", in: "query", required: false, schema: { type: "number" }, example: 10 }
         ],
         responses: {
-          "200": { description: "Toplam sonucu veya hesaplama formu" }
+          "200": { description: "Sum result or calculation form" }
         }
       }
     },
     "/homepage": {
       get: {
         tags: ["Calculator"],
-        summary: "Bağımsız anasayfa ve hakkımızda sayfası",
+        summary: "Standalone homepage and about page",
+        description: "Renders the standalone HTML home and information page.",
         responses: {
-          "200": { description: "Anasayfa HTML sayfası" }
+          "200": { description: "Homepage HTML document" }
         }
       }
     }
@@ -839,17 +1073,17 @@ const swaggerDocument = {
           name: { type: "string", example: "Ahmet Yılmaz" },
           email: { type: "string", example: "ahmet@alumni.edu" },
           role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"], example: "STUDENT" },
-          department: { type: "string", example: "Bilgisayar Mühendisliği" }
+          department: { type: "string", example: "Computer Engineering" }
         }
       },
       UpdateUserRequest: {
         type: "object",
         required: ["name", "email"],
         properties: {
-          name: { type: "string", example: "Ahmet Yılmaz Güncel" },
-          email: { type: "string", example: "ahmet.yeni@alumni.edu" },
+          name: { type: "string", example: "Ahmet Yılmaz Updated" },
+          email: { type: "string", example: "ahmet.updated@alumni.edu" },
           role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"], example: "ALUMNI" },
-          department: { type: "string", example: "Yazılım Mühendisliği" }
+          department: { type: "string", example: "Software Engineering" }
         }
       },
       PatchUserRequest: {
@@ -858,7 +1092,7 @@ const swaggerDocument = {
           name: { type: "string", example: "Ahmet Yılmaz" },
           email: { type: "string", example: "ahmet@alumni.edu" },
           role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"] },
-          department: { type: "string", example: "Veri Bilimi" }
+          department: { type: "string", example: "Data Science" }
         }
       }
     }
@@ -866,7 +1100,7 @@ const swaggerDocument = {
 };
 
 const renderSwaggerUI = (spec) => `<!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -942,9 +1176,9 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
     </div>
     <div class="custom-links">
       <a href="/api/swagger?format=json" target="_blank">{ } OpenAPI JSON</a>
-      <a href="/api/users">👥 Users Arayüzü</a>
+      <a href="/users">👥 User Dashboard (/users)</a>
       <a href="/api/health" target="_blank">🩺 Health Check</a>
-      <a href="/">🏠 Anasayfa</a>
+      <a href="/">🏠 Home</a>
     </div>
   </div>
 

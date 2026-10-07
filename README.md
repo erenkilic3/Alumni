@@ -117,6 +117,10 @@ Alumni/
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
 │   │   │   └── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
+│   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
+│   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
+│   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users, /users/:id -> UserController)
+│   │   │   └── api-user.routes.js           # 🚦 [ROUTER] REST API User Routes (/api/users, /api/user/:id -> ApiUserController)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
@@ -140,6 +144,9 @@ Alumni/
 | `server/src/models/user.model.js` | **Model (M)** | Backend | Standalone in-memory User entity repository with full CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`), without requiring a database. |
 | `server/src/controllers/api-user.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`) with standard HTTP status codes. |
 | `server/src/controllers/user.controller.js` | **Controller (C) & SSR View (V)** | Backend | Web/HTML controller; renders the interactive user management dashboard (`renderUsersPage`), processes web form submissions, and powers inline CRUD interactions. |
+| `server/src/routes/api-user.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/users`, `/api/users/count`, `/api/user/:id`, `/api/users/:id`) to `ApiUserController`. |
+| `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Dispatches Web UI requests (`/users`, `/users/:id`) to `UserController`. |
+| `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting `userRoutes` and `apiUserRoutes` modules. |
 | `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
@@ -147,7 +154,7 @@ Alumni/
 | `client/public/app.js` (Render Methods) | **View (V)** | Frontend | Dynamic DOM rendering logic: `renderAlumniList()`, `renderJobsList()`, `renderStats()`, `showNotification()`, `openModal()`, `closeModal()`. |
 | `server/src/controllers/user.controller.js` (HTML UI) | **View (V)** | Backend | Server-side rendered HTML dashboard: `renderUsersPage()` featuring inline edit/delete prompt triggers, responsive table, and live alert banners. |
 | `server/src/index.js` (SSR Templates) | **View (V)** | Backend | Server-side rendered HTML templates: `renderSwaggerUI()` (Swagger UI view), `handleHomepage()`, `handleSum()`. |
-| `server/src/index.js` (Router & Dispatcher) | **Controller (C)** | Backend | Central application router mounting API endpoints, delegating user routes to controllers, content negotiation, and error handling. |
+| `server/src/index.js` (Server & Mounting) | **Controller (C)** | Backend | Central application entry point; initializes Express, middleware, mounts routes, serves OpenAPI specification, and handles errors. |
 | `client/server.js` | **Controller (C)** | Frontend | Express web server; static file delivery (`express.static`), health monitoring (`/api/health`), documentation redirection (`/api/swagger`), and SPA fallback routing (`GET *`). |
 | `client/public/app.js` (Event & Fetch) | **Controller (C)** | Frontend | Event interception (`keyup`, `change`, `submit`, `click`), form input validation, and asynchronous backend communication via `fetch()`. |
 | `homepage.js` | **Controller & SSR View** | Root | Standalone server script (`npm run homepage`) serving `/homepage`, `/api/users`, and `/api/health` endpoints with embedded HTML views. |
@@ -317,23 +324,29 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 
 ### Available API Endpoints
 
-| Method | Endpoint | Description |
-| :--- | :--- | :--- |
-| `GET` | `/api/swagger` | Interactive Swagger UI interface and API documentation |
-| `GET` | `/api/swagger?format=json` | Raw OpenAPI 3.0.3 JSON schema |
-| `GET` | `/api/health` | Server and database JSON health status report |
-| `GET` | `/api/users` | List all users (Interactive HTML dashboard or `?format=json`) |
-| `POST` | `/api/users` | Create a new user without database requirement (RAM store) |
-| `GET` | `/api/user/{id}` | Query a specific user by ID |
-| `PUT` | `/api/user/{id}` | Fully update user attributes (`name`, `email`, `role`, `department`) |
-| `PATCH` | `/api/user/{id}` | Partially update user attributes |
-| `DELETE` | `/api/users/{id}` | Delete a user from in-memory store by ID |
-| `GET` | `/api/alumni` | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
-| `POST` | `/api/alumni` | Register a new alumni profile |
-| `GET` | `/api/stats` | Platform statistics (total alumni, employment rate, industry breakdown) |
-| `GET` | `/api/jobs` | Career and internship opportunities list |
-| `GET` | `/sum` | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
-| `GET` | `/homepage` | Standalone landing page and about view |
+| Method | Endpoint | Controller | Description |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/api/swagger` | Native | Interactive Swagger UI interface and OpenAPI specification |
+| `GET` | `/api/swagger?format=json` | Native | Raw OpenAPI 3.0.3 JSON schema |
+| `GET` | `/api/health` | Native | Server and database JSON health status report |
+| `GET` | `/users` | `UserController` | Interactive User Management Dashboard (Web UI / HTML SSR) |
+| `POST` | `/users` | `UserController` | Process Web Form User Registration (HTML form submit) |
+| `GET` | `/users/{id}` | `UserController` | Single user profile HTML detail view |
+| `PUT` / `PATCH` | `/users/{id}` | `UserController` | Web user profile update action |
+| `DELETE` | `/users/{id}` | `UserController` | Delete user via web management action |
+| `GET` | `/api/users` | `ApiUserController` | List all users (JSON with browser HTML fallback; `role`, `department`, `search`) |
+| `POST` | `/api/users` | `ApiUserController` | Create a new user without database requirement (JSON API) |
+| `GET` | `/api/users/count` | `ApiUserController` | Get total count of registered users |
+| `GET` | `/api/user/{id}` | `ApiUserController` | Query a specific user by ID |
+| `PUT` | `/api/user/{id}` | `ApiUserController` | Fully update user attributes (`name`, `email`, `role`, `department`) |
+| `PATCH` | `/api/user/{id}` | `ApiUserController` | Partially update user attributes |
+| `DELETE` | `/api/users/{id}` | `ApiUserController` | Delete a user from in-memory store by ID |
+| `GET` | `/api/alumni` | Native | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
+| `POST` | `/api/alumni` | Native | Register a new alumni profile |
+| `GET` | `/api/stats` | Native | Platform statistics (total alumni, employment rate, industry breakdown) |
+| `GET` | `/api/jobs` | Native | Career and internship opportunities list |
+| `GET` | `/sum` | Native | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
+| `GET` | `/homepage` | Native | Standalone landing page and about view |
 
 #### Testing with cURL:
 ```bash
