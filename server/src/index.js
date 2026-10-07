@@ -425,15 +425,26 @@ app.get('/api/health', handleHealth);
 app.get('/health', handleHealth);
 
 // ==========================================================================
-// Route Modules (User Web Routes & ApiUser REST API Routes)
+// Route Modules (User & Announcement Web & REST API Routes)
 // ==========================================================================
-const { userRoutes, apiUserRoutes } = require('./routes');
+const {
+  userRoutes,
+  apiUserRoutes,
+  announcementRoutes,
+  apiAnnouncementRoutes
+} = require('./routes');
 
-// Mount Web UI User routes (/users, /users/:id)
+// Mount Web UI User routes (/users, /users/:id, etc.)
 app.use(userRoutes);
 
 // Mount REST API User routes (/api/users, /api/user/:id, /api/users/count, etc.)
 app.use(apiUserRoutes);
+
+// Mount Web UI Announcement routes (/announcements, /announcements/:id, etc.)
+app.use(announcementRoutes);
+
+// Mount REST API Announcement routes (/api/announcements, /api/announcement/:id, etc.)
+app.use(apiAnnouncementRoutes);
 
 // ==========================================================================
 // Swagger / OpenAPI 3.0 Documentation Module
@@ -464,6 +475,8 @@ const swaggerDocument = {
     { name: "Health", description: "System and database health check" },
     { name: "ApiUser", description: "REST API JSON endpoints for in-memory user CRUD operations (ApiUserController)" },
     { name: "User", description: "Web UI and SSR endpoints for user dashboard management (UserController)" },
+    { name: "ApiAnnouncement", description: "REST API JSON endpoints for announcement resources (ApiAnnouncementController)" },
+    { name: "Announcement", description: "Web UI and management interface endpoints for announcements (AnnouncementController)" },
     { name: "Alumni", description: "Alumni directory and search endpoints" },
     { name: "Jobs", description: "Career opportunities and job postings" },
     { name: "Stats", description: "Platform overview and alumni statistics" },
@@ -1009,6 +1022,286 @@ const swaggerDocument = {
         }
       }
     },
+    "/api/announcements": {
+      get: {
+        tags: ["ApiAnnouncement"],
+        summary: "List all announcements (JSON with browser fallback)",
+        description: "Retrieves all announcements stored in memory. Supports optional query filters for category, priority, status, and search keywords.",
+        parameters: [
+          { name: "category", in: "query", required: false, schema: { type: "string", enum: ["ALL", "EVENT", "CAREER", "ACADEMIC", "GENERAL"] }, description: "Filter by category" },
+          { name: "priority", in: "query", required: false, schema: { type: "string", enum: ["ALL", "NORMAL", "HIGH", "URGENT"] }, description: "Filter by priority" },
+          { name: "status", in: "query", required: false, schema: { type: "string", enum: ["ALL", "ACTIVE", "ARCHIVED", "DRAFT"] }, description: "Filter by status" },
+          { name: "search", in: "query", required: false, schema: { type: "string" }, description: "Search keyword matching title, content, or author" },
+          { name: "format", in: "query", required: false, schema: { type: "string", enum: ["json"] }, description: "Force JSON output format" }
+        ],
+        responses: {
+          "200": {
+            description: "List of announcements",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    count: { type: "integer", example: 4 },
+                    announcements: { type: "array", items: { $ref: "#/components/schemas/Announcement" } }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      post: {
+        tags: ["ApiAnnouncement"],
+        summary: "Publish a new announcement (JSON API)",
+        description: "Adds a new announcement to the in-memory data store without requiring a database.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/CreateAnnouncementRequest" } }
+          }
+        },
+        responses: {
+          "201": {
+            description: "Announcement published successfully",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    message: { type: "string", example: "Announcement published successfully." },
+                    announcement: { $ref: "#/components/schemas/Announcement" },
+                    totalAnnouncements: { type: "integer", example: 5 }
+                  }
+                }
+              }
+            }
+          },
+          "400": { description: "Missing required fields (title, content)" }
+        }
+      }
+    },
+    "/api/announcements/count": {
+      get: {
+        tags: ["ApiAnnouncement"],
+        summary: "Get total announcements count",
+        description: "Returns the total number of announcements matching optional filters.",
+        responses: {
+          "200": {
+            description: "Announcement count",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    count: { type: "integer", example: 4 }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/announcement/{id}": {
+      get: {
+        tags: ["ApiAnnouncement"],
+        summary: "Get announcement by ID",
+        description: "Retrieves a single announcement by its unique identifier.",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        responses: {
+          "200": {
+            description: "Announcement found",
+            content: {
+              "application/json": {
+                schema: {
+                  type: "object",
+                  properties: {
+                    success: { type: "boolean", example: true },
+                    announcement: { $ref: "#/components/schemas/Announcement" }
+                  }
+                }
+              }
+            }
+          },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      put: {
+        tags: ["ApiAnnouncement"],
+        summary: "Update announcement completely (PUT)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/UpdateAnnouncementRequest" } } }
+        },
+        responses: {
+          "200": { description: "Announcement updated successfully" },
+          "400": { description: "Missing required fields" },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      patch: {
+        tags: ["ApiAnnouncement"],
+        summary: "Partially update announcement (PATCH)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { $ref: "#/components/schemas/PatchAnnouncementRequest" } } }
+        },
+        responses: {
+          "200": { description: "Announcement partially updated" },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      delete: {
+        tags: ["ApiAnnouncement"],
+        summary: "Delete announcement by ID (DELETE)",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        responses: {
+          "200": { description: "Announcement deleted successfully" },
+          "404": { description: "Announcement not found" }
+        }
+      }
+    },
+    "/announcements": {
+      get: {
+        tags: ["Announcement"],
+        summary: "Render Announcement Management Interface (Web UI)",
+        description: "Renders the server-side HTML announcement management dashboard with summary metrics, live search filters, and publication form (handled by AnnouncementController.index & AnnouncementView.renderAnnouncementsList).",
+        responses: {
+          "200": {
+            description: "HTML announcement management dashboard page",
+            content: { "text/html": { schema: { type: "string" } } }
+          }
+        }
+      },
+      post: {
+        tags: ["Announcement"],
+        summary: "Publish Announcement via Web Form (Web UI)",
+        description: "Processes standard URL-encoded form data submitted from the management interface (handled by AnnouncementController.create).",
+        requestBody: {
+          required: true,
+          content: {
+            "application/x-www-form-urlencoded": { schema: { $ref: "#/components/schemas/CreateAnnouncementRequest" } },
+            "application/json": { schema: { $ref: "#/components/schemas/CreateAnnouncementRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "HTML page re-rendered with new announcement" },
+          "302": { description: "Redirect upon successful creation" },
+          "400": { description: "Validation error" }
+        }
+      }
+    },
+    "/announcements/new": {
+      get: {
+        tags: ["Announcement"],
+        summary: "Render Create Announcement Form (Web UI)",
+        description: "Renders the dedicated server-side HTML form for publishing an announcement (handled by AnnouncementController.new & AnnouncementView.renderCreateForm).",
+        responses: {
+          "200": {
+            description: "HTML create announcement form page",
+            content: { "text/html": { schema: { type: "string" } } }
+          }
+        }
+      }
+    },
+    "/announcements/{id}": {
+      get: {
+        tags: ["Announcement"],
+        summary: "Display Announcement Detail View (Web UI)",
+        description: "Renders single announcement reading view with metadata and action buttons (handled by AnnouncementController.show & AnnouncementView.renderAnnouncementDetails).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        responses: {
+          "200": {
+            description: "HTML announcement detail page",
+            content: { "text/html": { schema: { type: "string" } } }
+          },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      put: {
+        tags: ["Announcement"],
+        summary: "Update Announcement (Web UI / Form Action)",
+        description: "Processes announcement update (handled by AnnouncementController.update).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": { schema: { $ref: "#/components/schemas/UpdateAnnouncementRequest" } },
+            "application/x-www-form-urlencoded": { schema: { $ref: "#/components/schemas/UpdateAnnouncementRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "Announcement updated successfully" },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      post: {
+        tags: ["Announcement"],
+        summary: "Update Announcement via HTML Form (Web UI)",
+        description: "Processes announcement update form submission (handled by AnnouncementController.update).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/x-www-form-urlencoded": { schema: { $ref: "#/components/schemas/UpdateAnnouncementRequest" } },
+            "application/json": { schema: { $ref: "#/components/schemas/UpdateAnnouncementRequest" } }
+          }
+        },
+        responses: {
+          "200": { description: "Announcement updated successfully" },
+          "404": { description: "Announcement not found" }
+        }
+      },
+      delete: {
+        tags: ["Announcement"],
+        summary: "Delete Announcement (Web UI Action)",
+        description: "Removes announcement and returns updated HTML view (handled by AnnouncementController.delete).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID" }
+        ],
+        responses: {
+          "200": { description: "Announcement deleted successfully" },
+          "404": { description: "Announcement not found" }
+        }
+      }
+    },
+    "/announcements/{id}/edit": {
+      get: {
+        tags: ["Announcement"],
+        summary: "Render Edit Announcement Form (Web UI)",
+        description: "Renders the dedicated server-side HTML form prefilled with announcement data for editing (handled by AnnouncementController.edit & AnnouncementView.renderEditForm).",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Announcement ID to edit" }
+        ],
+        responses: {
+          "200": {
+            description: "HTML edit announcement form page",
+            content: { "text/html": { schema: { type: "string" } } }
+          },
+          "404": { description: "Announcement not found" }
+        }
+      }
+    },
     "/api/alumni": {
       get: {
         tags: ["Alumni"],
@@ -1143,6 +1436,59 @@ const swaggerDocument = {
           role: { type: "string", enum: ["ADMIN", "ALUMNI", "STUDENT"] },
           department: { type: "string", example: "Data Science" }
         }
+      },
+      Announcement: {
+        type: "object",
+        properties: {
+          id: { type: "string", example: "1" },
+          title: { type: "string", example: "Annual Alumni Homecoming Weekend 2026" },
+          content: { type: "string", example: "Join us this October for the annual Homecoming Reunion! Connect with fellow graduates..." },
+          category: { type: "string", enum: ["EVENT", "CAREER", "ACADEMIC", "GENERAL"], example: "EVENT" },
+          priority: { type: "string", enum: ["NORMAL", "HIGH", "URGENT"], example: "HIGH" },
+          author: { type: "string", example: "Alumni Relations Office" },
+          isPinned: { type: "boolean", example: true },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "DRAFT"], example: "ACTIVE" },
+          createdAt: { type: "string", example: "2026-10-05T09:00:00.000Z" },
+          updatedAt: { type: "string", example: "2026-10-05T09:00:00.000Z" }
+        }
+      },
+      CreateAnnouncementRequest: {
+        type: "object",
+        required: ["title", "content"],
+        properties: {
+          title: { type: "string", example: "AI in Engineering Tech Talk" },
+          content: { type: "string", example: "Join our distinguished alumni panel exploring AI innovations in production." },
+          category: { type: "string", enum: ["EVENT", "CAREER", "ACADEMIC", "GENERAL"], example: "EVENT" },
+          priority: { type: "string", enum: ["NORMAL", "HIGH", "URGENT"], example: "HIGH" },
+          author: { type: "string", example: "Faculty & Alumni Committee" },
+          isPinned: { type: "boolean", example: false },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "DRAFT"], example: "ACTIVE" }
+        }
+      },
+      UpdateAnnouncementRequest: {
+        type: "object",
+        required: ["title", "content"],
+        properties: {
+          title: { type: "string", example: "Updated AI Tech Talk Title" },
+          content: { type: "string", example: "Updated detailed agenda and speaker roster." },
+          category: { type: "string", enum: ["EVENT", "CAREER", "ACADEMIC", "GENERAL"], example: "CAREER" },
+          priority: { type: "string", enum: ["NORMAL", "HIGH", "URGENT"], example: "URGENT" },
+          author: { type: "string", example: "Senior Alumni Council" },
+          isPinned: { type: "boolean", example: true },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "DRAFT"], example: "ACTIVE" }
+        }
+      },
+      PatchAnnouncementRequest: {
+        type: "object",
+        properties: {
+          title: { type: "string", example: "Quick Revised Title" },
+          content: { type: "string", example: "Quick revised content snippet." },
+          category: { type: "string", enum: ["EVENT", "CAREER", "ACADEMIC", "GENERAL"] },
+          priority: { type: "string", enum: ["NORMAL", "HIGH", "URGENT"] },
+          author: { type: "string", example: "Alumni Relations" },
+          isPinned: { type: "boolean", example: false },
+          status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "DRAFT"] }
+        }
       }
     }
   }
@@ -1226,6 +1572,7 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
     <div class="custom-links">
       <a href="/api/swagger?format=json" target="_blank">{ } OpenAPI JSON</a>
       <a href="/users">👥 User Dashboard (/users)</a>
+      <a href="/announcements">📢 Announcements (/announcements)</a>
       <a href="/api/health" target="_blank">🩺 Health Check</a>
       <a href="/">🏠 Home</a>
     </div>

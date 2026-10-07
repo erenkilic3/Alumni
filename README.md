@@ -112,18 +112,24 @@ Alumni/
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
 │   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
-│   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (GET /users, POST /users)
-│   │   │   └── api-user.controller.js       # ⚙️ [CONTROLLER] Pure JSON REST API User Controller
+│   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (Full CRUD with View)
+│   │   │   ├── api-user.controller.js       # ⚙️ [CONTROLLER] Pure JSON REST API User Controller
+│   │   │   ├── announcement.controller.js   # ⚙️ [CONTROLLER] Web Announcement Controller (Full CRUD with View)
+│   │   │   └── api-announcement.controller.js # ⚙️ [CONTROLLER] Pure JSON REST API Announcement Controller
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
-│   │   │   └── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
+│   │   │   ├── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
+│   │   │   └── announcement.model.js        # 🗄️ [MODEL] In-Memory Announcement Model with Full CRUD Operations
 │   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
-│   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users, /users/:id -> UserController)
-│   │   │   └── api-user.routes.js           # 🚦 [ROUTER] REST API User Routes (/api/users, /api/user/:id -> ApiUserController)
+│   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users -> UserController)
+│   │   │   ├── api-user.routes.js           # 🚦 [ROUTER] REST API User Routes (/api/users -> ApiUserController)
+│   │   │   ├── announcement.routes.js       # 🚦 [ROUTER] Web Announcement Routes (/announcements -> AnnouncementController)
+│   │   │   └── api-announcement.routes.js   # 🚦 [ROUTER] REST API Announcement Routes (/api/announcements -> ApiAnnouncementController)
 │   │   ├── views/                           # 🎨 [VIEW] Server-Side Rendered Presentation Layer
 │   │   │   ├── index.js                     # 🎨 [VIEW] Barrel Export for Views
-│   │   │   └── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (GET /users & POST /users)
+│   │   │   ├── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (Full CRUD)
+│   │   │   └── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
@@ -145,13 +151,19 @@ Alumni/
 | Directory / Folder / File | MVC Role | Layer | Responsibility & Scope |
 | :--- | :--- | :--- | :--- |
 | `server/src/models/user.model.js` | **Model (M)** | Backend | Standalone in-memory User entity repository with full CRUD operations (`create`, `findAll`, `findById`, `findByEmail`, `update`, `patch`, `delete`, `count`, `reset`), without requiring a database. |
-| `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `escapeHtml`); renders interactive user dashboard, metric cards, create form, and client-side filtering script for `GET /users` and `POST /users`. |
+| `server/src/models/announcement.model.js` | **Model (M)** | Backend | Standalone in-memory Announcement repository with full CRUD operations (`create`, `findAll`, `findById`, `update`, `patch`, `delete`, `count`, `reset`), priority tags, categories, and seed bulletins. |
+| `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `renderUserDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders user management dashboard and forms. |
+| `server/src/views/announcement.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAnnouncementsList`, `renderAnnouncementDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders interactive announcement interface, metrics bar, and publication forms. |
 | `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views. |
 | `server/src/controllers/api-user.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`) with standard HTTP status codes. |
-| `server/src/controllers/user.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `UserModel` (Data) and `UserView` (Presentation), managing `GET /users` listing and `POST /users` creation workflows. |
+| `server/src/controllers/api-announcement.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Announcement API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
+| `server/src/controllers/user.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `UserModel` (Data) and `UserView` (Presentation), managing full CRUD web workflows (`index`, `show`, `new`, `create`, `edit`, `update`, `delete`). |
+| `server/src/controllers/announcement.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `AnnouncementModel` (Data) and `AnnouncementView` (Presentation), managing full CRUD web workflows (`index`, `show`, `new`, `create`, `edit`, `update`, `delete`). |
 | `server/src/routes/api-user.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/users`, `/api/users/count`, `/api/user/:id`, `/api/users/:id`) to `ApiUserController`. |
-| `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Defines the 2 view-connected web routes (`GET /users`, `POST /users`) and resource routes (`/users/:id`) mapped to `UserController`. |
-| `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting `userRoutes` and `apiUserRoutes` modules. |
+| `server/src/routes/api-announcement.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/announcements`, `/api/announcements/count`, `/api/announcement/:id`) to `ApiAnnouncementController`. |
+| `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Defines the full CRUD web routes (`/users`, `/users/new`, `/users/:id`, `/users/:id/edit`) mapped to `UserController`. |
+| `server/src/routes/announcement.routes.js` | **Router (C/R)** | Backend | Defines the full CRUD web routes (`/announcements`, `/announcements/new`, `/announcements/:id`, `/announcements/:id/edit`) mapped to `AnnouncementController`. |
+| `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting user and announcement route modules. |
 | `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |
@@ -340,6 +352,13 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 | `GET` | `/users/{id}/edit` | `UserController` | `UserView.renderEditForm` | **Update Form**: Dedicated Edit User HTML Form View (prefilled) |
 | `POST` / `PUT` / `PATCH` | `/users/{id}` | `UserController` | `UserView.renderUserDetails` | **Update Action**: Process user update and render updated profile view |
 | `POST` / `DELETE` | `/users/{id}/delete` | `UserController` | `UserView.renderUsersList` | **Delete Action**: Process user deletion and re-render dashboard view |
+| `GET` | `/announcements` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Read All**: Interactive Announcement Management Interface (Web UI / HTML SSR) |
+| `GET` | `/announcements/new` | `AnnouncementController` | `AnnouncementView.renderCreateForm` | **Create Form**: Dedicated Add Announcement HTML Form View |
+| `POST` | `/announcements` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Create Action**: Process announcement publication and re-render dashboard view |
+| `GET` | `/announcements/{id}` | `AnnouncementController` | `AnnouncementView.renderAnnouncementDetails` | **Read One**: Single announcement detail view HTML page |
+| `GET` | `/announcements/{id}/edit` | `AnnouncementController` | `AnnouncementView.renderEditForm` | **Update Form**: Dedicated Edit Announcement HTML Form View (prefilled) |
+| `POST` / `PUT` / `PATCH` | `/announcements/{id}` | `AnnouncementController` | `AnnouncementView.renderAnnouncementDetails` | **Update Action**: Process announcement update and render updated view |
+| `POST` / `DELETE` | `/announcements/{id}/delete` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Delete Action**: Process announcement deletion and re-render dashboard view |
 | `GET` | `/api/users` | `ApiUserController` | JSON | List all users (JSON with browser HTML fallback; `role`, `department`, `search`) |
 | `POST` | `/api/users` | `ApiUserController` | JSON | Create a new user without database requirement (JSON API) |
 | `GET` | `/api/users/count` | `ApiUserController` | JSON | Get total count of registered users |
@@ -347,6 +366,13 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 | `PUT` | `/api/user/{id}` | `ApiUserController` | JSON | Fully update user attributes (`name`, `email`, `role`, `department`) |
 | `PATCH` | `/api/user/{id}` | `ApiUserController` | JSON | Partially update user attributes |
 | `DELETE` | `/api/users/{id}` | `ApiUserController` | JSON | Delete a user from in-memory store by ID |
+| `GET` | `/api/announcements` | `ApiAnnouncementController` | JSON | List all announcements (JSON with browser fallback; `category`, `priority`, `search`) |
+| `POST` | `/api/announcements` | `ApiAnnouncementController` | JSON | Publish a new announcement without database requirement (JSON API) |
+| `GET` | `/api/announcements/count` | `ApiAnnouncementController` | JSON | Get total count of registered announcements |
+| `GET` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Query a specific announcement by ID |
+| `PUT` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Fully update announcement attributes (`title`, `content`, `category`, etc.) |
+| `PATCH` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Partially update announcement attributes |
+| `DELETE` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Delete an announcement from in-memory store by ID |
 | `GET` | `/api/alumni` | Native | JSON | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
 | `POST` | `/api/alumni` | Native | JSON | Register a new alumni profile |
 | `GET` | `/api/stats` | Native | JSON | Platform statistics (total alumni, employment rate, industry breakdown) |
