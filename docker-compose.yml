@@ -1,7 +1,6 @@
-version: '3.8'
-
 services:
-  # 1. PostgreSQL Database Service
+  # 1. PostgreSQL Relational Database Service (Data Persistence Layer)
+  # Docs: ddd.md & README.md (Database Schema & DDD Specification)
   db:
     image: postgres:16-alpine
     container_name: alumni_postgres_db
@@ -19,8 +18,12 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+      start_period: 5s
+    networks:
+      - alumni_network
 
-  # 2. Node.js Backend API Service
+  # 2. Node.js Backend API Service (Controller & Model Layer)
+  # Connects to PostgreSQL via server/src/db.js with persistent CRUD & auto-seeding
   server:
     build:
       context: ./server
@@ -31,6 +34,11 @@ services:
       PORT: 5001
       NODE_ENV: development
       DATABASE_URL: postgresql://${DB_USER:-alumni_admin}:${DB_PASSWORD:-alumni_secure_password}@db:5432/${DB_NAME:-alumni_db}?schema=public
+      DB_USER: ${DB_USER:-alumni_admin}
+      DB_PASSWORD: ${DB_PASSWORD:-alumni_secure_password}
+      DB_NAME: ${DB_NAME:-alumni_db}
+      DB_HOST: db
+      DB_PORT: 5432
       CLIENT_URL: http://localhost:3000
     ports:
       - "5001:5001"
@@ -40,8 +48,17 @@ services:
     volumes:
       - ./server:/app
       - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:5001/api/health || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - alumni_network
 
-  # 3. Frontend Web Application Service
+  # 3. Frontend Web Application Service (View & Presentation Layer)
+  # Express SPA & Static Client (Port 3000)
   client:
     build:
       context: ./client
@@ -51,14 +68,31 @@ services:
     environment:
       PORT: 3000
       VITE_API_URL: http://localhost:5001/api
+      API_URL: http://localhost:5001/api
     ports:
       - "3000:3000"
     depends_on:
-      - server
+      server:
+        condition: service_healthy
     volumes:
       - ./client:/app
       - /app/node_modules
+    healthcheck:
+      test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:3000 || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - alumni_network
 
 volumes:
+  # Persistent Named Volume for PostgreSQL Data Storage
+  # Ensures data persistence across "docker compose down" and "docker compose up"
   pgdata:
     driver: local
+
+networks:
+  # Isolated Bridge Network for Inter-Container Communication
+  alumni_network:
+    driver: bridge
