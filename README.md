@@ -32,7 +32,7 @@ A modern, containerized platform designed for universities and educational insti
 | :--- | :--- | :--- |
 | **Backend** | **Node.js** (Express / NestJS + TypeScript) | High-performance RESTful API with modular architecture and input validation. |
 | **Database** | **PostgreSQL** | Robust relational database for managing structured alumni, career, and event data. |
-| **ORM** | **Prisma** | Type-safe database client and automated migration management. |
+| **Migrations** | **Native SQL Migrations** | Sürüm kontrollü, işlem güvenli (transactional) SQL migrasyonları (`schema_migrations`). |
 | **Frontend** | **Next.js / React (TypeScript)** | Responsive, modern web interface with server-side rendering and Dark Mode support. |
 | **Cache & Sessions** | **Redis** *(Optional / Recommended)* | High-speed caching for search results, session store, and rate limiting. |
 | **Containerization** | **Docker & Docker Compose** | Reproducible multi-container development and production environments. |
@@ -109,8 +109,16 @@ Alumni/
 │   ├── package.json                         # 📦 [CONFIG] Frontend Dependencies (express) & Scripts
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── server/                                  # ⚙️ [CONTROLLER & MODEL] Backend API & Data Service
+│   ├── migrations/                          # 🗄️ [DB MIGRATIONS] Sürüm Kontrollü Native SQL Migrasyonları (UP & DOWN)
+│   │   ├── 001_create_users_table.sql       # Users Tablosu DDL & Rollback
+│   │   ├── 002_create_announcements_table.sql # Announcements Tablosu DDL & Rollback
+│   │   ├── 003_create_alumni_table.sql      # Alumni Tablosu DDL & Rollback
+│   │   └── 004_seed_initial_data.sql        # Başlangıç Tohum (Seed) Verileri & Rollback
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
 │   │   ├── db.js                            # 🗄️ [MODEL & DB] Centralized PostgreSQL Connection, Auto-DDL & Seeding
+│   │   ├── db/                              # 🗄️ [DB TOOLS] Veritabanı Araçları ve Migrasyon Çalıştırıcı
+│   │   │   ├── generate.js                  # 🛠️ [TOOL] DDL Generator
+│   │   │   └── migrate.js                   # 🔄 [RUNNER] Native SQL Migration Runner (up, down, status, reset)
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
 │   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
 │   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (Full CRUD with View)
@@ -133,7 +141,7 @@ Alumni/
 │   │   │   └── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
-│   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
+│   ├── package.json                         # 📦 [CONFIG] Backend Dependencies & Migration Scripts
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── scripts/                                 # 🧪 [TEST & AUTOMATION] Test and Automation Scripts
 │   └── test-forgetting.sh                   # 🧪 [TEST] Docker Compose Persistence "The Forgetting Test" Script
@@ -382,6 +390,35 @@ erDiagram
 
 > [!TIP]
 > **Docker Volume Persistence & "The Forgetting Test"**: Veritabanı verileri `docker-compose.yml` içinde tanımlanan `pgdata:/var/lib/postgresql/data` yerel adlandırılmış biriminde (named volume) saklanır. `docker compose down` ve `docker compose up` işlemlerinde veriler kaybolmaz. Bu davranışı test etmek için `npm run test:forgetting` komutunu çalıştırabilirsiniz.
+
+---
+
+## 🔄 Veritabanı Migrasyonları (Native SQL Migrations)
+
+AlumniSphere, şema sürümlerini ve başlangıç tohum verilerini üçüncü parti ağır ORM paketlerine ihtiyaç duymadan **Native SQL Migrations** mimarisiyle yönetir.
+
+- **Sürüm Kontrolü**: `server/migrations/` altında `001_...`, `002_...` gibi sıralı SQL dosyaları barındırılır.
+- **Çift Yönlü (UP / DOWN)**: Her migrasyon dosyası hem tabloyu oluşturan `-- UP` hem de geri alan `-- DOWN` SQL blokları içerir.
+- **İşlem Güvenliği (Transactional)**: Her migrasyon `BEGIN` ... `COMMIT` / `ROLLBACK` blokları içinde atomik olarak uygulanır.
+- **Durum Takibi**: Uygulanan migrasyonlar veritabanında `schema_migrations` tablosunda saklanır.
+
+### 💻 Migrasyon Komutları (CLI Scripts)
+
+```bash
+# Bekleyen tüm migrasyonları sırayla uygula (UP)
+npm run migrate
+# veya
+npm run migrate:up
+
+# En son uygulanan migrasyonu geri al (DOWN / Rollback)
+npm run migrate:down
+
+# Migrasyonların mevcut durumunu listele (APPLIED / PENDING tablosu)
+npm run migrate:status
+
+# Tüm migrasyonları sıfırdan geri alıp tekrar uygula (RESET)
+npm run migrate:reset
+```
 
 ---
 

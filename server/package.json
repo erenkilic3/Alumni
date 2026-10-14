@@ -6,7 +6,12 @@
   "scripts": {
     "start": "node src/index.js",
     "dev": "node --watch src/index.js",
-    "db:generate": "node src/db/generate.js"
+    "db:generate": "node src/db/generate.js",
+    "migrate": "node src/db/migrate.js up",
+    "migrate:up": "node src/db/migrate.js up",
+    "migrate:down": "node src/db/migrate.js down",
+    "migrate:status": "node src/db/migrate.js status",
+    "migrate:reset": "node src/db/migrate.js reset"
   },
   "dependencies": {
     "cors": "^2.8.5",

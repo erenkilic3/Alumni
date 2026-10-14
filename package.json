@@ -10,7 +10,12 @@
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
     "test:forgetting": "bash scripts/test-forgetting.sh",
-    "db:generate": "npm --prefix server run db:generate"
+    "db:generate": "npm --prefix server run db:generate",
+    "migrate": "npm --prefix server run migrate",
+    "migrate:up": "npm --prefix server run migrate:up",
+    "migrate:down": "npm --prefix server run migrate:down",
+    "migrate:status": "npm --prefix server run migrate:status",
+    "migrate:reset": "npm --prefix server run migrate:reset"
   },
   "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],
   "author": "Eren Kılıç",

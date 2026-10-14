@@ -232,3 +232,45 @@ volumes:
 
 - **Persistence Garantisi**: `docker compose down` çalıştırıldığında konteynerlar kaldırılsa bile `pgdata` birimi ana makinede korunur.
 - **Akıllı Tohumlama**: [server/src/db.js](file:///Users/erenkilic/repo/Alumni/server/src/db.js) açılışta `COUNT(*)` sorgusu yaparak yalnızca tablolar tamamen boşsa varsayılan kayıtları ekler; mevcut kayıtların üzerine yazmaz.
+
+---
+
+## 🔄 Veritabanı Migrasyon Sistemi (Database Migrations)
+
+AlumniSphere, üçüncü parti ağır ORM bağımlılıkları olmadan **Native SQL Migrations** mimarisi kullanır. Tüm veritabanı şema değişiklikleri ve ilk veriler, sürüm kontrollü SQL dosyaları ve PostgreSQL hareketleri (`BEGIN ... COMMIT / ROLLBACK`) ile yönetilir.
+
+### 📁 Migrasyon Dosyaları (`server/migrations/`)
+
+Migrasyon dosyaları sıralı öneklerle adlandırılır ve her biri hem `-- UP` (şemayı uygulama) hem de `-- DOWN` (geri alma / rollback) blokları içerir:
+
+1. **[001_create_users_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/001_create_users_table.sql)**: `users` tablosu, indeksler ve rollback komutları.
+2. **[002_create_announcements_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/002_create_announcements_table.sql)**: `announcements` tablosu, indeksler ve rollback komutları.
+3. **[003_create_alumni_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/003_create_alumni_table.sql)**: `alumni` tablosu, indeksler ve rollback komutları.
+4. **[004_seed_initial_data.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/004_seed_initial_data.sql)**: Başlangıç mock/seed verileri ve rollback temizleme komutları.
+
+### 📋 Takip Tablosu: `schema_migrations`
+
+Hangi migrasyonların uygulandığı veritabanında `schema_migrations` tablosunda saklanır:
+
+```sql
+CREATE TABLE IF NOT EXISTS schema_migrations (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  applied_at TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 💻 Migrasyon CLI Komutları
+
+Proje kök dizininde veya `server/` dizininde aşağıdaki npm script'leri çalıştırılabilir:
+
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run migrate` veya `npm run migrate:up` | Henüz uygulanmamış tüm bekleyen migrasyonları sırayla çalıştırır. |
+| `npm run migrate:down` | En son uygulanan tek bir migrasyonu geri alır (`-- DOWN` bloğu). |
+| `npm run migrate:status` | Tüm migrasyon dosyalarının durumunu (`[✓ APPLIED]` veya `[⏳ PENDING]`) ve uygulanma tarihlerini tablo olarak listeler. |
+| `npm run migrate:reset` | Uygulanmış tüm migrasyonları sırayla geri alır ve sıfırdan tekrar uygular. |
+
+### 🔒 İşlem Güvenliği (Transactional Safety)
+Her bir migrasyon ayrı bir PostgreSQL transaction'ı (`BEGIN` -> SQL -> `INSERT INTO schema_migrations` -> `COMMIT`) içinde çalışır. Herhangi bir hata oluşursa anında `ROLLBACK` yapılır ve veritabanı tutarsız bir duruma düşmez.
+
