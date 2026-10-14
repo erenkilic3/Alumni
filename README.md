@@ -487,27 +487,39 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 | `POST` / `DELETE` | `/users/{id}/delete` | `UserController` | `UserView.renderUsersList` | **Delete Action**: Process user deletion and re-render dashboard view |
 | `GET` | `/announcements` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Read All**: Interactive Announcement Management Interface (Web UI / HTML SSR) |
 | `GET` | `/announcements/new` | `AnnouncementController` | `AnnouncementView.renderCreateForm` | **Create Form**: Dedicated Add Announcement HTML Form View |
-| `POST` | `/announcements` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Create Action**: Process announcement publication and re-render dashboard view |
+| `POST` | `/announcements` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Create Action**: Process announcement publication and persist in PostgreSQL |
 | `GET` | `/announcements/{id}` | `AnnouncementController` | `AnnouncementView.renderAnnouncementDetails` | **Read One**: Single announcement detail view HTML page |
 | `GET` | `/announcements/{id}/edit` | `AnnouncementController` | `AnnouncementView.renderEditForm` | **Update Form**: Dedicated Edit Announcement HTML Form View (prefilled) |
-| `POST` / `PUT` / `PATCH` | `/announcements/{id}` | `AnnouncementController` | `AnnouncementView.renderAnnouncementDetails` | **Update Action**: Process announcement update and render updated view |
-| `POST` / `DELETE` | `/announcements/{id}/delete` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Delete Action**: Process announcement deletion and re-render dashboard view |
-| `GET` | `/api/users` | `ApiUserController` | JSON | List all users (JSON with browser HTML fallback; `role`, `department`, `search`) |
-| `POST` | `/api/users` | `ApiUserController` | JSON | Create a new user without database requirement (JSON API) |
+| `POST` / `PUT` / `PATCH` | `/announcements/{id}` | `AnnouncementController` | `AnnouncementView.renderAnnouncementDetails` | **Update Action**: Process announcement update in PostgreSQL and render updated view |
+| `POST` / `DELETE` | `/announcements/{id}/delete` | `AnnouncementController` | `AnnouncementView.renderAnnouncementsList` | **Delete Action**: Process announcement deletion from PostgreSQL |
+| `GET` | `/alumni` | `AlumniController` | `AlumniView.renderAlumniList` | **Read All**: Interactive Alumni Profiles Dashboard (Web UI / HTML SSR with PostgreSQL) |
+| `GET` | `/alumni/new` | `AlumniController` | `AlumniView.renderCreateForm` | **Create Form**: Dedicated Add Alumni HTML Form View |
+| `POST` | `/alumni` | `AlumniController` | `AlumniView.renderAlumniList` | **Create Action**: Process alumni profile creation and persist in PostgreSQL |
+| `GET` | `/alumni/{id}` | `AlumniController` | `AlumniView.renderAlumniDetails` | **Read One**: Single alumni profile card HTML view |
+| `GET` | `/alumni/{id}/edit` | `AlumniController` | `AlumniView.renderEditForm` | **Update Form**: Dedicated Edit Alumni HTML Form View (prefilled) |
+| `POST` / `PUT` / `PATCH` | `/alumni/{id}` | `AlumniController` | `AlumniView.renderAlumniDetails` | **Update Action**: Process alumni profile update in PostgreSQL |
+| `POST` / `DELETE` | `/alumni/{id}/delete` | `AlumniController` | `AlumniView.renderAlumniList` | **Delete Action**: Process alumni profile deletion from PostgreSQL |
+| `GET` | `/api/users` | `ApiUserController` | JSON | List all users from PostgreSQL (`role`, `department`, `search`) |
+| `POST` | `/api/users` | `ApiUserController` | JSON | Create a new user in PostgreSQL (JSON API) |
 | `GET` | `/api/users/count` | `ApiUserController` | JSON | Get total count of registered users |
 | `GET` | `/api/user/{id}` | `ApiUserController` | JSON | Query a specific user by ID |
 | `PUT` | `/api/user/{id}` | `ApiUserController` | JSON | Fully update user attributes (`name`, `email`, `role`, `department`) |
 | `PATCH` | `/api/user/{id}` | `ApiUserController` | JSON | Partially update user attributes |
-| `DELETE` | `/api/users/{id}` | `ApiUserController` | JSON | Delete a user from in-memory store by ID |
-| `GET` | `/api/announcements` | `ApiAnnouncementController` | JSON | List all announcements (JSON with browser fallback; `category`, `priority`, `search`) |
-| `POST` | `/api/announcements` | `ApiAnnouncementController` | JSON | Publish a new announcement without database requirement (JSON API) |
+| `DELETE` | `/api/users/{id}` | `ApiUserController` | JSON | Delete a user from PostgreSQL by ID |
+| `GET` | `/api/announcements` | `ApiAnnouncementController` | JSON | List all announcements from PostgreSQL (`category`, `priority`, `search`) |
+| `POST` | `/api/announcements` | `ApiAnnouncementController` | JSON | Publish a new announcement in PostgreSQL (JSON API) |
 | `GET` | `/api/announcements/count` | `ApiAnnouncementController` | JSON | Get total count of registered announcements |
 | `GET` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Query a specific announcement by ID |
 | `PUT` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Fully update announcement attributes (`title`, `content`, `category`, etc.) |
 | `PATCH` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Partially update announcement attributes |
-| `DELETE` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Delete an announcement from in-memory store by ID |
-| `GET` | `/api/alumni` | Native | JSON | Filter and list alumni profiles (`search`, `department`, `year`, `mentorOnly`) |
-| `POST` | `/api/alumni` | Native | JSON | Register a new alumni profile |
+| `DELETE` | `/api/announcement/{id}` | `ApiAnnouncementController` | JSON | Delete an announcement from PostgreSQL by ID |
+| `GET` | `/api/alumni` | `ApiAlumniController` | JSON | Filter and list alumni profiles from PostgreSQL (`search`, `department`, `year`, `mentorOnly`) |
+| `POST` | `/api/alumni` | `ApiAlumniController` | JSON | Register a new alumni profile in PostgreSQL |
+| `GET` | `/api/alumni/count` | `ApiAlumniController` | JSON | Get total count of alumni in PostgreSQL |
+| `GET` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Query specific alumni profile by ID |
+| `PUT` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Fully update alumni profile in PostgreSQL |
+| `PATCH` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Partially update alumni profile in PostgreSQL |
+| `DELETE` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Delete an alumni profile from PostgreSQL by ID |
 | `GET` | `/api/stats` | Native | JSON | Platform statistics (total alumni, employment rate, industry breakdown) |
 | `GET` | `/api/jobs` | Native | JSON | Career and internship opportunities list |
 | `GET` | `/sum` | Native | Form / JSON | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |

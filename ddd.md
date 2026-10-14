@@ -315,4 +315,22 @@ const mentors = await AlumniFactory.mentor().inCompany('Google').create(3);
 | `npm run seed:fresh` | Mevcut tabloları temizler (`TRUNCATE CASCADE`) ve sıfırdan temiz tohum verileri oluşturur. |
 | `node server/src/db/seed.js --users=25 --alumni=30` | İstenilen adetlerde özel dinamik tohumlama yapar. |
 
+---
+
+## 🖥️ Veritabanı Bağlantılı CRUD Arayüzleri (MVC CRUD Interfaces)
+
+Sistemdeki üç ana veri tablosu (`users`, `announcements`, `alumni`) için PostgreSQL veritabanına doğrudan bağlı, server-side rendered (SSR) web arayüzleri ve tam REST API uçları sunulmaktadır:
+
+| Varlık / Modül | Web CRUD Arayüzü | REST API Uçları | Veritabanı Tablosu | Model & Controller |
+| :--- | :--- | :--- | :--- | :--- |
+| **Users** | [`/users`](http://localhost:5001/users), [`/users/new`](http://localhost:5001/users/new) | `/api/users`, `/api/user/:id`, `/api/users/count` | `users` | `UserModel`, `UserController`, `UserView` |
+| **Announcements** | [`/announcements`](http://localhost:5001/announcements), [`/announcements/new`](http://localhost:5001/announcements/new) | `/api/announcements`, `/api/announcement/:id`, `/api/announcements/count` | `announcements` | `AnnouncementModel`, `AnnouncementController`, `AnnouncementView` |
+| **Alumni** | [`/alumni`](http://localhost:5001/alumni), [`/alumni/new`](http://localhost:5001/alumni/new) | `/api/alumni`, `/api/alumni/:id`, `/api/alumni/count` | `alumni` | `AlumniModel`, `AlumniController`, `AlumniView` |
+
+Tüm CRUD arayüzlerinde:
+- Üst gezinme çubuğunda canlı **PostgreSQL Bağlantı Rozeti** (`🟢 PostgreSQL Connected (alumni_db:5432)`) yer alır.
+- Modüller arası hızlı geçiş menüsü (Users ↔ Announcements ↔ Alumni ↔ Swagger) mevcuttur.
+- Oluşturma, listeleme, detay görüntüleme, güncelleme ve silme (Create, Read, Update, Delete) operasyonları doğrudan PostgreSQL üzerinde transactional olarak yürütülür.
+
+
 

@@ -8,6 +8,8 @@
  * - CREATE FORM:       renderCreateForm() (GET /announcements/new)
  * - EDIT FORM:         renderEditForm() (GET /announcements/:id/edit)
  */
+const db = require('../db');
+
 class AnnouncementView {
   /**
    * Escape HTML special characters to prevent Cross-Site Scripting (XSS)
@@ -24,6 +26,48 @@ class AnnouncementView {
       .replace(/'/g, '&#039;');
   }
 
+  static renderTopNav(activeSection = 'announcements') {
+    const isConnected = db.isDbConnected;
+    return `
+    <nav class="top-nav">
+      <a href="/announcements" class="nav-brand">
+        <span style="font-size: 1.4rem;">📢</span>
+        <span>AlumniSphere <span style="color: var(--accent); font-weight: 400;">CRUD Hub</span></span>
+      </a>
+      <div class="nav-links">
+        <a href="/users" class="nav-link ${activeSection === 'users' ? 'active' : ''}">
+          <span>👥</span> Users
+        </a>
+        <a href="/announcements" class="nav-link ${activeSection === 'announcements' ? 'active' : ''}">
+          <span>📢</span> Announcements
+        </a>
+        <a href="/alumni" class="nav-link ${activeSection === 'alumni' ? 'active' : ''}">
+          <span>🎓</span> Alumni Directory
+        </a>
+        <a href="/api/swagger" class="nav-link" target="_blank">
+          <span>⚡</span> Swagger Docs
+        </a>
+        <a href="http://localhost:3000" class="nav-link" target="_blank">
+          <span>🏠</span> Client App (:3000)
+        </a>
+      </div>
+      <div>
+        ${isConnected ? `
+          <div class="db-status-badge connected" title="PostgreSQL 16 active on port 5432 with volume persistence (pgdata)">
+            <span class="status-dot"></span>
+            <span>PostgreSQL Connected</span>
+          </div>
+        ` : `
+          <div class="db-status-badge fallback" title="Operating with resilient in-memory data store">
+            <span class="status-dot"></span>
+            <span>In-Memory Fallback</span>
+          </div>
+        `}
+      </div>
+    </nav>
+    `;
+  }
+
   /**
    * Shared CSS Stylesheet for Announcement views
    */
@@ -33,6 +77,113 @@ class AnnouncementView {
       --bg-primary: #0f172a;
       --bg-surface: #1e293b;
       --bg-card: rgba(30, 41, 59, 0.75);
+      --border: rgba(255, 255, 255, 0.1);
+      --accent: #38bdf8;
+      --accent-glow: rgba(56, 189, 248, 0.25);
+      --accent-dark: #0284c7;
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --success: #34d399;
+      --danger: #f87171;
+      --warning: #fbbf24;
+      --purple: #c084fc;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+      color: var(--text-main);
+      min-height: 100vh;
+      padding: 2rem 1rem;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .container {
+      width: 100%;
+      max-width: 1100px;
+    }
+    .container-narrow {
+      max-width: 680px;
+    }
+
+    /* Global Navigation Bar */
+    .top-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1rem;
+      padding: 0.85rem 1.5rem;
+      background: var(--bg-card);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      margin-bottom: 2rem;
+    }
+    .nav-brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      font-weight: 700;
+      font-size: 1.1rem;
+      color: var(--text-main);
+      text-decoration: none;
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .nav-link {
+      padding: 0.45rem 0.9rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .nav-link:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+    .nav-link.active {
+      color: var(--accent);
+      background: var(--accent-glow);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+    }
+    .db-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.4rem 0.85rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+    }
+    .db-status-badge.connected {
+      background: rgba(52, 211, 153, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(52, 211, 153, 0.3);
+    }
+    .db-status-badge.fallback {
+      background: rgba(251, 191, 36, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
       --border: rgba(255, 255, 255, 0.1);
       --accent: #38bdf8;
       --accent-glow: rgba(56, 189, 248, 0.25);
@@ -598,6 +749,7 @@ class AnnouncementView {
 </head>
 <body>
   <div class="container">
+    ${this.renderTopNav('announcements')}
     <header class="dashboard-header">
       <div class="badge-pill">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
@@ -820,6 +972,7 @@ class AnnouncementView {
 </head>
 <body>
   <div class="container container-narrow">
+    ${this.renderTopNav('announcements')}
     <nav class="breadcrumb-nav">
       <a href="/announcements">← Back to Announcements</a>
       <span>/</span>
@@ -891,6 +1044,7 @@ class AnnouncementView {
 </head>
 <body>
   <div class="container container-narrow">
+    ${this.renderTopNav('announcements')}
     <nav class="breadcrumb-nav">
       <a href="/announcements">← Back to Announcements</a>
       <span>/</span>
@@ -986,6 +1140,7 @@ class AnnouncementView {
 </head>
 <body>
   <div class="container container-narrow">
+    ${this.renderTopNav('announcements')}
     <nav class="breadcrumb-nav">
       <a href="/announcements">← Back to Announcements</a>
       <span>/</span>

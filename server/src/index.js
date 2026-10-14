@@ -419,7 +419,9 @@ const {
   userRoutes,
   apiUserRoutes,
   announcementRoutes,
-  apiAnnouncementRoutes
+  apiAnnouncementRoutes,
+  alumniRoutes,
+  apiAlumniRoutes
 } = require('./routes');
 
 // Mount Web UI User routes (/users, /users/:id, etc.)
@@ -433,6 +435,12 @@ app.use(announcementRoutes);
 
 // Mount REST API Announcement routes (/api/announcements, /api/announcement/:id, etc.)
 app.use(apiAnnouncementRoutes);
+
+// Mount Web UI Alumni routes (/alumni, /alumni/:id, etc.)
+app.use(alumniRoutes);
+
+// Mount REST API Alumni routes (/api/alumni, /api/alumni/:id, etc.)
+app.use(apiAlumniRoutes);
 
 // ==========================================================================
 // Swagger / OpenAPI 3.0 Documentation Module
@@ -1337,6 +1345,62 @@ const swaggerDocument = {
         }
       }
     },
+    "/api/alumni/count": {
+      get: {
+        tags: ["Alumni"],
+        summary: "Get total alumni count",
+        description: "Returns the total number of alumni profiles in PostgreSQL matching optional filters.",
+        responses: {
+          "200": { description: "Total alumni count" }
+        }
+      }
+    },
+    "/api/alumni/{id}": {
+      get: {
+        tags: ["Alumni"],
+        summary: "Get alumni profile by ID",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Alumni profile found" },
+          "404": { description: "Alumni not found" }
+        }
+      },
+      put: {
+        tags: ["Alumni"],
+        summary: "Update alumni profile (Full update)",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Alumni profile updated" },
+          "404": { description: "Alumni not found" }
+        }
+      },
+      patch: {
+        tags: ["Alumni"],
+        summary: "Update alumni profile (Partial update)",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        requestBody: {
+          required: true,
+          content: { "application/json": { schema: { type: "object" } } }
+        },
+        responses: {
+          "200": { description: "Alumni profile patched" },
+          "404": { description: "Alumni not found" }
+        }
+      },
+      delete: {
+        tags: ["Alumni"],
+        summary: "Delete alumni profile",
+        parameters: [{ name: "id", in: "path", required: true, schema: { type: "string" } }],
+        responses: {
+          "200": { description: "Alumni deleted successfully" },
+          "404": { description: "Alumni not found" }
+        }
+      }
+    },
     "/api/stats": {
       get: {
         tags: ["Stats"],
@@ -1643,127 +1707,6 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-// Alumni List & Filter Endpoint
-app.get('/api/alumni', async (req, res) => {
-  const { search, department, year, mentorOnly } = req.query;
-
-  if (db.isDbConnected) {
-    try {
-      let sql = `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt" FROM alumni WHERE 1=1`;
-      const params = [];
-
-      if (department && department !== 'All') {
-        params.push(department);
-        sql += ` AND department = $${params.length}`;
-      }
-      if (year && year !== 'All') {
-        params.push(parseInt(year, 10));
-        sql += ` AND graduation_year = $${params.length}`;
-      }
-      if (mentorOnly === 'true') {
-        sql += ` AND is_mentor = TRUE`;
-      }
-      if (search) {
-        params.push(`%${search.toLowerCase()}%`);
-        sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(company) LIKE $${params.length} OR LOWER(role) LIKE $${params.length})`;
-      }
-
-      sql += ` ORDER BY CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END DESC, created_at DESC`;
-      const dbRes = await db.query(sql, params);
-      return res.json({
-        count: dbRes.rows.length,
-        alumni: dbRes.rows
-      });
-    } catch (err) {
-      console.error('Error fetching alumni from DB:', err.message);
-    }
-  }
-
-  let results = [...mockAlumni];
-
-  if (search) {
-    const q = search.toLowerCase();
-    results = results.filter(a =>
-      a.name.toLowerCase().includes(q) ||
-      a.company.toLowerCase().includes(q) ||
-      a.role.toLowerCase().includes(q) ||
-      a.skills.some(s => s.toLowerCase().includes(q))
-    );
-  }
-
-  if (department && department !== 'All') {
-    results = results.filter(a => a.department === department);
-  }
-
-  if (year && year !== 'All') {
-    results = results.filter(a => a.graduationYear.toString() === year.toString());
-  }
-
-  if (mentorOnly === 'true') {
-    results = results.filter(a => a.isMentor);
-  }
-
-  res.json({
-    count: results.length,
-    alumni: results
-  });
-});
-
-// Add New Alumni Profile
-app.post('/api/alumni', async (req, res) => {
-  const { name, graduationYear, department, company, role, location, industry, skills, bio, isMentor } = req.body;
-  if (!name || !graduationYear || !department) {
-    return res.status(400).json({ error: 'Name, graduationYear, and department are required.' });
-  }
-
-  const gradYear = parseInt(graduationYear, 10);
-  const comp = company || "Freelance / Independent";
-  const r = role || "Specialist";
-  const loc = location || "Remote";
-  const ind = industry || "Technology";
-  const sk = Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []);
-  const av = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80";
-  const isM = !!isMentor;
-  const b = bio || "New alumni profile.";
-
-  if (db.isDbConnected) {
-    try {
-      const idRes = await db.query("SELECT COALESCE(MAX(CAST(id AS INTEGER)), 0) + 1 AS next_id FROM alumni WHERE id ~ '^[0-9]+$'");
-      const newId = (idRes.rows[0].next_id || 1).toString();
-
-      const insertRes = await db.query(
-        `INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
-         RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt"`,
-        [newId, name, gradYear, department, comp, r, loc, ind, sk, av, isM, b]
-      );
-
-      const newProfile = insertRes.rows[0];
-      mockAlumni.unshift(newProfile);
-      return res.status(201).json({ success: true, profile: newProfile });
-    } catch (err) {
-      console.error('Error inserting alumni to DB:', err.message);
-    }
-  }
-
-  const newProfile = {
-    id: (mockAlumni.length + 1).toString(),
-    name,
-    graduationYear: gradYear,
-    department,
-    company: comp,
-    role: r,
-    location: loc,
-    industry: ind,
-    skills: sk,
-    avatar: av,
-    isMentor: isM,
-    bio: b
-  };
-
-  mockAlumni.unshift(newProfile);
-  res.status(201).json({ success: true, profile: newProfile });
-});
 
 // Jobs Endpoint
 app.get('/api/jobs', (req, res) => {
