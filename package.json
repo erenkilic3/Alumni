@@ -8,7 +8,8 @@
     "client": "npm --prefix client start",
     "homepage": "node homepage.js",
     "docker:up": "docker compose up --build",
-    "docker:down": "docker compose down"
+    "docker:down": "docker compose down",
+    "test:forgetting": "bash scripts/test-forgetting.sh"
   },
   "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],
   "author": "Eren Kılıç",

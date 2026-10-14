@@ -34,10 +34,10 @@ class AnnouncementController {
    * 1. READ ALL: GET /announcements
    * Renders the announcement management dashboard
    */
-  index(req, res) {
+  async index(req, res) {
     try {
       const { category, priority, status, search, isPinned } = req.query;
-      const announcements = this.model.findAll({ category, priority, status, search, isPinned });
+      const announcements = await this.model.findAll({ category, priority, status, search, isPinned });
       const flashMsg = req.query.msg || null;
       return res.status(200).send(this.view.renderAnnouncementsList(announcements, flashMsg));
     } catch (err) {
@@ -49,13 +49,14 @@ class AnnouncementController {
    * 2. READ ONE: GET /announcements/:id
    * Displays single announcement detail view
    */
-  show(req, res) {
+  async show(req, res) {
     try {
       const { id } = req.params;
-      const announcement = this.model.findById(id);
+      const announcement = await this.model.findById(id);
 
       if (!announcement) {
-        return res.status(404).send(this.view.renderAnnouncementsList(this.model.findAll(), null, `Announcement #${id} not found.`));
+        const all = await this.model.findAll();
+        return res.status(404).send(this.view.renderAnnouncementsList(all, null, `Announcement #${id} not found.`));
       }
 
       if (req.headers.accept && req.headers.accept.includes('application/json')) {
@@ -65,7 +66,8 @@ class AnnouncementController {
       const flashMsg = req.query.msg || null;
       return res.status(200).send(this.view.renderAnnouncementDetails(announcement, flashMsg));
     } catch (err) {
-      return res.status(500).send(this.view.renderAnnouncementsList(this.model.findAll(), null, err.message));
+      const all = await this.model.findAll().catch(() => []);
+      return res.status(500).send(this.view.renderAnnouncementsList(all, null, err.message));
     }
   }
 
@@ -81,7 +83,7 @@ class AnnouncementController {
    * 4. CREATE ACTION: POST /announcements
    * Processes form submission, adds announcement to store, and re-renders view
    */
-  create(req, res) {
+  async create(req, res) {
     const { title, content, category, priority, author, isPinned, status } = req.body || {};
     const wantsJson = req.headers.accept &&
       req.headers.accept.includes('application/json') &&
@@ -96,7 +98,7 @@ class AnnouncementController {
     }
 
     try {
-      const newAnnouncement = this.model.create({
+      const newAnnouncement = await this.model.create({
         title,
         content,
         category,
@@ -106,18 +108,21 @@ class AnnouncementController {
         status
       });
 
+      const totalAnnouncements = await this.model.count();
+
       if (wantsJson) {
         return res.status(201).json({
           success: true,
           message: 'Announcement published successfully.',
           announcement: newAnnouncement,
-          totalAnnouncements: this.model.count()
+          totalAnnouncements
         });
       }
 
+      const all = await this.model.findAll();
       return res.status(201).send(
         this.view.renderAnnouncementsList(
-          this.model.findAll(),
+          all,
           `Announcement "${newAnnouncement.title}" published successfully!`
         )
       );
@@ -133,12 +138,13 @@ class AnnouncementController {
    * 5. UPDATE FORM: GET /announcements/:id/edit
    * Renders the dedicated "Edit Announcement" form view prefilled with current data
    */
-  edit(req, res) {
+  async edit(req, res) {
     const { id } = req.params;
-    const announcement = this.model.findById(id);
+    const announcement = await this.model.findById(id);
 
     if (!announcement) {
-      return res.status(404).send(this.view.renderAnnouncementsList(this.model.findAll(), null, `Announcement #${id} not found.`));
+      const all = await this.model.findAll();
+      return res.status(404).send(this.view.renderAnnouncementsList(all, null, `Announcement #${id} not found.`));
     }
 
     return res.status(200).send(this.view.renderEditForm(announcement));
@@ -148,7 +154,7 @@ class AnnouncementController {
    * 6. UPDATE ACTION: PUT /announcements/:id, PATCH /announcements/:id, or POST /announcements/:id
    * Processes update submission and renders the updated announcement detail view
    */
-  update(req, res) {
+  async update(req, res) {
     const { id } = req.params;
     const { title, content, category, priority, author, isPinned, status } = req.body || {};
     const isPartial = req.method === 'PATCH';
@@ -156,7 +162,7 @@ class AnnouncementController {
 
     if (!isPartial && (!title || !content)) {
       const errorMsg = 'Both title and content are required fields.';
-      const announcement = this.model.findById(id) || { id, title, content, category, priority, author };
+      const announcement = (await this.model.findById(id)) || { id, title, content, category, priority, author };
       if (wantsJson) {
         return res.status(400).json({ success: false, error: errorMsg });
       }
@@ -164,7 +170,7 @@ class AnnouncementController {
     }
 
     try {
-      const updated = this.model.update(id, {
+      const updated = await this.model.update(id, {
         title,
         content,
         category,
@@ -179,7 +185,8 @@ class AnnouncementController {
         if (wantsJson) {
           return res.status(404).json({ success: false, error: errorMsg });
         }
-        return res.status(404).send(this.view.renderAnnouncementsList(this.model.findAll(), null, errorMsg));
+        const all = await this.model.findAll();
+        return res.status(404).send(this.view.renderAnnouncementsList(all, null, errorMsg));
       }
 
       if (wantsJson) {
@@ -194,7 +201,7 @@ class AnnouncementController {
         this.view.renderAnnouncementDetails(updated, `Announcement #${id} was successfully updated!`)
       );
     } catch (err) {
-      const announcement = this.model.findById(id) || { id, title, content, category, priority, author };
+      const announcement = (await this.model.findById(id)) || { id, title, content, category, priority, author };
       if (wantsJson) {
         return res.status(400).json({ success: false, error: err.message });
       }
@@ -206,33 +213,37 @@ class AnnouncementController {
    * 7. DELETE ACTION: DELETE /announcements/:id or POST /announcements/:id/delete
    * Removes announcement and re-renders the listing view with a flash alert
    */
-  delete(req, res) {
+  async delete(req, res) {
     const { id } = req.params;
     const wantsJson = (req.headers.accept && req.headers.accept.includes('application/json')) || req.xhr;
 
     try {
-      const deleted = this.model.delete(id);
+      const deleted = await this.model.delete(id);
 
       if (!deleted) {
         const errorMsg = `Announcement #${id} not found.`;
         if (wantsJson) {
           return res.status(404).json({ success: false, error: errorMsg });
         }
-        return res.status(404).send(this.view.renderAnnouncementsList(this.model.findAll(), null, errorMsg));
+        const all = await this.model.findAll();
+        return res.status(404).send(this.view.renderAnnouncementsList(all, null, errorMsg));
       }
+
+      const remainingAnnouncements = await this.model.count();
 
       if (wantsJson) {
         return res.json({
           success: true,
-          message: `Announcement #${id} (${deleted.title}) successfully deleted.`,
+          message: `Announcement #${id} (${deleted.title}) deleted successfully.`,
           deletedAnnouncement: deleted,
-          remainingAnnouncements: this.model.count()
+          remainingAnnouncements
         });
       }
 
+      const all = await this.model.findAll();
       return res.status(200).send(
         this.view.renderAnnouncementsList(
-          this.model.findAll(),
+          all,
           `Announcement #${id} (${deleted.title}) was successfully deleted.`
         )
       );
@@ -240,7 +251,8 @@ class AnnouncementController {
       if (wantsJson) {
         return res.status(500).json({ success: false, error: err.message });
       }
-      return res.status(500).send(this.view.renderAnnouncementsList(this.model.findAll(), null, err.message));
+      const all = await this.model.findAll().catch(() => []);
+      return res.status(500).send(this.view.renderAnnouncementsList(all, null, err.message));
     }
   }
 }

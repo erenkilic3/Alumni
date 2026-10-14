@@ -10,27 +10,27 @@ const { ApiAnnouncementController, AnnouncementController } = require('../contro
  */
 
 // Content-negotiating handler for /api/announcements (renders HTML if requested directly in a web browser)
-const handleGetAnnouncements = (req, res) => {
+const handleGetAnnouncements = async (req, res) => {
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     req.query.format !== 'json' &&
     !req.headers.accept.includes('application/json');
 
   if (isBrowserHtml) {
-    return AnnouncementController.index(req, res);
+    return await AnnouncementController.index(req, res);
   }
-  return ApiAnnouncementController.getAll(req, res);
+  return await ApiAnnouncementController.getAll(req, res);
 };
 
-const handleCreateAnnouncement = (req, res) => {
+const handleCreateAnnouncement = async (req, res) => {
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     !req.headers.accept.includes('application/json');
 
   if (isBrowserHtml) {
-    return AnnouncementController.create(req, res);
+    return await AnnouncementController.create(req, res);
   }
-  return ApiAnnouncementController.create(req, res);
+  return await ApiAnnouncementController.create(req, res);
 };
 
 // GET /api/announcements - List all announcements

@@ -10,22 +10,9 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Database connection pool (PostgreSQL)
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-});
-
-let isDbConnected = false;
-pool.connect()
-  .then(client => {
-    isDbConnected = true;
-    client.release();
-    console.log('✅ Connected to PostgreSQL database successfully');
-  })
-  .catch(err => {
-    isDbConnected = false;
-    console.log('ℹ️ PostgreSQL not immediately reachable, using fallback in-memory seed store:', err.message);
-  });
+// Centralized PostgreSQL Database Module
+const db = require('./db');
+db.connectDb();
 
 // Seed data for live preview
 let mockAlumni = [
@@ -415,7 +402,7 @@ const handleHealth = (req, res) => {
     message: 'healthy',
     online: true,
     timestamp: new Date().toISOString(),
-    postgresConnected: isDbConnected,
+    postgresConnected: db.isDbConnected,
     environment: process.env.NODE_ENV || 'development',
     serverVersion: '1.0.0'
   });
@@ -1626,11 +1613,25 @@ app.get('/swagger.json', (req, res) => res.json(swaggerDocument));
 app.get('/api/docs', handleSwagger);
 
 // Statistics Endpoint
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
+  let totalCount = mockAlumni.length;
+  let mentorCount = mockAlumni.filter(a => a.isMentor).length;
+
+  if (db.isDbConnected) {
+    try {
+      const totalRes = await db.query('SELECT COUNT(*) AS count FROM alumni');
+      const mentorRes = await db.query('SELECT COUNT(*) AS count FROM alumni WHERE is_mentor = TRUE');
+      totalCount = parseInt(totalRes.rows[0].count, 10);
+      mentorCount = parseInt(mentorRes.rows[0].count, 10);
+    } catch (err) {
+      console.error('Error fetching stats from DB:', err.message);
+    }
+  }
+
   res.json({
-    totalAlumni: mockAlumni.length + 1240,
-    employmentRate: '94.8%',
-    activeMentors: mockAlumni.filter(a => a.isMentor).length + 180,
+    totalAlumni: totalCount + 1240,
+    employmentRate: "94.8%",
+    activeMentors: mentorCount + 180,
     partnerCompanies: 145,
     topIndustries: [
       { name: "Technology & Software", count: 48 },
@@ -1642,8 +1643,41 @@ app.get('/api/stats', (req, res) => {
 });
 
 // Alumni List & Filter Endpoint
-app.get('/api/alumni', (req, res) => {
+app.get('/api/alumni', async (req, res) => {
   const { search, department, year, mentorOnly } = req.query;
+
+  if (db.isDbConnected) {
+    try {
+      let sql = `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt" FROM alumni WHERE 1=1`;
+      const params = [];
+
+      if (department && department !== 'All') {
+        params.push(department);
+        sql += ` AND department = $${params.length}`;
+      }
+      if (year && year !== 'All') {
+        params.push(parseInt(year, 10));
+        sql += ` AND graduation_year = $${params.length}`;
+      }
+      if (mentorOnly === 'true') {
+        sql += ` AND is_mentor = TRUE`;
+      }
+      if (search) {
+        params.push(`%${search.toLowerCase()}%`);
+        sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(company) LIKE $${params.length} OR LOWER(role) LIKE $${params.length})`;
+      }
+
+      sql += ` ORDER BY CAST(id AS INTEGER) DESC`;
+      const dbRes = await db.query(sql, params);
+      return res.json({
+        count: dbRes.rows.length,
+        alumni: dbRes.rows
+      });
+    } catch (err) {
+      console.error('Error fetching alumni from DB:', err.message);
+    }
+  }
+
   let results = [...mockAlumni];
 
   if (search) {
@@ -1675,25 +1709,55 @@ app.get('/api/alumni', (req, res) => {
 });
 
 // Add New Alumni Profile
-app.post('/api/alumni', (req, res) => {
+app.post('/api/alumni', async (req, res) => {
   const { name, graduationYear, department, company, role, location, industry, skills, bio, isMentor } = req.body;
   if (!name || !graduationYear || !department) {
     return res.status(400).json({ error: 'Name, graduationYear, and department are required.' });
   }
 
+  const gradYear = parseInt(graduationYear, 10);
+  const comp = company || "Freelance / Independent";
+  const r = role || "Specialist";
+  const loc = location || "Remote";
+  const ind = industry || "Technology";
+  const sk = Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []);
+  const av = "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80";
+  const isM = !!isMentor;
+  const b = bio || "New alumni profile.";
+
+  if (db.isDbConnected) {
+    try {
+      const idRes = await db.query("SELECT COALESCE(MAX(CAST(id AS INTEGER)), 0) + 1 AS next_id FROM alumni WHERE id ~ '^[0-9]+$'");
+      const newId = (idRes.rows[0].next_id || 1).toString();
+
+      const insertRes = await db.query(
+        `INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, created_at)
+         VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
+         RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt"`,
+        [newId, name, gradYear, department, comp, r, loc, ind, sk, av, isM, b]
+      );
+
+      const newProfile = insertRes.rows[0];
+      mockAlumni.unshift(newProfile);
+      return res.status(201).json({ success: true, profile: newProfile });
+    } catch (err) {
+      console.error('Error inserting alumni to DB:', err.message);
+    }
+  }
+
   const newProfile = {
     id: (mockAlumni.length + 1).toString(),
     name,
-    graduationYear: parseInt(graduationYear, 10),
+    graduationYear: gradYear,
     department,
-    company: company || "Freelance / Independent",
-    role: role || "Specialist",
-    location: location || "Remote",
-    industry: industry || "Technology",
-    skills: Array.isArray(skills) ? skills : (skills ? skills.split(',').map(s => s.trim()) : []),
-    avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
-    isMentor: !!isMentor,
-    bio: bio || "New alumni profile."
+    company: comp,
+    role: r,
+    location: loc,
+    industry: ind,
+    skills: sk,
+    avatar: av,
+    isMentor: isM,
+    bio: b
   };
 
   mockAlumni.unshift(newProfile);

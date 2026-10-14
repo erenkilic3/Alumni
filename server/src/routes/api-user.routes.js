@@ -8,27 +8,27 @@ const { ApiUserController, UserController } = require('../controllers');
  */
 
 // Content-negotiating handler for /api/users (renders HTML if requested directly in a web browser)
-const handleGetUsers = (req, res) => {
+const handleGetUsers = async (req, res) => {
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     req.query.format !== 'json' &&
     !req.headers.accept.includes('application/json');
 
   if (isBrowserHtml) {
-    return UserController.index(req, res);
+    return await UserController.index(req, res);
   }
-  return ApiUserController.getAll(req, res);
+  return await ApiUserController.getAll(req, res);
 };
 
-const handleCreateUser = (req, res) => {
+const handleCreateUser = async (req, res) => {
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     !req.headers.accept.includes('application/json');
 
   if (isBrowserHtml) {
-    return UserController.create(req, res);
+    return await UserController.create(req, res);
   }
-  return ApiUserController.create(req, res);
+  return await ApiUserController.create(req, res);
 };
 
 // GET /api/users - List all users (JSON with browser HTML fallback)

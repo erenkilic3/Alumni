@@ -24,10 +24,10 @@ class ApiUserController {
    * GET /api/users
    * Retrieve all users, optionally filtered by role, department, or search query
    */
-  getAll(req, res) {
+  async getAll(req, res) {
     try {
       const { role, department, search } = req.query;
-      const users = this.model.findAll({ role, department, search });
+      const users = await this.model.findAll({ role, department, search });
 
       return res.status(200).json({
         success: true,
@@ -46,10 +46,10 @@ class ApiUserController {
    * GET /api/users/:id or GET /api/user/:id
    * Retrieve a single user by ID
    */
-  getById(req, res) {
+  async getById(req, res) {
     try {
       const { id } = req.params;
-      const user = this.model.findById(id);
+      const user = await this.model.findById(id);
 
       if (!user) {
         return res.status(404).json({
@@ -72,9 +72,9 @@ class ApiUserController {
 
   /**
    * POST /api/users
-   * Create a new user in the in-memory store
+   * Create a new user
    */
-  create(req, res) {
+  async create(req, res) {
     try {
       const { name, email, role, department } = req.body || {};
 
@@ -85,13 +85,14 @@ class ApiUserController {
         });
       }
 
-      const newUser = this.model.create({ name, email, role, department });
+      const newUser = await this.model.create({ name, email, role, department });
+      const totalUsers = await this.model.count();
 
       return res.status(201).json({
         success: true,
-        message: 'User created successfully without database (in-memory).',
+        message: 'User created successfully.',
         user: newUser,
-        totalUsers: this.model.count()
+        totalUsers
       });
     } catch (err) {
       return res.status(400).json({
@@ -105,7 +106,7 @@ class ApiUserController {
    * PUT /api/user/:id or PUT /api/users/:id
    * Fully update a user (requires both name and email)
    */
-  update(req, res) {
+  async update(req, res) {
     try {
       const { id } = req.params;
       const { name, email, role, department } = req.body || {};
@@ -119,7 +120,7 @@ class ApiUserController {
         });
       }
 
-      const updatedUser = this.model.update(
+      const updatedUser = await this.model.update(
         id,
         { name, email, role, department },
         isPartial
@@ -150,18 +151,18 @@ class ApiUserController {
    * PATCH /api/user/:id or PATCH /api/users/:id
    * Partially update user attributes
    */
-  patch(req, res) {
+  async patch(req, res) {
     return this.update(req, res);
   }
 
   /**
    * DELETE /api/users/:id or DELETE /api/user/:id
-   * Delete a user from the in-memory store
+   * Delete a user
    */
-  delete(req, res) {
+  async delete(req, res) {
     try {
       const { id } = req.params;
-      const deletedUser = this.model.delete(id);
+      const deletedUser = await this.model.delete(id);
 
       if (!deletedUser) {
         return res.status(404).json({
@@ -170,11 +171,13 @@ class ApiUserController {
         });
       }
 
+      const remainingUsers = await this.model.count();
+
       return res.status(200).json({
         success: true,
         message: `User #${id} (${deletedUser.name}) deleted successfully.`,
         deletedUser,
-        remainingUsers: this.model.count()
+        remainingUsers
       });
     } catch (err) {
       return res.status(500).json({
@@ -188,11 +191,19 @@ class ApiUserController {
    * GET /api/users/count
    * Return the total count of registered users
    */
-  count(req, res) {
-    return res.status(200).json({
-      success: true,
-      count: this.model.count()
-    });
+  async count(req, res) {
+    try {
+      const count = await this.model.count();
+      return res.status(200).json({
+        success: true,
+        count
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to count users: ' + err.message
+      });
+    }
   }
 }
 

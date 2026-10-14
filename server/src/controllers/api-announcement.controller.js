@@ -25,10 +25,10 @@ class ApiAnnouncementController {
    * Retrieve all announcements, with optional query filters:
    * ?category=EVENT&priority=URGENT&status=ACTIVE&search=alumni&isPinned=true
    */
-  getAll(req, res) {
+  async getAll(req, res) {
     try {
       const { category, priority, status, search, isPinned } = req.query;
-      const announcements = this.model.findAll({ category, priority, status, search, isPinned });
+      const announcements = await this.model.findAll({ category, priority, status, search, isPinned });
 
       return res.status(200).json({
         success: true,
@@ -47,10 +47,10 @@ class ApiAnnouncementController {
    * GET /api/announcement/:id or GET /api/announcements/:id
    * Retrieve single announcement by ID
    */
-  getById(req, res) {
+  async getById(req, res) {
     try {
       const { id } = req.params;
-      const announcement = this.model.findById(id);
+      const announcement = await this.model.findById(id);
 
       if (!announcement) {
         return res.status(404).json({
@@ -73,9 +73,9 @@ class ApiAnnouncementController {
 
   /**
    * POST /api/announcements
-   * Create a new announcement in memory
+   * Create a new announcement
    */
-  create(req, res) {
+  async create(req, res) {
     try {
       const { title, content, category, priority, author, isPinned, status } = req.body || {};
 
@@ -86,7 +86,7 @@ class ApiAnnouncementController {
         });
       }
 
-      const newAnnouncement = this.model.create({
+      const newAnnouncement = await this.model.create({
         title,
         content,
         category,
@@ -96,11 +96,13 @@ class ApiAnnouncementController {
         status
       });
 
+      const totalAnnouncements = await this.model.count();
+
       return res.status(201).json({
         success: true,
         message: 'Announcement successfully created.',
         announcement: newAnnouncement,
-        totalAnnouncements: this.model.count()
+        totalAnnouncements
       });
     } catch (err) {
       return res.status(400).json({
@@ -114,7 +116,7 @@ class ApiAnnouncementController {
    * PUT /api/announcement/:id or PUT /api/announcements/:id
    * Completely update an existing announcement
    */
-  update(req, res) {
+  async update(req, res) {
     try {
       const { id } = req.params;
       const { title, content, category, priority, author, isPinned, status } = req.body || {};
@@ -126,7 +128,7 @@ class ApiAnnouncementController {
         });
       }
 
-      const updated = this.model.update(id, {
+      const updated = await this.model.update(id, {
         title,
         content,
         category,
@@ -160,10 +162,10 @@ class ApiAnnouncementController {
    * PATCH /api/announcement/:id or PATCH /api/announcements/:id
    * Partially update an existing announcement
    */
-  patch(req, res) {
+  async patch(req, res) {
     try {
       const { id } = req.params;
-      const updated = this.model.patch(id, req.body || {});
+      const updated = await this.model.patch(id, req.body || {});
 
       if (!updated) {
         return res.status(404).json({
@@ -189,10 +191,10 @@ class ApiAnnouncementController {
    * DELETE /api/announcement/:id or DELETE /api/announcements/:id
    * Remove an announcement by ID
    */
-  delete(req, res) {
+  async delete(req, res) {
     try {
       const { id } = req.params;
-      const deleted = this.model.delete(id);
+      const deleted = await this.model.delete(id);
 
       if (!deleted) {
         return res.status(404).json({
@@ -201,11 +203,13 @@ class ApiAnnouncementController {
         });
       }
 
+      const remainingAnnouncements = await this.model.count();
+
       return res.status(200).json({
         success: true,
         message: `Announcement #${id} (${deleted.title}) deleted successfully.`,
         deletedAnnouncement: deleted,
-        remainingAnnouncements: this.model.count()
+        remainingAnnouncements
       });
     } catch (err) {
       return res.status(500).json({
@@ -219,12 +223,13 @@ class ApiAnnouncementController {
    * GET /api/announcements/count
    * Return total count of registered announcements
    */
-  count(req, res) {
+  async count(req, res) {
     try {
       const { category, priority, status } = req.query;
+      const count = await this.model.count({ category, priority, status });
       return res.status(200).json({
         success: true,
-        count: this.model.count({ category, priority, status })
+        count
       });
     } catch (err) {
       return res.status(500).json({

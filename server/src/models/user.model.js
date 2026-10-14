@@ -1,10 +1,25 @@
 /**
- * User Model (In-Memory / No Database Connection)
+ * User Model
  *
- * Implements a standalone, database-free in-memory user repository
- * featuring complete CRUD (Create, Read, Update, Delete) operations,
- * input validation, and seed data initialization.
+ * Implements persistent data management with PostgreSQL when connected,
+ * with seamless in-memory fallback if the database is offline.
+ * Supports full CRUD operations, filtering, and seeding.
  */
+
+const db = require('../db');
+
+function mapUserRow(row) {
+  if (!row) return null;
+  return {
+    id: String(row.id),
+    name: row.name,
+    email: row.email,
+    role: row.role,
+    department: row.department,
+    createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : (row.createdAt || row.created_at),
+    updatedAt: row.updatedAt instanceof Date ? row.updatedAt.toISOString() : (row.updatedAt || row.updated_at)
+  };
+}
 
 class UserModel {
   constructor(initialUsers = null) {
@@ -84,11 +99,11 @@ class UserModel {
   }
 
   /**
-   * CREATE: Create and insert a new user into the in-memory store
+   * CREATE: Create and insert a new user (Persistent in PostgreSQL or in-memory)
    * @param {Object} userData - User attributes { name, email, role, department }
-   * @returns {Object} Created user object
+   * @returns {Promise<Object>|Object} Created user object
    */
-  create(userData) {
+  async create(userData) {
     if (!userData || typeof userData !== 'object') {
       throw new Error('User data is required.');
     }
@@ -102,29 +117,54 @@ class UserModel {
       throw new Error('Email (email) is required.');
     }
 
-    // Auto-generate incrementing string ID based on highest numeric ID in store
+    const allowedRoles = ['ADMIN', 'ALUMNI', 'STUDENT'];
+    const normalizedRole = role && allowedRoles.includes(role.toString().toUpperCase())
+      ? role.toString().toUpperCase()
+      : 'STUDENT';
+    const dept = department && department.trim() ? department.trim() : 'Belirtilmedi';
+
+    if (db.isDbConnected) {
+      try {
+        const idRes = await db.query(
+          "SELECT COALESCE(MAX(CAST(id AS INTEGER)), 0) + 1 AS next_id FROM users WHERE id ~ '^[0-9]+$'"
+        );
+        const newId = (idRes.rows[0].next_id || 1).toString();
+
+        const insertRes = await db.query(
+          `INSERT INTO users (id, name, email, role, department, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+           RETURNING id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt"`,
+          [newId, name.trim(), email.trim().toLowerCase(), normalizedRole, dept]
+        );
+
+        const newUser = mapUserRow(insertRes.rows[0]);
+        this.users.unshift(newUser);
+        return newUser;
+      } catch (err) {
+        if (err.code === '23505') { // PostgreSQL unique violation
+          throw new Error(`Email "${email}" is already registered.`);
+        }
+        throw err;
+      }
+    }
+
+    // In-memory fallback
     const maxId = this.users.reduce((max, u) => {
       const num = parseInt(u.id, 10);
       return !isNaN(num) && num > max ? num : max;
     }, 0);
     const newId = (maxId + 1).toString();
 
-    const allowedRoles = ['ADMIN', 'ALUMNI', 'STUDENT'];
-    const normalizedRole = role && allowedRoles.includes(role.toString().toUpperCase())
-      ? role.toString().toUpperCase()
-      : 'STUDENT';
-
     const newUser = {
       id: newId,
       name: name.trim(),
       email: email.trim().toLowerCase(),
       role: normalizedRole,
-      department: department && department.trim() ? department.trim() : 'Belirtilmedi',
+      department: dept,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
 
-    // Prepend to collection so latest additions appear at top
     this.users.unshift(newUser);
     return newUser;
   }
@@ -132,23 +172,49 @@ class UserModel {
   /**
    * READ: Retrieve all users, optionally filtered
    * @param {Object} [filter={}] - Filter options { role, department, search }
-   * @returns {Array<Object>} List of matching users
+   * @returns {Promise<Array<Object>>|Array<Object>} List of matching users
    */
-  findAll(filter = {}) {
-    let result = [...this.users];
+  async findAll(filter = {}) {
+    if (db.isDbConnected) {
+      try {
+        let sql = `SELECT id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt" FROM users WHERE 1=1`;
+        const params = [];
 
+        if (filter.role) {
+          params.push(filter.role.toString().toUpperCase());
+          sql += ` AND UPPER(role) = $${params.length}`;
+        }
+
+        if (filter.department) {
+          params.push(`%${filter.department.toString().toLowerCase()}%`);
+          sql += ` AND LOWER(department) LIKE $${params.length}`;
+        }
+
+        if (filter.search) {
+          params.push(`%${filter.search.toString().toLowerCase()}%`);
+          sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(email) LIKE $${params.length} OR LOWER(department) LIKE $${params.length})`;
+        }
+
+        sql += ` ORDER BY CAST(id AS INTEGER) DESC`;
+        const res = await db.query(sql, params);
+        return res.rows.map(mapUserRow);
+      } catch (err) {
+        console.error('Error fetching users from DB:', err.message);
+      }
+    }
+
+    // In-memory fallback
+    let result = [...this.users];
     if (filter.role) {
       const roleFilter = filter.role.toString().toUpperCase();
       result = result.filter(u => u.role === roleFilter);
     }
-
     if (filter.department) {
       const deptFilter = filter.department.toString().toLowerCase();
       result = result.filter(u =>
         u.department && u.department.toLowerCase().includes(deptFilter)
       );
     }
-
     if (filter.search) {
       const q = filter.search.toString().toLowerCase();
       result = result.filter(u =>
@@ -157,29 +223,56 @@ class UserModel {
         (u.department && u.department.toLowerCase().includes(q))
       );
     }
-
     return result;
   }
 
   /**
    * READ: Find a single user by ID
    * @param {string|number} id - User ID
-   * @returns {Object|null} User object or null if not found
+   * @returns {Promise<Object|null>|Object|null} User object or null if not found
    */
-  findById(id) {
+  async findById(id) {
     if (id === undefined || id === null) return null;
     const strId = id.toString();
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `SELECT id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt"
+           FROM users WHERE id = $1`,
+          [strId]
+        );
+        return mapUserRow(res.rows[0]);
+      } catch (err) {
+        console.error('Error finding user by ID:', err.message);
+      }
+    }
+
     return this.users.find(u => u.id === strId) || null;
   }
 
   /**
    * READ: Find a single user by email
    * @param {string} email - Email address
-   * @returns {Object|null} User object or null if not found
+   * @returns {Promise<Object|null>|Object|null} User object or null if not found
    */
-  findByEmail(email) {
+  async findByEmail(email) {
     if (!email) return null;
     const normalizedEmail = email.trim().toLowerCase();
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `SELECT id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt"
+           FROM users WHERE LOWER(email) = LOWER($1)`,
+          [normalizedEmail]
+        );
+        return mapUserRow(res.rows[0]);
+      } catch (err) {
+        console.error('Error finding user by email:', err.message);
+      }
+    }
+
     return this.users.find(u => u.email.toLowerCase() === normalizedEmail) || null;
   }
 
@@ -188,19 +281,19 @@ class UserModel {
    * @param {string|number} id - User ID
    * @param {Object} updateData - Updated attributes
    * @param {boolean} [isPartial=false] - True for PATCH (partial), false for PUT (full)
-   * @returns {Object|null} Updated user or null if user not found
+   * @returns {Promise<Object|null>|Object|null} Updated user or null if user not found
    */
-  update(id, updateData = {}, isPartial = false) {
+  async update(id, updateData = {}, isPartial = false) {
     if (id === undefined || id === null) return null;
-    const userIndex = this.users.findIndex(u => u.id === id.toString());
-    if (userIndex === -1) {
+    const strId = id.toString();
+
+    const existing = await this.findById(strId);
+    if (!existing) {
       return null;
     }
 
-    const existing = this.users[userIndex];
     const { name, email, role, department } = updateData;
 
-    // In full update (PUT), name and email are mandatory
     if (!isPartial && (!name || !email)) {
       throw new Error('PUT update requires both "name" and "email".');
     }
@@ -213,12 +306,43 @@ class UserModel {
         : existing.role;
     }
 
+    const newName = name !== undefined ? name.trim() : existing.name;
+    const newEmail = email !== undefined ? email.trim().toLowerCase() : existing.email;
+    const newDept = department !== undefined ? department.trim() : existing.department;
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `UPDATE users
+           SET name = $1, email = $2, role = $3, department = $4, updated_at = NOW()
+           WHERE id = $5
+           RETURNING id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt"`,
+          [newName, newEmail, updatedRole, newDept, strId]
+        );
+        const updated = mapUserRow(res.rows[0]);
+
+        const idx = this.users.findIndex(u => u.id === strId);
+        if (idx !== -1) this.users[idx] = updated;
+
+        return updated;
+      } catch (err) {
+        if (err.code === '23505') {
+          throw new Error(`Email "${newEmail}" is already registered to another user.`);
+        }
+        throw err;
+      }
+    }
+
+    // In-memory fallback
+    const userIndex = this.users.findIndex(u => u.id === strId);
+    if (userIndex === -1) return null;
+
     const updatedUser = {
       ...existing,
-      name: name !== undefined ? name.trim() : existing.name,
-      email: email !== undefined ? email.trim().toLowerCase() : existing.email,
+      name: newName,
+      email: newEmail,
       role: updatedRole,
-      department: department !== undefined ? department.trim() : existing.department,
+      department: newDept,
       updatedAt: new Date().toISOString()
     };
 
@@ -230,23 +354,43 @@ class UserModel {
    * UPDATE: Convenience helper for partial update (PATCH)
    * @param {string|number} id - User ID
    * @param {Object} patchData - Attributes to update
-   * @returns {Object|null} Updated user or null
+   * @returns {Promise<Object|null>|Object|null} Updated user or null
    */
-  patch(id, patchData) {
+  async patch(id, patchData) {
     return this.update(id, patchData, true);
   }
 
   /**
-   * DELETE: Remove user from memory store by ID
+   * DELETE: Remove user from store by ID
    * @param {string|number} id - User ID to delete
-   * @returns {Object|null} Deleted user object or null if not found
+   * @returns {Promise<Object|null>|Object|null} Deleted user object or null if not found
    */
-  delete(id) {
+  async delete(id) {
     if (id === undefined || id === null) return null;
-    const userIndex = this.users.findIndex(u => u.id === id.toString());
-    if (userIndex === -1) {
-      return null;
+    const strId = id.toString();
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `DELETE FROM users
+           WHERE id = $1
+           RETURNING id, name, email, role, department, created_at AS "createdAt", updated_at AS "updatedAt"`,
+          [strId]
+        );
+        const deleted = mapUserRow(res.rows[0]);
+
+        const idx = this.users.findIndex(u => u.id === strId);
+        if (idx !== -1) this.users.splice(idx, 1);
+
+        return deleted;
+      } catch (err) {
+        console.error('Error deleting user from DB:', err.message);
+      }
     }
+
+    // In-memory fallback
+    const userIndex = this.users.findIndex(u => u.id === strId);
+    if (userIndex === -1) return null;
 
     const [deletedUser] = this.users.splice(userIndex, 1);
     return deletedUser;
@@ -254,35 +398,66 @@ class UserModel {
 
   /**
    * COUNT: Get total user count
-   * @returns {number} Total number of users in memory
+   * @returns {Promise<number>|number} Total number of users
    */
-  count() {
+  async count() {
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query('SELECT COUNT(*) AS count FROM users');
+        return parseInt(res.rows[0].count, 10);
+      } catch (err) {
+        console.error('Error counting users in DB:', err.message);
+      }
+    }
     return this.users.length;
   }
 
   /**
    * Check if user exists by ID
    * @param {string|number} id - User ID
-   * @returns {boolean} True if exists
+   * @returns {Promise<boolean>|boolean} True if exists
    */
-  exists(id) {
-    return this.findById(id) !== null;
+  async exists(id) {
+    return (await this.findById(id)) !== null;
   }
 
   /**
-   * RESET: Reset memory store back to default seed users
-   * @returns {Array<Object>}
+   * RESET: Reset memory store and database back to default seed users
+   * @returns {Promise<Array<Object>>|Array<Object>}
    */
-  reset() {
+  async reset() {
+    if (db.isDbConnected) {
+      try {
+        await db.query('TRUNCATE TABLE users');
+        const seedUsers = this.getSeedUsers();
+        for (const u of seedUsers) {
+          await db.query(
+            `INSERT INTO users (id, name, email, role, department, created_at, updated_at)
+             VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
+             ON CONFLICT (id) DO NOTHING`,
+            [u.id, u.name, u.email, u.role, u.department]
+          );
+        }
+      } catch (err) {
+        console.error('Error resetting users in DB:', err.message);
+      }
+    }
     this.users = this.getSeedUsers();
     return this.users;
   }
 
   /**
-   * CLEAR: Remove all users from memory
-   * @returns {Array<Object>}
+   * CLEAR: Remove all users
+   * @returns {Promise<Array<Object>>|Array<Object>}
    */
-  clear() {
+  async clear() {
+    if (db.isDbConnected) {
+      try {
+        await db.query('TRUNCATE TABLE users');
+      } catch (err) {
+        console.error('Error clearing users in DB:', err.message);
+      }
+    }
     this.users = [];
     return this.users;
   }
