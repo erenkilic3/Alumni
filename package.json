@@ -9,7 +9,8 @@
     "homepage": "node homepage.js",
     "docker:up": "docker compose up --build",
     "docker:down": "docker compose down",
-    "test:forgetting": "bash scripts/test-forgetting.sh"
+    "test:forgetting": "bash scripts/test-forgetting.sh",
+    "db:generate": "npm --prefix server run db:generate"
   },
   "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],
   "author": "Eren Kılıç",
