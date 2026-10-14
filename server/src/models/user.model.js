@@ -195,7 +195,7 @@ class UserModel {
           sql += ` AND (LOWER(name) LIKE $${params.length} OR LOWER(email) LIKE $${params.length} OR LOWER(department) LIKE $${params.length})`;
         }
 
-        sql += ` ORDER BY CAST(id AS INTEGER) DESC`;
+        sql += ` ORDER BY CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END DESC, created_at DESC`;
         const res = await db.query(sql, params);
         return res.rows.map(mapUserRow);
       } catch (err) {

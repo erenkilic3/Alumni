@@ -15,7 +15,10 @@
     "migrate:up": "npm --prefix server run migrate:up",
     "migrate:down": "npm --prefix server run migrate:down",
     "migrate:status": "npm --prefix server run migrate:status",
-    "migrate:reset": "npm --prefix server run migrate:reset"
+    "migrate:reset": "npm --prefix server run migrate:reset",
+    "seed": "npm --prefix server run seed",
+    "seed:fresh": "npm --prefix server run seed:fresh",
+    "db:seed": "npm --prefix server run db:seed"
   },
   "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],
   "author": "Eren Kılıç",

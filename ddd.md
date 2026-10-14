@@ -274,3 +274,45 @@ Proje kök dizininde veya `server/` dizininde aşağıdaki npm script'leri çal�
 ### 🔒 İşlem Güvenliği (Transactional Safety)
 Her bir migrasyon ayrı bir PostgreSQL transaction'ı (`BEGIN` -> SQL -> `INSERT INTO schema_migrations` -> `COMMIT`) içinde çalışır. Herhangi bir hata oluşursa anında `ROLLBACK` yapılır ve veritabanı tutarsız bir duruma düşmez.
 
+---
+
+## 🏭 Veri Fabrikaları ve Tohumlama (Factory & Seeding Architecture)
+
+Testler, geliştirme ortamı ve zengin demo verileri için esnek ve gerçekçi veriler üreten bir **Factory & Seeder** mimarisi bulunmaktadır.
+
+### 🏭 Fabrikalar (`server/src/factories/`)
+
+Nesne yönelimli fabrika kalıbı (Factory Pattern) ile modellenmiştir:
+
+- **`BaseFactory`** ([server/src/factories/base.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/base.factory.js)): Tüm fabrikaların türediği ana sınıf. `.make()`, `.create()`, `.state()`, veri rastgeleştiricileri ve dizilim (sequence) araçlarını sağlar.
+- **`UserFactory`** ([server/src/factories/user.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/user.factory.js)): Gerçekçi isim, e-posta, bölüm ve roller (`.admin()`, `.alumni()`, `.student()`).
+- **`AnnouncementFactory`** ([server/src/factories/announcement.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/announcement.factory.js)): Kategori, öncelik ve yayın durumları (`.pinned()`, `.urgent()`, `.event()`, `.career()`).
+- **`AlumniFactory`** ([server/src/factories/alumni.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/alumni.factory.js)): Mezuniyet yılı, şirket, unvan, lokasyon, yetenek etiketleri ve mentorluk durumu (`.mentor()`, `.inCompany()`, `.graduatedIn()`).
+
+#### Örnek Fabrika Kullanımı:
+```javascript
+const { UserFactory, AlumniFactory } = require('./server/src/factories');
+
+// Bellekte 5 adet öğrenci oluştur (DB'ye yazmaz)
+const students = UserFactory.student().make(5);
+
+// Veritabanına doğrudan 3 adet Google mezun mentoru ekle
+const mentors = await AlumniFactory.mentor().inCompany('Google').create(3);
+```
+
+### 🌱 Tohumlayıcılar (`server/src/seeders/`)
+
+- **`UserSeeder`**: Çekirdek sistem kullanıcılarını ve dinamik fabrika kullanıcılarını ekler.
+- **`AnnouncementSeeder`**: Temel kampüs duyurularını ve dinamik duyuruları ekler.
+- **`AlumniSeeder`**: Örnek lider mezun profillerini ve dinamik mezunları ekler.
+- **`DatabaseSeeder`**: Tüm tohumlayıcıları koordine eden ana orkestratör (`--clean` seçeneğiyle tabloları sıfırlayıp baştan tohumlama yapabilir).
+
+### 💻 Tohumlama CLI Komutları
+
+| Komut | Açıklama |
+| :--- | :--- |
+| `npm run seed` veya `npm run db:seed` | Temel kayıtları ve varsayılan fabrika verilerini (10 kullanıcı, 8 duyuru, 10 mezun) veritabanına ekler. |
+| `npm run seed:fresh` | Mevcut tabloları temizler (`TRUNCATE CASCADE`) ve sıfırdan temiz tohum verileri oluşturur. |
+| `node server/src/db/seed.js --users=25 --alumni=30` | İstenilen adetlerde özel dinamik tohumlama yapar. |
+
+

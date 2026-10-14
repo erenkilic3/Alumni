@@ -116,9 +116,22 @@ Alumni/
 │   │   └── 004_seed_initial_data.sql        # Başlangıç Tohum (Seed) Verileri & Rollback
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
 │   │   ├── db.js                            # 🗄️ [MODEL & DB] Centralized PostgreSQL Connection, Auto-DDL & Seeding
-│   │   ├── db/                              # 🗄️ [DB TOOLS] Veritabanı Araçları ve Migrasyon Çalıştırıcı
+│   │   ├── db/                              # 🗄️ [DB TOOLS] Veritabanı Araçları, Migrasyon ve Tohumlama
 │   │   │   ├── generate.js                  # 🛠️ [TOOL] DDL Generator
-│   │   │   └── migrate.js                   # 🔄 [RUNNER] Native SQL Migration Runner (up, down, status, reset)
+│   │   │   ├── migrate.js                   # 🔄 [RUNNER] Native SQL Migration Runner (up, down, status, reset)
+│   │   │   └── seed.js                      # 🌱 [RUNNER] Database Seeding CLI Runner (clean, custom counts)
+│   │   ├── factories/                       # 🏭 [FACTORIES] Nesne Yönelimli Model Fabrikaları (Mock Data)
+│   │   │   ├── base.factory.js              # 🏭 BaseFactory (.make, .create, .state, sequence, random)
+│   │   │   ├── user.factory.js              # 👤 UserFactory (admin, alumni, student traits)
+│   │   │   ├── announcement.factory.js      # 📢 AnnouncementFactory (pinned, urgent, event, career traits)
+│   │   │   ├── alumni.factory.js            # 🎓 AlumniFactory (mentor, company, gradYear traits)
+│   │   │   └── index.js                     # 🏭 Barrel Export for Factories
+│   │   ├── seeders/                         # 🌱 [SEEDERS] Veritabanı Tohumlayıcılar Katmanı
+│   │   │   ├── user.seeder.js               # 👤 UserSeeder (Core + Factory Users)
+│   │   │   ├── announcement.seeder.js       # 📢 AnnouncementSeeder (Core + Factory Announcements)
+│   │   │   ├── alumni.seeder.js             # 🎓 AlumniSeeder (Core + Factory Alumni)
+│   │   │   ├── database.seeder.js           # 🌱 DatabaseSeeder (Master Coordinator)
+│   │   │   └── index.js                     # 🌱 Barrel Export for Seeders
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
 │   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
 │   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (Full CRUD with View)
@@ -128,7 +141,8 @@ Alumni/
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
 │   │   │   ├── user.model.js                # 🗄️ [MODEL] Persistent PostgreSQL User Model with In-Memory Fallback
-│   │   │   └── announcement.model.js        # 🗄️ [MODEL] Persistent PostgreSQL Announcement Model with In-Memory Fallback
+│   │   │   ├── announcement.model.js        # 🗄️ [MODEL] Persistent PostgreSQL Announcement Model with In-Memory Fallback
+│   │   │   └── alumni.model.js              # 🗄️ [MODEL] Persistent PostgreSQL Alumni Model with In-Memory Fallback
 │   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
 │   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users -> UserController)
@@ -141,7 +155,7 @@ Alumni/
 │   │   │   └── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
-│   ├── package.json                         # 📦 [CONFIG] Backend Dependencies & Migration Scripts
+│   ├── package.json                         # 📦 [CONFIG] Backend Dependencies, Migrations & Seed Scripts
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── scripts/                                 # 🧪 [TEST & AUTOMATION] Test and Automation Scripts
 │   └── test-forgetting.sh                   # 🧪 [TEST] Docker Compose Persistence "The Forgetting Test" Script
@@ -418,6 +432,34 @@ npm run migrate:status
 
 # Tüm migrasyonları sıfırdan geri alıp tekrar uygula (RESET)
 npm run migrate:reset
+```
+
+---
+
+## 🏭 Veri Fabrikaları ve Tohumlama (Factories & Seeding)
+
+AlumniSphere, testler ve geliştirme ortamı için gerçekçi mock verileri üreten nesne yönelimli **Factory Pattern** ve **Database Seeders** mimarisine sahiptir.
+
+- **Fabrikalar (`server/src/factories/`)**:
+  - `UserFactory`: Gerçekçi kullanıcılar, roller (`.admin()`, `.alumni()`, `.student()`) ve bölüm filtreleri.
+  - `AnnouncementFactory`: Öncelik (`.urgent()`, `.high()`), kategori (`.event()`, `.career()`) ve pinleme (`.pinned()`).
+  - `AlumniFactory`: Şirket (`.inCompany()`), mentorluk (`.mentor()`), mezuniyet yılı (`.graduatedIn()`) ve yetenekler.
+- **Tohumlayıcılar (`server/src/seeders/`)**:
+  - `UserSeeder`, `AnnouncementSeeder`, `AlumniSeeder` ve tümünü yöneten `DatabaseSeeder`.
+
+### 💻 Tohumlama Komutları (CLI Scripts)
+
+```bash
+# Temel verileri ve varsayılan fabrika kayıtlarını (+10 user, +8 ann, +10 alumni) ekle
+npm run seed
+# veya
+npm run db:seed
+
+# Mevcut tabloları temizleyip (TRUNCATE) baştan sıfır tohum verisi oluştur
+npm run seed:fresh
+
+# Özel sayıda dinamik kayıt oluştur
+node server/src/db/seed.js --users=30 --alumni=25 --announcements=15
 ```
 
 ---

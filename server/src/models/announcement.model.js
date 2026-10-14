@@ -200,7 +200,7 @@ class AnnouncementModel {
           sql += ` AND (LOWER(title) LIKE $${params.length} OR LOWER(content) LIKE $${params.length} OR LOWER(author) LIKE $${params.length})`;
         }
 
-        sql += ` ORDER BY is_pinned DESC, CAST(id AS INTEGER) DESC`;
+        sql += ` ORDER BY is_pinned DESC, CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END DESC, created_at DESC`;
         const res = await db.query(sql, params);
         return res.rows.map(mapAnnouncementRow);
       } catch (err) {
