@@ -110,6 +110,7 @@ Alumni/
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
 ├── server/                                  # ⚙️ [CONTROLLER & MODEL] Backend API & Data Service
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
+│   │   ├── db.js                            # 🗄️ [MODEL & DB] Centralized PostgreSQL Connection, Auto-DDL & Seeding
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
 │   │   │   ├── index.js                     # ⚙️ [CONTROLLER] Barrel Export for Controllers
 │   │   │   ├── user.controller.js           # ⚙️ [CONTROLLER] Web User Controller (Full CRUD with View)
@@ -118,8 +119,8 @@ Alumni/
 │   │   │   └── api-announcement.controller.js # ⚙️ [CONTROLLER] Pure JSON REST API Announcement Controller
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
-│   │   │   ├── user.model.js                # 🗄️ [MODEL] In-Memory User Model with Full CRUD Operations
-│   │   │   └── announcement.model.js        # 🗄️ [MODEL] In-Memory Announcement Model with Full CRUD Operations
+│   │   │   ├── user.model.js                # 🗄️ [MODEL] Persistent PostgreSQL User Model with In-Memory Fallback
+│   │   │   └── announcement.model.js        # 🗄️ [MODEL] Persistent PostgreSQL Announcement Model with In-Memory Fallback
 │   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
 │   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users -> UserController)
@@ -134,9 +135,12 @@ Alumni/
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies (express, cors, dotenv, pg)
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
+├── scripts/                                 # 🧪 [TEST & AUTOMATION] Test and Automation Scripts
+│   └── test-forgetting.sh                   # 🧪 [TEST] Docker Compose Persistence "The Forgetting Test" Script
 ├── postman/                                 # 🧪 [TEST & DOCS] API Testing Collections & Environments
 │   ├── collections/                         # API Request Blueprints (CRUD test scenarios)
 │   └── globals/                             # Postman Global Workspace Variables
+├── ddd.md                                   # 🗄️ [DOCS & SCHEMA] Data Definition Document (Veritabanı Tablo ve Şema Tanımları)
 ├── homepage.js                              # 📄 [CONTROLLER & SSR VIEW] Standalone Lightweight Server Script (Port 3000)
 ├── docker-compose.yml                       # 🐳 [INFRA] Multi-Container Orchestration (db, server, client)
 ├── package.json                             # 📦 [CONFIG] Root Workspace Automation Scripts
@@ -328,6 +332,56 @@ docker compose up --build
 - **User Management Interface**: [http://localhost:5001/api/users](http://localhost:5001/api/users)
 - **System Health Check**: [http://localhost:5001/api/health](http://localhost:5001/api/health)
 - **PostgreSQL Database**: `localhost:5432`
+
+---
+
+## 🗄️ Veritabanı Tabloları ve Şema Dokümantasyonu (Data Definition Document - DDD)
+
+AlumniSphere veritabanı şeması, varlık-ilişki diyagramı (ERD), veri tipleri ve kısıtlamalarının eksiksiz teknik detayları için **[ddd.md](file:///Users/erenkilic/repo/Alumni/ddd.md)** dokümanını inceleyebilirsiniz.
+
+### 📊 Varlık İlişki Diyagramı (ERD)
+
+```mermaid
+erDiagram
+    USERS ||--o| ALUMNI : "ilişkilendirilebilir (opsiyonel)"
+    USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir / yönetebilir"
+    USERS {
+        VARCHAR id PK "Benzersiz kullanıcı ID"
+        VARCHAR name "Ad Soyad"
+        VARCHAR email UK "E-posta (Benzersiz)"
+        VARCHAR role "Rol (ADMIN, ALUMNI, STUDENT)"
+        VARCHAR department "Bölüm"
+    }
+    ANNOUNCEMENTS {
+        VARCHAR id PK "Benzersiz duyuru ID"
+        VARCHAR title "Duyuru başlığı"
+        TEXT content "İçerik"
+        VARCHAR category "Kategori (EVENT, CAREER, ACADEMIC, GENERAL)"
+        VARCHAR priority "Öncelik (NORMAL, HIGH, URGENT)"
+        BOOLEAN is_pinned "Başa tutturuldu mu?"
+        VARCHAR status "Durum (ACTIVE, ARCHIVED, DRAFT)"
+    }
+    ALUMNI {
+        VARCHAR id PK "Benzersiz mezun ID"
+        VARCHAR name "Mezun Ad Soyad"
+        INTEGER graduation_year "Mezuniyet yılı"
+        VARCHAR department "Bölüm"
+        VARCHAR company "Şirket / Kurum"
+        VARCHAR role "Mevcut pozisyon"
+        BOOLEAN is_mentor "Mentorluk veriyor mu?"
+    }
+```
+
+### 📋 Tablo Özeti (Database Tables)
+
+| Tablo Adı | Birincil Anahtar (PK) | Tekil Alanlar (Unique) | Açıklama | Detaylı Dokümantasyon |
+| :--- | :--- | :--- | :--- | :--- |
+| **`users`** | `id (VARCHAR)` | `email (VARCHAR)` | Sistem kullanıcıları (`ADMIN`, `ALUMNI`, `STUDENT`), roller ve bölümler | [ddd.md#1-users-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#1-users-tablosu) |
+| **`announcements`** | `id (VARCHAR)` | — | Etkinlik, kariyer ve akademik duyurular, öncelikler ve pinleme | [ddd.md#2-announcements-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#2-announcements-tablosu) |
+| **`alumni`** | `id (VARCHAR)` | — | Mezun profilleri, çalıştıkları şirketler, unvanlar, yetenekler ve mentorluk | [ddd.md#3-alumni-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#3-alumni-tablosu) |
+
+> [!TIP]
+> **Docker Volume Persistence & "The Forgetting Test"**: Veritabanı verileri `docker-compose.yml` içinde tanımlanan `pgdata:/var/lib/postgresql/data` yerel adlandırılmış biriminde (named volume) saklanır. `docker compose down` ve `docker compose up` işlemlerinde veriler kaybolmaz. Bu davranışı test etmek için `npm run test:forgetting` komutunu çalıştırabilirsiniz.
 
 ---
 
