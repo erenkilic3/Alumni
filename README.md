@@ -144,7 +144,7 @@ Alumni/
 ├── homepage.js                              # 📄 [CONTROLLER & SSR VIEW] Standalone Lightweight Server Script (Port 3000)
 ├── docker-compose.yml                       # 🐳 [INFRA] Multi-Container Orchestration (db, server, client)
 ├── package.json                             # 📦 [CONFIG] Root Workspace Automation Scripts
-├── .env / .env.example                      # ⚙️ [CONFIG] Environment Variables (DATABASE_URL, Ports)
+├── .env / .env.example / .example.env        # ⚙️ [CONFIG] Environment Variables (Git-ignored .env, Templates: .env.example, .example.env)
 └── README.md                                # 📖 [DOCS] Architecture, MVC Blueprint & API Documentation
 ```
 
