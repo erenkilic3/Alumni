@@ -423,9 +423,10 @@ const {
   alumniRoutes,
   apiAlumniRoutes,
   apiJobRoutes,
+  apiApplicationRoutes,
   nestedRoutes
 } = require('./routes');
-const { JobPostingModel } = require('./models');
+const { JobPostingModel, ApplicationModel } = require('./models');
 
 // Mount Web UI User routes (/users, /users/:id, etc.)
 app.use(userRoutes);
@@ -448,7 +449,10 @@ app.use(apiAlumniRoutes);
 // Mount REST API Direct Job routes (/api/jobs, /api/jobs/:id, /api/jobs/count, etc.)
 app.use(apiJobRoutes);
 
-// Mount REST API Nested Relational routes (/api/users/:userId/..., /api/alumni/:alumniId/..., /api/jobs/:jobId/...)
+// Mount REST API Direct Application routes (/api/applications, /api/applications/:id, /api/applications/count, etc.)
+app.use(apiApplicationRoutes);
+
+// Mount REST API Nested Relational routes (/api/users/:userId/..., /api/alumni/:alumniId/..., /api/jobs/:jobId/..., /api/applications/:applicationId/...)
 app.use(nestedRoutes);
 
 // ==========================================================================
@@ -484,7 +488,8 @@ const swaggerDocument = {
     { name: "Announcement", description: "Web UI and management interface endpoints for announcements (AnnouncementController)" },
     { name: "Alumni", description: "Alumni directory and search endpoints" },
     { name: "Jobs", description: "Career opportunities and job postings" },
-    { name: "NestedRoutes", description: "Hierarchical parent-child relational endpoints across Users, Alumni, Announcements, and Jobs" },
+    { name: "Applications", description: "Job application submissions and applicant tracking" },
+    { name: "NestedRoutes", description: "Hierarchical parent-child relational endpoints across Users, Alumni, Announcements, Jobs, and Applications" },
     { name: "Stats", description: "Platform overview and alumni statistics" },
     { name: "Calculator", description: "Utility arithmetic and legacy helper endpoints" }
   ],
@@ -1511,6 +1516,111 @@ const swaggerDocument = {
         }
       }
     },
+    "/api/applications": {
+      get: {
+        tags: ["Applications"],
+        summary: "List all job applications",
+        description: "Returns submitted job applications with optional filtering by status, jobId, userId, and search.",
+        parameters: [
+          { name: "status", in: "query", required: false, schema: { type: "string", enum: ["PENDING", "REVIEWING", "SHORTLISTED", "ACCEPTED", "REJECTED"] } },
+          { name: "jobId", in: "query", required: false, schema: { type: "string" } },
+          { name: "userId", in: "query", required: false, schema: { type: "string" } },
+          { name: "search", in: "query", required: false, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "List of job applications" }
+        }
+      },
+      post: {
+        tags: ["Applications"],
+        summary: "Submit a job application",
+        description: "Submits a new application for a job opportunity.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/CreateApplicationRequest" }
+            }
+          }
+        },
+        responses: {
+          "201": { description: "Application submitted successfully" },
+          "400": { description: "Missing required fields" }
+        }
+      }
+    },
+    "/api/applications/count": {
+      get: {
+        tags: ["Applications"],
+        summary: "Count total applications",
+        description: "Returns total count of submitted applications.",
+        responses: {
+          "200": { description: "Total count of applications" }
+        }
+      }
+    },
+    "/api/applications/{id}": {
+      get: {
+        tags: ["Applications"],
+        summary: "Get application by ID",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Application details" },
+          "404": { description: "Application not found" }
+        }
+      },
+      put: {
+        tags: ["Applications"],
+        summary: "Full update of application",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/UpdateApplicationRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Application updated" },
+          "404": { description: "Application not found" }
+        }
+      },
+      patch: {
+        tags: ["Applications"],
+        summary: "Partial update of application status",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/PatchApplicationRequest" }
+            }
+          }
+        },
+        responses: {
+          "200": { description: "Application patched" },
+          "404": { description: "Application not found" }
+        }
+      },
+      delete: {
+        tags: ["Applications"],
+        summary: "Delete / withdraw application",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" } }
+        ],
+        responses: {
+          "200": { description: "Application deleted" },
+          "404": { description: "Application not found" }
+        }
+      }
+    },
     "/api/users/{userId}/announcements": {
       get: {
         tags: ["NestedRoutes"],
@@ -1652,6 +1762,115 @@ const swaggerDocument = {
         }
       }
     },
+    "/api/users/{userId}/applications": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "List applications submitted by user",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": { description: "List of applications submitted by user" },
+          "404": { description: "User not found" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Submit application under user",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["jobId"],
+                properties: {
+                  jobId: { type: "string", example: "job-1" },
+                  resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/cv.pdf" },
+                  coverLetter: { type: "string", example: "Excited to apply." },
+                  status: { type: "string", example: "PENDING" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "201": { description: "Application submitted" },
+          "404": { description: "User or job not found" }
+        }
+      }
+    },
+    "/api/jobs/{jobId}/applications": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "List applications received for job",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "List of applications for job" },
+          "404": { description: "Job not found" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Submit application for job",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["userId"],
+                properties: {
+                  userId: { type: "string", example: "3" },
+                  applicantName: { type: "string", example: "Burak Demir" },
+                  applicantEmail: { type: "string", example: "burak.demir@peak.com" },
+                  resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/cv.pdf" },
+                  coverLetter: { type: "string", example: "Excited to apply." }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "201": { description: "Application submitted for job" },
+          "404": { description: "Job or user not found" }
+        }
+      }
+    },
+    "/api/applications/{applicationId}/user": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get applicant user profile for an application",
+        parameters: [
+          { name: "applicationId", in: "path", required: true, schema: { type: "string" }, description: "Application ID" }
+        ],
+        responses: {
+          "200": { description: "Applicant user profile" },
+          "404": { description: "Application or user not found" }
+        }
+      }
+    },
+    "/api/applications/{applicationId}/job": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get target job posting details for an application",
+        parameters: [
+          { name: "applicationId", in: "path", required: true, schema: { type: "string" }, description: "Application ID" }
+        ],
+        responses: {
+          "200": { description: "Target job posting" },
+          "404": { description: "Application or job not found" }
+        }
+      }
+    },
     "/sum": {
       get: {
         tags: ["Calculator"],
@@ -1771,6 +1990,54 @@ const swaggerDocument = {
           author: { type: "string", example: "Alumni Relations" },
           isPinned: { type: "boolean", example: false },
           status: { type: "string", enum: ["ACTIVE", "ARCHIVED", "DRAFT"] }
+        }
+      },
+      Application: {
+        type: "object",
+        properties: {
+          id: { type: "string", example: "app-1" },
+          jobId: { type: "string", example: "job-1" },
+          userId: { type: "string", example: "3" },
+          applicantName: { type: "string", example: "Burak Demir" },
+          applicantEmail: { type: "string", example: "burak.demir@peak.com" },
+          resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/burak_demir_cv.pdf" },
+          coverLetter: { type: "string", example: "I have 2 years of experience with Node.js and PostgreSQL." },
+          status: { type: "string", enum: ["PENDING", "REVIEWING", "SHORTLISTED", "ACCEPTED", "REJECTED"], example: "REVIEWING" },
+          createdAt: { type: "string", example: "2026-10-10T12:00:00.000Z" },
+          updatedAt: { type: "string", example: "2026-10-10T12:00:00.000Z" }
+        }
+      },
+      CreateApplicationRequest: {
+        type: "object",
+        required: ["jobId", "userId", "applicantName", "applicantEmail"],
+        properties: {
+          jobId: { type: "string", example: "job-1" },
+          userId: { type: "string", example: "3" },
+          applicantName: { type: "string", example: "Burak Demir" },
+          applicantEmail: { type: "string", example: "burak.demir@peak.com" },
+          resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/burak_demir_cv.pdf" },
+          coverLetter: { type: "string", example: "Excited to apply for the backend opening." },
+          status: { type: "string", enum: ["PENDING", "REVIEWING", "SHORTLISTED", "ACCEPTED", "REJECTED"], example: "PENDING" }
+        }
+      },
+      UpdateApplicationRequest: {
+        type: "object",
+        properties: {
+          jobId: { type: "string", example: "job-1" },
+          userId: { type: "string", example: "3" },
+          applicantName: { type: "string", example: "Burak Demir Updated" },
+          applicantEmail: { type: "string", example: "burak.demir@peak.com" },
+          resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/burak_demir_cv_v2.pdf" },
+          coverLetter: { type: "string", example: "Updated cover letter." },
+          status: { type: "string", enum: ["PENDING", "REVIEWING", "SHORTLISTED", "ACCEPTED", "REJECTED"], example: "SHORTLISTED" }
+        }
+      },
+      PatchApplicationRequest: {
+        type: "object",
+        properties: {
+          status: { type: "string", enum: ["PENDING", "REVIEWING", "SHORTLISTED", "ACCEPTED", "REJECTED"], example: "ACCEPTED" },
+          resumeUrl: { type: "string", example: "https://storage.alumni.edu/resumes/burak_demir_cv_final.pdf" },
+          coverLetter: { type: "string", example: "Revised cover note." }
         }
       }
     }

@@ -2,30 +2,37 @@ const UserModel = require('../models/user.model');
 const AnnouncementModel = require('../models/announcement.model');
 const AlumniModel = require('../models/alumni.model');
 const JobPostingModel = require('../models/job-posting.model');
+const ApplicationModel = require('../models/application.model');
 
 /**
  * NestedController
  *
  * RESTful API Controller handling hierarchical parent-child relationships:
- * 1. USERS -> ANNOUNCEMENTS (/api/users/:userId/announcements)
- * 2. USERS -> ALUMNI        (/api/users/:userId/alumni)
- * 3. USERS -> JOB_POSTINGS  (/api/users/:userId/jobs)
- * 4. ALUMNI -> USERS        (/api/alumni/:alumniId/user)
- * 5. ALUMNI -> JOB_POSTINGS (/api/alumni/:alumniId/jobs)
- * 6. JOBS -> USER           (/api/jobs/:jobId/user)
- * 7. JOBS -> ALUMNI         (/api/jobs/:jobId/alumni)
+ * 1. USERS -> ANNOUNCEMENTS   (/api/users/:userId/announcements)
+ * 2. USERS -> ALUMNI          (/api/users/:userId/alumni)
+ * 3. USERS -> JOB_POSTINGS    (/api/users/:userId/jobs)
+ * 4. USERS -> APPLICATIONS    (/api/users/:userId/applications)
+ * 5. ALUMNI -> USERS          (/api/alumni/:alumniId/user)
+ * 6. ALUMNI -> JOB_POSTINGS   (/api/alumni/:alumniId/jobs)
+ * 7. JOBS -> USER             (/api/jobs/:jobId/user)
+ * 8. JOBS -> ALUMNI           (/api/jobs/:jobId/alumni)
+ * 9. JOBS -> APPLICATIONS     (/api/jobs/:jobId/applications)
+ * 10. APPLICATIONS -> USER    (/api/applications/:applicationId/user)
+ * 11. APPLICATIONS -> JOB     (/api/applications/:applicationId/job)
  */
 class NestedController {
   constructor({
     userModel = UserModel,
     announcementModel = AnnouncementModel,
     alumniModel = AlumniModel,
-    jobModel = JobPostingModel
+    jobModel = JobPostingModel,
+    applicationModel = ApplicationModel
   } = {}) {
     this.userModel = userModel;
     this.announcementModel = announcementModel;
     this.alumniModel = alumniModel;
     this.jobModel = jobModel;
+    this.applicationModel = applicationModel;
 
     this.getUserAnnouncements = this.getUserAnnouncements.bind(this);
     this.createUserAnnouncement = this.createUserAnnouncement.bind(this);
@@ -38,6 +45,12 @@ class NestedController {
     this.createAlumniJob = this.createAlumniJob.bind(this);
     this.getJobUser = this.getJobUser.bind(this);
     this.getJobAlumni = this.getJobAlumni.bind(this);
+    this.getUserApplications = this.getUserApplications.bind(this);
+    this.createUserApplication = this.createUserApplication.bind(this);
+    this.getJobApplications = this.getJobApplications.bind(this);
+    this.createJobApplication = this.createJobApplication.bind(this);
+    this.getApplicationUser = this.getApplicationUser.bind(this);
+    this.getApplicationJob = this.getApplicationJob.bind(this);
   }
 
   // ==========================================================================
@@ -542,6 +555,270 @@ class NestedController {
       return res.status(500).json({
         success: false,
         error: 'Failed to retrieve job alumni: ' + err.message
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 7. USERS <---> APPLICATIONS (1:N)
+  // ==========================================================================
+
+  /**
+   * GET /api/users/:userId/applications
+   * Retrieve all applications submitted by a specific user
+   */
+  async getUserApplications(req, res) {
+    try {
+      const { userId } = req.params;
+      const user = await this.userModel.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User not found (ID: ${userId})`
+        });
+      }
+
+      const applications = await this.applicationModel.findByUserId(userId);
+      return res.status(200).json({
+        success: true,
+        user: { id: user.id, name: user.name, email: user.email },
+        count: applications.length,
+        applications
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve user applications: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * POST /api/users/:userId/applications
+   * Submit an application for a specific user
+   */
+  async createUserApplication(req, res) {
+    try {
+      const { userId } = req.params;
+      const user = await this.userModel.findById(userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User not found (ID: ${userId})`
+        });
+      }
+
+      const { jobId, resumeUrl, coverLetter, status } = req.body;
+      if (!jobId) {
+        return res.status(400).json({
+          success: false,
+          error: 'jobId is required to submit an application.'
+        });
+      }
+
+      const job = await this.jobModel.findById(jobId);
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Target job posting not found (ID: ${jobId})`
+        });
+      }
+
+      const applicantName = req.body.applicantName || user.name;
+      const applicantEmail = req.body.applicantEmail || user.email;
+
+      const created = await this.applicationModel.create({
+        jobId,
+        userId: user.id,
+        applicantName,
+        applicantEmail,
+        resumeUrl,
+        coverLetter,
+        status: status || 'PENDING'
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: `Application submitted successfully for user "${user.name}".`,
+        application: created
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to submit user application: ' + err.message
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 8. JOB_POSTINGS <---> APPLICATIONS (1:N)
+  // ==========================================================================
+
+  /**
+   * GET /api/jobs/:jobId/applications
+   * Retrieve all applications submitted for a specific job posting
+   */
+  async getJobApplications(req, res) {
+    try {
+      const { jobId } = req.params;
+      const job = await this.jobModel.findById(jobId);
+
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Job posting not found (ID: ${jobId})`
+        });
+      }
+
+      const applications = await this.applicationModel.findByJobId(jobId);
+      return res.status(200).json({
+        success: true,
+        job: { id: job.id, title: job.title, company: job.company },
+        count: applications.length,
+        applications
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve job applications: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * POST /api/jobs/:jobId/applications
+   * Submit an application directly for a specific job posting
+   */
+  async createJobApplication(req, res) {
+    try {
+      const { jobId } = req.params;
+      const job = await this.jobModel.findById(jobId);
+
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Job posting not found (ID: ${jobId})`
+        });
+      }
+
+      const { userId, applicantName, applicantEmail, resumeUrl, coverLetter, status } = req.body;
+      if (!userId) {
+        return res.status(400).json({
+          success: false,
+          error: 'userId is required to submit an application.'
+        });
+      }
+
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User not found (ID: ${userId})`
+        });
+      }
+
+      const finalName = applicantName || user.name;
+      const finalEmail = applicantEmail || user.email;
+
+      const created = await this.applicationModel.create({
+        jobId: job.id,
+        userId: user.id,
+        applicantName: finalName,
+        applicantEmail: finalEmail,
+        resumeUrl,
+        coverLetter,
+        status: status || 'PENDING'
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: `Application submitted successfully for job "${job.title}".`,
+        application: created
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to submit job application: ' + err.message
+      });
+    }
+  }
+
+  // ==========================================================================
+  // 9. APPLICATIONS <---> USER / JOB (N:1)
+  // ==========================================================================
+
+  /**
+   * GET /api/applications/:applicationId/user
+   * Retrieve applicant user account for an application
+   */
+  async getApplicationUser(req, res) {
+    try {
+      const { applicationId } = req.params;
+      const application = await this.applicationModel.findById(applicationId);
+
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          error: `Application not found (ID: ${applicationId})`
+        });
+      }
+
+      const user = await this.userModel.findById(application.userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User account #${application.userId} not found.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        application: { id: application.id, applicantName: application.applicantName, jobId: application.jobId },
+        user
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve application user: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * GET /api/applications/:applicationId/job
+   * Retrieve target job posting for an application
+   */
+  async getApplicationJob(req, res) {
+    try {
+      const { applicationId } = req.params;
+      const application = await this.applicationModel.findById(applicationId);
+
+      if (!application) {
+        return res.status(404).json({
+          success: false,
+          error: `Application not found (ID: ${applicationId})`
+        });
+      }
+
+      const job = await this.jobModel.findById(application.jobId);
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Job posting #${application.jobId} not found.`
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        application: { id: application.id, applicantName: application.applicantName, status: application.status },
+        job
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to retrieve application job: ' + err.message
       });
     }
   }

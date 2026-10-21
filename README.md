@@ -113,7 +113,9 @@ Alumni/
 │   │   ├── 001_create_users_table.sql       # Users Tablosu DDL & Rollback
 │   │   ├── 002_create_announcements_table.sql # Announcements Tablosu DDL & Rollback
 │   │   ├── 003_create_alumni_table.sql      # Alumni Tablosu DDL & Rollback
-│   │   └── 004_seed_initial_data.sql        # Başlangıç Tohum (Seed) Verileri & Rollback
+│   │   ├── 004_seed_initial_data.sql        # Başlangıç Tohum (Seed) Verileri & Rollback
+│   │   ├── 005_create_job_postings_table.sql # Job Postings Tablosu DDL & Rollback
+│   │   └── 006_create_applications_table.sql # Applications Tablosu DDL & Rollback
 │   ├── src/                                 # 📂 [CONTROLLER, MODEL & SSR VIEW] Backend Source Code
 │   │   ├── db.js                            # 🗄️ [MODEL & DB] Centralized PostgreSQL Connection, Auto-DDL & Seeding
 │   │   ├── db/                              # 🗄️ [DB TOOLS] Veritabanı Araçları, Migrasyon ve Tohumlama
@@ -125,11 +127,15 @@ Alumni/
 │   │   │   ├── user.factory.js              # 👤 UserFactory (admin, alumni, student traits)
 │   │   │   ├── announcement.factory.js      # 📢 AnnouncementFactory (pinned, urgent, event, career traits)
 │   │   │   ├── alumni.factory.js            # 🎓 AlumniFactory (mentor, company, gradYear traits)
+│   │   │   ├── job-posting.factory.js       # 💼 JobPostingFactory (internship, fullTime, remote traits)
+│   │   │   ├── application.factory.js       # 📄 ApplicationFactory (pending, reviewing, accepted traits)
 │   │   │   └── index.js                     # 🏭 Barrel Export for Factories
 │   │   ├── seeders/                         # 🌱 [SEEDERS] Veritabanı Tohumlayıcılar Katmanı
 │   │   │   ├── user.seeder.js               # 👤 UserSeeder (Core + Factory Users)
 │   │   │   ├── announcement.seeder.js       # 📢 AnnouncementSeeder (Core + Factory Announcements)
 │   │   │   ├── alumni.seeder.js             # 🎓 AlumniSeeder (Core + Factory Alumni)
+│   │   │   ├── job-posting.seeder.js        # 💼 JobPostingSeeder (Core + Factory Jobs)
+│   │   │   ├── application.seeder.js        # 📄 ApplicationSeeder (Core + Factory Applications)
 │   │   │   ├── database.seeder.js           # 🌱 DatabaseSeeder (Master Coordinator)
 │   │   │   └── index.js                     # 🌱 Barrel Export for Seeders
 │   │   ├── controllers/                     # ⚙️ [CONTROLLER] Application Controllers Layer
@@ -141,13 +147,15 @@ Alumni/
 │   │   │   ├── alumni.controller.js         # ⚙️ [CONTROLLER] Web Alumni Controller (Full CRUD with View)
 │   │   │   ├── api-alumni.controller.js     # ⚙️ [CONTROLLER] Pure JSON REST API Alumni Controller
 │   │   │   ├── api-job.controller.js        # ⚙️ [CONTROLLER] Pure JSON REST API Job Posting Controller
-│   │   │   └── nested.controller.js         # 🪢 [CONTROLLER] Nested Relational Controller (Users, Alumni, Jobs, Announcements)
+│   │   │   ├── api-application.controller.js # ⚙️ [CONTROLLER] Pure JSON REST API Application Controller
+│   │   │   └── nested.controller.js         # 🪢 [CONTROLLER] Nested Relational Controller (Users, Alumni, Jobs, Applications)
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
 │   │   │   ├── user.model.js                # 🗄️ [MODEL] Persistent PostgreSQL User Model with In-Memory Fallback
 │   │   │   ├── announcement.model.js        # 🗄️ [MODEL] Persistent PostgreSQL Announcement Model with In-Memory Fallback
 │   │   │   ├── alumni.model.js              # 🗄️ [MODEL] Persistent PostgreSQL Alumni Model with In-Memory Fallback
-│   │   │   └── job-posting.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Job Posting Model with In-Memory Fallback
+│   │   │   ├── job-posting.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Job Posting Model with In-Memory Fallback
+│   │   │   └── application.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Application Model with In-Memory Fallback
 │   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
 │   │   │   ├── user.routes.js               # 🚦 [ROUTER] Web User Routes (/users -> UserController)
@@ -157,7 +165,8 @@ Alumni/
 │   │   │   ├── alumni.routes.js             # 🚦 [ROUTER] Web Alumni Routes (/alumni -> AlumniController)
 │   │   │   ├── api-alumni.routes.js         # 🚦 [ROUTER] REST API Alumni Routes (/api/alumni -> ApiAlumniController)
 │   │   │   ├── api-job.routes.js            # 🚦 [ROUTER] REST API Direct Job Routes (/api/jobs -> ApiJobController)
-│   │   │   └── nested.routes.js             # 🪢 [ROUTER] Nested Relational Routes (/api/users/:userId/..., /api/alumni/:alumniId/...)
+│   │   │   ├── api-application.routes.js    # 🚦 [ROUTER] REST API Direct Application Routes (/api/applications -> ApiApplicationController)
+│   │   │   └── nested.routes.js             # 🪢 [ROUTER] Nested Relational Routes (/api/users/:userId/..., /api/jobs/:jobId/..., /api/applications/:applicationId/...)
 │   │   ├── views/                           # 🎨 [VIEW] Server-Side Rendered Presentation Layer
 │   │   │   ├── index.js                     # 🎨 [VIEW] Barrel Export for Views
 │   │   │   ├── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (Full CRUD)
@@ -189,6 +198,7 @@ Alumni/
 | `server/src/models/announcement.model.js` | **Model (M)** | Backend | Standalone in-memory & PostgreSQL Announcement repository with full CRUD operations, author/user associations (`findByUserId`), priority tags, categories, and seed bulletins. |
 | `server/src/models/alumni.model.js` | **Model (M)** | Backend | Standalone in-memory & PostgreSQL Alumni repository with full CRUD operations, user link (`userId`, `findByUserId`), industry/skills filtering, and mentor flags. |
 | `server/src/models/job-posting.model.js` | **Model (M)** | Backend | Standalone in-memory & PostgreSQL Job Posting repository with full CRUD operations, relational links (`userId`, `alumniId`, `findByUserId`, `findByAlumniId`). |
+| `server/src/models/application.model.js` | **Model (M)** | Backend | Standalone in-memory & PostgreSQL Application repository with full CRUD operations, relational links (`jobId`, `userId`, `findByUserId`, `findByJobId`). |
 | `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `renderUserDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders user management dashboard and forms. |
 | `server/src/views/announcement.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAnnouncementsList`, `renderAnnouncementDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders interactive announcement interface, metrics bar, and publication forms. |
 | `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views. |
@@ -196,17 +206,19 @@ Alumni/
 | `server/src/controllers/api-announcement.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Announcement API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
 | `server/src/controllers/api-alumni.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Alumni API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
 | `server/src/controllers/api-job.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Direct Job Posting API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
-| `server/src/controllers/nested.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful Nested Relational controller; handles parent-child associations (`/api/users/:userId/announcements`, `/api/users/:userId/alumni`, `/api/users/:userId/jobs`, `/api/alumni/:alumniId/user`, `/api/alumni/:alumniId/jobs`, `/api/jobs/:jobId/user`, `/api/jobs/:jobId/alumni`). |
+| `server/src/controllers/api-application.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Direct Application API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
+| `server/src/controllers/nested.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful Nested Relational controller; handles parent-child associations (`/api/users/:userId/announcements`, `/api/users/:userId/alumni`, `/api/users/:userId/jobs`, `/api/users/:userId/applications`, `/api/alumni/:alumniId/user`, `/api/alumni/:alumniId/jobs`, `/api/jobs/:jobId/user`, `/api/jobs/:jobId/alumni`, `/api/jobs/:jobId/applications`, `/api/applications/:applicationId/user`, `/api/applications/:applicationId/job`). |
 | `server/src/controllers/user.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `UserModel` (Data) and `UserView` (Presentation), managing full CRUD web workflows (`index`, `show`, `new`, `create`, `edit`, `update`, `delete`). |
 | `server/src/controllers/announcement.controller.js` | **Controller (C)** | Backend | Web controller; coordinates between `AnnouncementModel` (Data) and `AnnouncementView` (Presentation), managing full CRUD web workflows (`index`, `show`, `new`, `create`, `edit`, `update`, `delete`). |
 | `server/src/routes/api-user.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/users`, `/api/users/count`, `/api/user/:id`, `/api/users/:id`) to `ApiUserController`. |
 | `server/src/routes/api-announcement.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/announcements`, `/api/announcements/count`, `/api/announcement/:id`) to `ApiAnnouncementController`. |
 | `server/src/routes/api-alumni.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/alumni`, `/api/alumni/count`, `/api/alumni/:id`) to `ApiAlumniController`. |
 | `server/src/routes/api-job.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/jobs`, `/api/jobs/count`, `/api/jobs/:id`) to `ApiJobController`. |
-| `server/src/routes/nested.routes.js` | **Router (C/R)** | Backend | Dispatches relational nested REST API requests (`/api/users/:userId/...`, `/api/alumni/:alumniId/...`, `/api/jobs/:jobId/...`) to `NestedController`. |
+| `server/src/routes/api-application.routes.js` | **Router (C/R)** | Backend | Dispatches JSON REST API requests (`/api/applications`, `/api/applications/count`, `/api/applications/:id`) to `ApiApplicationController`. |
+| `server/src/routes/nested.routes.js` | **Router (C/R)** | Backend | Dispatches relational nested REST API requests (`/api/users/:userId/...`, `/api/alumni/:alumniId/...`, `/api/jobs/:jobId/...`, `/api/applications/:applicationId/...`) to `NestedController`. |
 | `server/src/routes/user.routes.js` | **Router (C/R)** | Backend | Defines the full CRUD web routes (`/users`, `/users/new`, `/users/:id`, `/users/:id/edit`) mapped to `UserController`. |
 | `server/src/routes/announcement.routes.js` | **Router (C/R)** | Backend | Defines the full CRUD web routes (`/announcements`, `/announcements/new`, `/announcements/:id`, `/announcements/:id/edit`) mapped to `AnnouncementController`. |
-| `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting user, announcement, alumni, job, and nested relational route modules. |
+| `server/src/routes/index.js` | **Router (C/R)** | Backend | Central barrel router mounting user, announcement, alumni, job, application, and nested relational route modules. |
 | `server/src/index.js` (Data Entities) | **Model (M)** | Backend | PostgreSQL connection pool (`pg.Pool`), in-memory catalogs (`mockAlumni`, `mockJobs`), and metric calculation aggregators. |
 | `client/public/app.js` (State Variables) | **Model (M)** | Frontend | Client-side reactive state model (`alumniData`, `activeTab`, `alumni_theme`, modal form states). |
 | `client/public/index.html` | **View (V)** | Frontend | Primary user interface template: Navbar, live status pills, hero section, statistics counter cards, search/filter bars, tab views, modal dialogues, and toast notifications. |

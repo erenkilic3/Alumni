@@ -58,4 +58,21 @@ router.get('/api/job/:jobId/user', NestedController.getJobUser);
 router.get('/api/jobs/:jobId/alumni', NestedController.getJobAlumni);
 router.get('/api/job/:jobId/alumni', NestedController.getJobAlumni);
 
+// 7. User -> Applications (1:N)
+router.get('/api/users/:userId/applications', NestedController.getUserApplications);
+router.post('/api/users/:userId/applications', NestedController.createUserApplication);
+
+// 8. Job -> Applications (1:N)
+router.get('/api/jobs/:jobId/applications', NestedController.getJobApplications);
+router.get('/api/job/:jobId/applications', NestedController.getJobApplications);
+router.post('/api/jobs/:jobId/applications', NestedController.createJobApplication);
+router.post('/api/job/:jobId/applications', NestedController.createJobApplication);
+
+// 9. Application -> User & Job (N:1)
+router.get('/api/applications/:applicationId/user', NestedController.getApplicationUser);
+router.get('/api/application/:applicationId/user', NestedController.getApplicationUser);
+
+router.get('/api/applications/:applicationId/job', NestedController.getApplicationJob);
+router.get('/api/application/:applicationId/job', NestedController.getApplicationJob);
+
 module.exports = router;
