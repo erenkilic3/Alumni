@@ -367,6 +367,8 @@ AlumniSphere veritabanı şeması, varlık-ilişki diyagramı (ERD), veri tipler
 erDiagram
     USERS ||--o| ALUMNI : "ilişkilendirilebilir (opsiyonel)"
     USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir / yönetebilir"
+    USERS ||--o{ JOB_POSTINGS : "yayınlar / yönetir"
+    ALUMNI ||--o{ JOB_POSTINGS : "tavsiye eder / paylaşır"
     USERS {
         VARCHAR id PK "Benzersiz kullanıcı ID"
         VARCHAR name "Ad Soyad"
@@ -392,6 +394,17 @@ erDiagram
         VARCHAR role "Mevcut pozisyon"
         BOOLEAN is_mentor "Mentorluk veriyor mu?"
     }
+    JOB_POSTINGS {
+        VARCHAR id PK "Benzersiz iş ilanı ID"
+        VARCHAR title "Pozisyon unvanı"
+        VARCHAR company "Şirket / Kurum"
+        VARCHAR location "Lokasyon (Remote / Şehir)"
+        VARCHAR type "İstihdam türü (Full-Time, Internship)"
+        TEXT description "İş tanımı ve sorumluluklar"
+        VARCHAR posted_by "İlan veren kullanıcı"
+        DATE deadline "Son başvuru tarihi"
+        VARCHAR status "Yayın durumu (ACTIVE, CLOSED)"
+    }
 ```
 
 ### 📋 Tablo Özeti (Database Tables)
@@ -401,6 +414,7 @@ erDiagram
 | **`users`** | `id (VARCHAR)` | `email (VARCHAR)` | Sistem kullanıcıları (`ADMIN`, `ALUMNI`, `STUDENT`), roller ve bölümler | [ddd.md#1-users-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#1-users-tablosu) |
 | **`announcements`** | `id (VARCHAR)` | — | Etkinlik, kariyer ve akademik duyurular, öncelikler ve pinleme | [ddd.md#2-announcements-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#2-announcements-tablosu) |
 | **`alumni`** | `id (VARCHAR)` | — | Mezun profilleri, çalıştıkları şirketler, unvanlar, yetenekler ve mentorluk | [ddd.md#3-alumni-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#3-alumni-tablosu) |
+| **`job_postings`** | `id (VARCHAR)` | — | Mezun ve partner şirket kariyer fırsatları, staj ve tam zamanlı iş ilanları | [ddd.md#4-job_postings-tablosu](file:///Users/erenkilic/repo/Alumni/ddd.md#4-job_postings-tablosu) |
 
 > [!TIP]
 > **Docker Volume Persistence & "The Forgetting Test"**: Veritabanı verileri `docker-compose.yml` içinde tanımlanan `pgdata:/var/lib/postgresql/data` yerel adlandırılmış biriminde (named volume) saklanır. `docker compose down` ve `docker compose up` işlemlerinde veriler kaybolmaz. Bu davranışı test etmek için `npm run test:forgetting` komutunu çalıştırabilirsiniz.

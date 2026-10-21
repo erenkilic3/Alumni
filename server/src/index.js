@@ -423,6 +423,7 @@ const {
   alumniRoutes,
   apiAlumniRoutes
 } = require('./routes');
+const { JobPostingModel } = require('./models');
 
 // Mount Web UI User routes (/users, /users/:id, etc.)
 app.use(userRoutes);
@@ -1708,11 +1709,38 @@ app.get('/api/stats', async (req, res) => {
 });
 
 
-// Jobs Endpoint
-app.get('/api/jobs', (req, res) => {
-  res.json(mockJobs);
+// Jobs Endpoints (Conforms to ddd.md)
+app.get('/api/jobs', async (req, res) => {
+  try {
+    const jobs = await JobPostingModel.findAll(req.query);
+    res.json(jobs);
+  } catch (err) {
+    res.json(mockJobs);
+  }
+});
+
+app.get('/api/jobs/count', async (req, res) => {
+  try {
+    const count = await JobPostingModel.count();
+    res.json({ count });
+  } catch (err) {
+    res.json({ count: mockJobs.length });
+  }
+});
+
+app.get('/api/job/:id', async (req, res) => {
+  try {
+    const job = await JobPostingModel.findById(req.params.id);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    res.json(job);
+  } catch (err) {
+    const job = mockJobs.find(j => j.id === req.params.id);
+    if (!job) return res.status(404).json({ error: 'Job not found' });
+    res.json(job);
+  }
 });
 
 app.listen(PORT, () => {
   console.log(`🚀 Alumni API server listening on http://localhost:${PORT}`);
 });
+

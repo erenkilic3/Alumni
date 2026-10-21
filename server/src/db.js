@@ -120,6 +120,26 @@ async function initDb() {
       );
     `);
 
+    // 4. Job Postings Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS job_postings (
+        id VARCHAR(255) PRIMARY KEY,
+        title VARCHAR(255) NOT NULL,
+        company VARCHAR(255) NOT NULL,
+        location VARCHAR(255) DEFAULT 'Remote',
+        type VARCHAR(50) DEFAULT 'Full-Time',
+        description TEXT NOT NULL,
+        requirements TEXT[] DEFAULT '{}',
+        salary_range VARCHAR(100),
+        contact_email VARCHAR(255),
+        posted_by VARCHAR(255) DEFAULT 'Alumni Career Network',
+        deadline DATE,
+        status VARCHAR(50) DEFAULT 'ACTIVE',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW()
+      );
+    `);
+
     // Seed Users if table is empty
     const usersCountRes = await pool.query('SELECT COUNT(*) AS count FROM users');
     if (parseInt(usersCountRes.rows[0].count, 10) === 0) {
@@ -284,6 +304,51 @@ async function initDb() {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW())
            ON CONFLICT (id) DO NOTHING`,
           [al.id, al.name, al.graduationYear, al.department, al.company, al.role, al.location, al.industry, al.skills, al.avatar, al.isMentor, al.bio]
+        );
+      }
+    }
+
+    // Seed Job Postings if table is empty
+    const jobsCountRes = await pool.query('SELECT COUNT(*) AS count FROM job_postings');
+    if (parseInt(jobsCountRes.rows[0].count, 10) === 0) {
+      console.log('🌱 Seeding initial job postings into PostgreSQL...');
+      const seedJobs = [
+        {
+          id: "job-1",
+          title: "Junior Backend Developer (Node.js / PostgreSQL)",
+          company: "Peak Tech",
+          location: "Remote / Istanbul",
+          type: "Full-Time",
+          description: "We are seeking a junior backend engineer to join our high-growth platform team working on scalable REST APIs and PostgreSQL databases.",
+          requirements: ["Node.js", "PostgreSQL", "Express", "Docker", "Git"],
+          salaryRange: "$40,000 - $55,000",
+          contactEmail: "careers@peaktech.example.com",
+          postedBy: "Burak Demir",
+          deadline: "2026-10-15",
+          status: "ACTIVE"
+        },
+        {
+          id: "job-2",
+          title: "Data Science Intern",
+          company: "FinAnalytica",
+          location: "Hybrid (Ankara)",
+          type: "Internship",
+          description: "Join our financial analytics lab to assist senior data scientists in predictive modeling, statistical reporting, and dashboard creation.",
+          requirements: ["Python", "Pandas", "SQL", "Data Visualization", "Machine Learning Basics"],
+          salaryRange: "Paid Internship",
+          contactEmail: "interns@finanalytica.example.com",
+          postedBy: "Selin Öztürk",
+          deadline: "2026-11-01",
+          status: "ACTIVE"
+        }
+      ];
+
+      for (const j of seedJobs) {
+        await pool.query(
+          `INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, deadline, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+           ON CONFLICT (id) DO NOTHING`,
+          [j.id, j.title, j.company, j.location, j.type, j.description, j.requirements, j.salaryRange, j.contactEmail, j.postedBy, j.deadline, j.status]
         );
       }
     }

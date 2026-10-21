@@ -49,8 +49,27 @@ erDiagram
         TIMESTAMPTZ created_at "Profil oluşturulma zamanı"
     }
 
+    JOB_POSTINGS {
+        VARCHAR(255) id PK "Benzersiz iş ilanı ID"
+        VARCHAR(255) title "Pozisyon unvanı / Rol"
+        VARCHAR(255) company "İlanı açan şirket / kurum"
+        VARCHAR(255) location "Çalışma lokasyonu (Remote / Şehir)"
+        VARCHAR(50) type "İstihdam türü (Full-Time, Internship)"
+        TEXT description "İş ilanı detay metni"
+        TEXT[] requirements "Aranan teknik nitelikler"
+        VARCHAR(100) salary_range "Maaş / Ücret skalası"
+        VARCHAR(255) contact_email "Başvuru e-posta adresi"
+        VARCHAR(255) posted_by "İlanı oluşturan kullanıcı / mezun"
+        DATE deadline "Son başvuru tarihi"
+        VARCHAR(50) status "Yayın durumu (ACTIVE, CLOSED)"
+        TIMESTAMPTZ created_at "İlan oluşturulma zamanı"
+        TIMESTAMPTZ updated_at "Son güncellenme zamanı"
+    }
+
     USERS ||--o| ALUMNI : "ilişkilendirilebilir (opsiyonel)"
     USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir / yönetebilir"
+    USERS ||--o{ JOB_POSTINGS : "yayınlar / yönetir"
+    ALUMNI ||--o{ JOB_POSTINGS : "tavsiye eder / paylaşır"
 ```
 
 ---
@@ -159,6 +178,48 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
 
 ---
 
+### 4. `job_postings` Tablosu
+Üniversite mezunları, kariyer geliştirme merkezi ve iş ortakları tarafından paylaşılan kariyer fırsatlarını, iş ve staj ilanlarını saklar.
+
+| Alan Adı (Column) | Veri Tipi (Type) | Zorunlu (Nullable) | Varsayılan (Default) | Açıklama |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR(255)` | **HAYIR** (PK) | — | İş ilanının benzersiz kimliği (Primary Key) |
+| `title` | `VARCHAR(255)` | **HAYIR** | — | Pozisyon veya staj unvanı (Örn: Junior Backend Developer) |
+| `company` | `VARCHAR(255)` | **HAYIR** | — | İlanı yayınlayan şirket veya kuruluş |
+| `location` | `VARCHAR(255)` | EVET | `'Remote'` | Çalışma yeri / modeli (Örn: Remote / Istanbul, Hybrid) |
+| `type` | `VARCHAR(50)` | EVET | `'Full-Time'` | İstihdam türü: `Full-Time`, `Part-Time`, `Internship`, `Contract` |
+| `description` | `TEXT` | **HAYIR** | — | İlanın kapsamlı iş tanımı, sorumlulukları ve detayları |
+| `requirements` | `TEXT[]` | EVET | `'{}'` | Aranan nitelikler, teknik beceriler ve teknoloji etiketleri |
+| `salary_range` | `VARCHAR(100)` | EVET | — | Maaş veya ücret aralığı (Örn: $40,000 - $55,000) |
+| `contact_email`| `VARCHAR(255)` | EVET | — | Başvuru ve CV iletimi için iletişim e-posta adresi |
+| `posted_by` | `VARCHAR(255)` | EVET | `'Alumni Career Network'` | İlanı sisteme ekleyen mezun/yetkili adı veya kimliği |
+| `deadline` | `DATE` | EVET | — | Son başvuru tarihi (Örn: 2026-10-15) |
+| `status` | `VARCHAR(50)` | EVET | `'ACTIVE'` | İlan yayın durumu: `ACTIVE`, `CLOSED`, `DRAFT` |
+| `created_at` | `TIMESTAMPTZ` | EVET | `NOW()` | İlanın sisteme girildiği tarih ve saat |
+| `updated_at` | `TIMESTAMPTZ` | EVET | `NOW()` | İlanın son güncellendiği tarih ve saat |
+
+#### Örnek Kayıt:
+```json
+{
+  "id": "job-1",
+  "title": "Junior Backend Developer (Node.js / PostgreSQL)",
+  "company": "Peak Tech",
+  "location": "Remote / Istanbul",
+  "type": "Full-Time",
+  "description": "We are seeking a junior backend engineer to join our high-growth platform team working on scalable REST APIs and PostgreSQL databases.",
+  "requirements": ["Node.js", "PostgreSQL", "Express", "Docker", "Git"],
+  "salary_range": "$40,000 - $55,000",
+  "contact_email": "careers@peaktech.example.com",
+  "posted_by": "Burak Demir",
+  "deadline": "2026-10-15",
+  "status": "ACTIVE",
+  "created_at": "2026-10-14T06:33:33.335Z",
+  "updated_at": "2026-10-14T06:33:33.335Z"
+}
+```
+
+---
+
 ## 🛠️ DDL (Data Definition Language) SQL Tanımları
 
 PostgreSQL veritabanı başlatıldığında [server/src/db.js](file:///Users/erenkilic/repo/Alumni/server/src/db.js) tarafından otomatik olarak yürütülen SQL şeması:
@@ -205,6 +266,31 @@ CREATE TABLE IF NOT EXISTS alumni (
   bio TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- 4. Job Postings Tablosu
+CREATE TABLE IF NOT EXISTS job_postings (
+  id VARCHAR(255) PRIMARY KEY,
+  title VARCHAR(255) NOT NULL,
+  company VARCHAR(255) NOT NULL,
+  location VARCHAR(255) DEFAULT 'Remote',
+  type VARCHAR(50) DEFAULT 'Full-Time',
+  description TEXT NOT NULL,
+  requirements TEXT[] DEFAULT '{}',
+  salary_range VARCHAR(100),
+  contact_email VARCHAR(255),
+  posted_by VARCHAR(255) DEFAULT 'Alumni Career Network',
+  deadline DATE,
+  status VARCHAR(50) DEFAULT 'ACTIVE',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Performans İndeksleri
+CREATE INDEX IF NOT EXISTS idx_job_postings_posted_by ON job_postings (posted_by);
+CREATE INDEX IF NOT EXISTS idx_job_postings_status ON job_postings (status);
+CREATE INDEX IF NOT EXISTS idx_job_postings_deadline ON job_postings (deadline);
+CREATE INDEX IF NOT EXISTS idx_job_postings_type ON job_postings (type);
+CREATE INDEX IF NOT EXISTS idx_job_postings_company ON job_postings (company);
 ```
 
 ---
@@ -247,6 +333,7 @@ Migrasyon dosyaları sıralı öneklerle adlandırılır ve her biri hem `-- UP`
 2. **[002_create_announcements_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/002_create_announcements_table.sql)**: `announcements` tablosu, indeksler ve rollback komutları.
 3. **[003_create_alumni_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/003_create_alumni_table.sql)**: `alumni` tablosu, indeksler ve rollback komutları.
 4. **[004_seed_initial_data.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/004_seed_initial_data.sql)**: Başlangıç mock/seed verileri ve rollback temizleme komutları.
+5. **[005_create_job_postings_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/005_create_job_postings_table.sql)**: `job_postings` tablosu, indeksler, kısıtlamalar ve rollback komutları.
 
 ### 📋 Takip Tablosu: `schema_migrations`
 
@@ -288,16 +375,20 @@ Nesne yönelimli fabrika kalıbı (Factory Pattern) ile modellenmiştir:
 - **`UserFactory`** ([server/src/factories/user.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/user.factory.js)): Gerçekçi isim, e-posta, bölüm ve roller (`.admin()`, `.alumni()`, `.student()`).
 - **`AnnouncementFactory`** ([server/src/factories/announcement.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/announcement.factory.js)): Kategori, öncelik ve yayın durumları (`.pinned()`, `.urgent()`, `.event()`, `.career()`).
 - **`AlumniFactory`** ([server/src/factories/alumni.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/alumni.factory.js)): Mezuniyet yılı, şirket, unvan, lokasyon, yetenek etiketleri ve mentorluk durumu (`.mentor()`, `.inCompany()`, `.graduatedIn()`).
+- **`JobPostingFactory`** ([server/src/factories/job-posting.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/job-posting.factory.js)): Pozisyon unvanı, şirket, lokasyon, istihdam türü, teknik gereksinimler, maaş skalası ve yayın durumu (`.internship()`, `.fullTime()`, `.remote()`, `.inCompany()`, `.active()`).
 
 #### Örnek Fabrika Kullanımı:
 ```javascript
-const { UserFactory, AlumniFactory } = require('./server/src/factories');
+const { UserFactory, AlumniFactory, JobPostingFactory } = require('./server/src/factories');
 
 // Bellekte 5 adet öğrenci oluştur (DB'ye yazmaz)
 const students = UserFactory.student().make(5);
 
 // Veritabanına doğrudan 3 adet Google mezun mentoru ekle
 const mentors = await AlumniFactory.mentor().inCompany('Google').create(3);
+
+// Doğrudan 4 adet uzaktan staj/iş ilanı oluştur ve DB'ye ekle
+const remoteJobs = await JobPostingFactory.internship().remote().create(4);
 ```
 
 ### 🌱 Tohumlayıcılar (`server/src/seeders/`)
@@ -305,32 +396,35 @@ const mentors = await AlumniFactory.mentor().inCompany('Google').create(3);
 - **`UserSeeder`**: Çekirdek sistem kullanıcılarını ve dinamik fabrika kullanıcılarını ekler.
 - **`AnnouncementSeeder`**: Temel kampüs duyurularını ve dinamik duyuruları ekler.
 - **`AlumniSeeder`**: Örnek lider mezun profillerini ve dinamik mezunları ekler.
+- **`JobPostingSeeder`**: Temel kariyer fırsatlarını (`job-1`, `job-2`) ve dinamik fabrika iş ilanlarını ekler.
 - **`DatabaseSeeder`**: Tüm tohumlayıcıları koordine eden ana orkestratör (`--clean` seçeneğiyle tabloları sıfırlayıp baştan tohumlama yapabilir).
 
 ### 💻 Tohumlama CLI Komutları
 
 | Komut | Açıklama |
 | :--- | :--- |
-| `npm run seed` veya `npm run db:seed` | Temel kayıtları ve varsayılan fabrika verilerini (10 kullanıcı, 8 duyuru, 10 mezun) veritabanına ekler. |
+| `npm run seed` veya `npm run db:seed` | Temel kayıtları ve varsayılan fabrika verilerini (10 kullanıcı, 8 duyuru, 10 mezun, 6 iş ilanı) veritabanına ekler. |
 | `npm run seed:fresh` | Mevcut tabloları temizler (`TRUNCATE CASCADE`) ve sıfırdan temiz tohum verileri oluşturur. |
-| `node server/src/db/seed.js --users=25 --alumni=30` | İstenilen adetlerde özel dinamik tohumlama yapar. |
+| `node server/src/db/seed.js --users=25 --alumni=30 --jobs=15` | İstenilen adetlerde özel dinamik tohumlama yapar. |
 
 ---
 
 ## 🖥️ Veritabanı Bağlantılı CRUD Arayüzleri (MVC CRUD Interfaces)
 
-Sistemdeki üç ana veri tablosu (`users`, `announcements`, `alumni`) için PostgreSQL veritabanına doğrudan bağlı, server-side rendered (SSR) web arayüzleri ve tam REST API uçları sunulmaktadır:
+Sistemdeki dört ana veri tablosu (`users`, `announcements`, `alumni`, `job_postings`) için PostgreSQL veritabanına doğrudan bağlı, server-side rendered (SSR) web arayüzleri ve tam REST API uçları sunulmaktadır:
 
 | Varlık / Modül | Web CRUD Arayüzü | REST API Uçları | Veritabanı Tablosu | Model & Controller |
 | :--- | :--- | :--- | :--- | :--- |
 | **Users** | [`/users`](http://localhost:5001/users), [`/users/new`](http://localhost:5001/users/new) | `/api/users`, `/api/user/:id`, `/api/users/count` | `users` | `UserModel`, `UserController`, `UserView` |
 | **Announcements** | [`/announcements`](http://localhost:5001/announcements), [`/announcements/new`](http://localhost:5001/announcements/new) | `/api/announcements`, `/api/announcement/:id`, `/api/announcements/count` | `announcements` | `AnnouncementModel`, `AnnouncementController`, `AnnouncementView` |
 | **Alumni** | [`/alumni`](http://localhost:5001/alumni), [`/alumni/new`](http://localhost:5001/alumni/new) | `/api/alumni`, `/api/alumni/:id`, `/api/alumni/count` | `alumni` | `AlumniModel`, `AlumniController`, `AlumniView` |
+| **Job Postings** | [`/jobs`](http://localhost:5001/jobs) | `/api/jobs`, `/api/job/:id`, `/api/jobs/count` | `job_postings` | `JobPostingModel`, `JobPostingController` |
 
 Tüm CRUD arayüzlerinde:
 - Üst gezinme çubuğunda canlı **PostgreSQL Bağlantı Rozeti** (`🟢 PostgreSQL Connected (alumni_db:5432)`) yer alır.
-- Modüller arası hızlı geçiş menüsü (Users ↔ Announcements ↔ Alumni ↔ Swagger) mevcuttur.
+- Modüller arası hızlı geçiş menüsü (Users ↔ Announcements ↔ Alumni ↔ Jobs ↔ Swagger) mevcuttur.
 - Oluşturma, listeleme, detay görüntüleme, güncelleme ve silme (Create, Read, Update, Delete) operasyonları doğrudan PostgreSQL üzerinde transactional olarak yürütülür.
+
 
 
 

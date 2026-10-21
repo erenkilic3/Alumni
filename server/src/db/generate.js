@@ -30,6 +30,7 @@ async function generateDatabase() {
   const usersRes = await db.query('SELECT COUNT(*) AS count FROM users');
   const annRes = await db.query('SELECT COUNT(*) AS count FROM announcements');
   const alumniRes = await db.query('SELECT COUNT(*) AS count FROM alumni');
+  const jobsRes = await db.query('SELECT COUNT(*) AS count FROM job_postings');
 
   console.log('======================================================');
   console.log('✅ DATABASE SUCCESSFULLY GENERATED ACCORDING TO ddd.md');
@@ -37,6 +38,7 @@ async function generateDatabase() {
   console.log(`- users table:         ${usersRes.rows[0].count} records`);
   console.log(`- announcements table: ${annRes.rows[0].count} records`);
   console.log(`- alumni table:        ${alumniRes.rows[0].count} records`);
+  console.log(`- job_postings table:  ${jobsRes.rows[0].count} records`);
   console.log('======================================================');
 }
 
