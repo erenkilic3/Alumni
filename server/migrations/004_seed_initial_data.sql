@@ -15,7 +15,7 @@ VALUES
   ('7', 'memet raşit famoushand', 'memetk3@student.com', 'STUDENT', 'barber', NOW(), NOW())
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO announcements (id, title, content, category, priority, author, is_pinned, status, created_at, updated_at)
+INSERT INTO announcements (id, title, content, category, priority, author, user_id, is_pinned, status, created_at, updated_at)
 VALUES
   (
     '1',
@@ -24,6 +24,7 @@ VALUES
     'EVENT',
     'HIGH',
     'Alumni Relations Office',
+    '1',
     TRUE,
     'ACTIVE',
     NOW(),
@@ -36,6 +37,7 @@ VALUES
     'CAREER',
     'URGENT',
     'Career Development Center',
+    '1',
     TRUE,
     'ACTIVE',
     NOW(),
@@ -48,6 +50,7 @@ VALUES
     'ACADEMIC',
     'NORMAL',
     'Office of Academic Affairs',
+    '1',
     FALSE,
     'ACTIVE',
     NOW(),
@@ -60,6 +63,7 @@ VALUES
     'GENERAL',
     'NORMAL',
     'Alumni Relations Office',
+    '1',
     FALSE,
     'ACTIVE',
     NOW(),
@@ -67,7 +71,7 @@ VALUES
   )
 ON CONFLICT (id) DO NOTHING;
 
-INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, created_at)
+INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, user_id, created_at)
 VALUES
   (
     '1',
@@ -82,6 +86,7 @@ VALUES
     'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80',
     TRUE,
     'Graduated with honors in 2021. Open for student mentorship in cloud infrastructure.',
+    '6',
     NOW()
   ),
   (
@@ -97,6 +102,7 @@ VALUES
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
     TRUE,
     'Passionate about building customer-centric products. Mentor for tech career transitions.',
+    '7',
     NOW()
   ),
   (
@@ -112,6 +118,7 @@ VALUES
     'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
     FALSE,
     'Building audio discovery features. Alumni representative for Nordic region.',
+    '1',
     NOW()
   ),
   (
@@ -127,6 +134,7 @@ VALUES
     'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80',
     TRUE,
     'Working on automotive autonomy. Happy to connect with junior engineers.',
+    '4',
     NOW()
   ),
   (
@@ -142,6 +150,7 @@ VALUES
     'https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80',
     FALSE,
     'Consulting for energy and sustainability sectors.',
+    '2',
     NOW()
   )
 ON CONFLICT (id) DO NOTHING;

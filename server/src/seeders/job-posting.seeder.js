@@ -21,6 +21,8 @@ const CORE_JOBS = [
     salaryRange: "$40,000 - $55,000",
     contactEmail: "careers@peaktech.example.com",
     postedBy: "Burak Demir",
+    userId: "3",
+    alumniId: null,
     deadline: "2026-10-15",
     status: "ACTIVE"
   },
@@ -35,6 +37,8 @@ const CORE_JOBS = [
     salaryRange: "Paid Internship",
     contactEmail: "interns@finanalytica.example.com",
     postedBy: "Selin Öztürk",
+    userId: "5",
+    alumniId: "5",
     deadline: "2026-11-01",
     status: "ACTIVE"
   }
@@ -64,8 +68,8 @@ class JobPostingSeeder {
     for (const j of CORE_JOBS) {
       try {
         const queryText = `
-          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, deadline, status, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, user_id, alumni_id, deadline, status, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
           ON CONFLICT (id) DO NOTHING
           RETURNING id;
         `;
@@ -80,6 +84,8 @@ class JobPostingSeeder {
           j.salaryRange,
           j.contactEmail,
           j.postedBy,
+          j.userId,
+          j.alumniId,
           j.deadline,
           j.status
         ];

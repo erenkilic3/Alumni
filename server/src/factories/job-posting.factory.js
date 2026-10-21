@@ -114,6 +114,8 @@ class JobPostingFactory extends BaseFactory {
       salaryRange: salaryRange,
       contactEmail: contactEmail,
       postedBy: postedBy,
+      userId: BaseFactory.randomItem(['1', '2', '3', '4', '5']),
+      alumniId: BaseFactory.randomItem(['1', '2', '3', '4', '5']),
       deadline: deadlineDate,
       status: 'ACTIVE',
       createdAt: createdAt,
@@ -170,8 +172,8 @@ class JobPostingFactory extends BaseFactory {
     for (const j of records) {
       try {
         const queryText = `
-          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, deadline, status, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, user_id, alumni_id, deadline, status, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
           ON CONFLICT (id) DO NOTHING
           RETURNING *;
         `;
@@ -186,6 +188,8 @@ class JobPostingFactory extends BaseFactory {
           j.salaryRange,
           j.contactEmail,
           j.postedBy,
+          j.userId,
+          j.alumniId,
           j.deadline,
           j.status,
           j.createdAt,

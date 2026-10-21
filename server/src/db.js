@@ -94,10 +94,12 @@ async function initDb() {
         category VARCHAR(50) DEFAULT 'GENERAL',
         priority VARCHAR(50) DEFAULT 'NORMAL',
         author VARCHAR(255) DEFAULT 'Alumni Staff',
+        user_id VARCHAR(255),
         is_pinned BOOLEAN DEFAULT FALSE,
         status VARCHAR(50) DEFAULT 'ACTIVE',
         created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT fk_announcements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       );
     `);
 
@@ -116,7 +118,9 @@ async function initDb() {
         avatar TEXT,
         is_mentor BOOLEAN DEFAULT FALSE,
         bio TEXT,
-        created_at TIMESTAMPTZ DEFAULT NOW()
+        user_id VARCHAR(255),
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT fk_alumni_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
       );
     `);
 
@@ -133,10 +137,14 @@ async function initDb() {
         salary_range VARCHAR(100),
         contact_email VARCHAR(255),
         posted_by VARCHAR(255) DEFAULT 'Alumni Career Network',
+        user_id VARCHAR(255),
+        alumni_id VARCHAR(255),
         deadline DATE,
         status VARCHAR(50) DEFAULT 'ACTIVE',
         created_at TIMESTAMPTZ DEFAULT NOW(),
-        updated_at TIMESTAMPTZ DEFAULT NOW()
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT fk_job_postings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+        CONSTRAINT fk_job_postings_alumni FOREIGN KEY (alumni_id) REFERENCES alumni(id) ON DELETE SET NULL
       );
     `);
 

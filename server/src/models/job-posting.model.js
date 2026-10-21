@@ -21,6 +21,8 @@ function mapJobPostingRow(row) {
     salaryRange: row.salary_range || row.salaryRange || null,
     contactEmail: row.contact_email || row.contactEmail || null,
     postedBy: row.posted_by || row.postedBy || 'Alumni Career Network',
+    userId: row.user_id || row.userId || null,
+    alumniId: row.alumni_id || row.alumniId || null,
     deadline: row.deadline ? (row.deadline instanceof Date ? row.deadline.toISOString().split('T')[0] : String(row.deadline).split('T')[0]) : null,
     status: row.status || 'ACTIVE',
     createdAt: row.created_at || row.createdAt || new Date().toISOString(),
@@ -153,6 +155,8 @@ class JobPostingModel {
       salaryRange: data.salaryRange || data.salary_range || null,
       contactEmail: data.contactEmail || data.contact_email || null,
       postedBy: data.postedBy || data.posted_by || 'Alumni Career Network',
+      userId: data.userId || data.user_id || null,
+      alumniId: data.alumniId || data.alumni_id || null,
       deadline: data.deadline || null,
       status: data.status || 'ACTIVE',
       createdAt: new Date().toISOString(),
@@ -162,8 +166,8 @@ class JobPostingModel {
     if (db.isDbConnected) {
       try {
         const queryText = `
-          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, deadline, status, created_at, updated_at)
-          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
+          INSERT INTO job_postings (id, title, company, location, type, description, requirements, salary_range, contact_email, posted_by, user_id, alumni_id, deadline, status, created_at, updated_at)
+          VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, NOW(), NOW())
           RETURNING *;
         `;
         const params = [
@@ -177,6 +181,8 @@ class JobPostingModel {
           newJob.salaryRange,
           newJob.contactEmail,
           newJob.postedBy,
+          newJob.userId,
+          newJob.alumniId,
           newJob.deadline,
           newJob.status
         ];
@@ -203,6 +209,8 @@ class JobPostingModel {
           ...existing,
           ...data,
           requirements: Array.isArray(data.requirements) ? data.requirements : (data.requirements ? [data.requirements] : existing.requirements),
+          userId: data.userId !== undefined ? data.userId : (data.user_id !== undefined ? data.user_id : existing.userId),
+          alumniId: data.alumniId !== undefined ? data.alumniId : (data.alumni_id !== undefined ? data.alumni_id : existing.alumniId),
           updatedAt: new Date().toISOString()
         };
 
@@ -210,8 +218,8 @@ class JobPostingModel {
           UPDATE job_postings
           SET title = $1, company = $2, location = $3, type = $4, description = $5,
               requirements = $6, salary_range = $7, contact_email = $8, posted_by = $9,
-              deadline = $10, status = $11, updated_at = NOW()
-          WHERE id = $12
+              user_id = $10, alumni_id = $11, deadline = $12, status = $13, updated_at = NOW()
+          WHERE id = $14
           RETURNING *;
         `;
         const params = [
@@ -224,6 +232,8 @@ class JobPostingModel {
           updated.salaryRange,
           updated.contactEmail,
           updated.postedBy,
+          updated.userId,
+          updated.alumniId,
           updated.deadline,
           updated.status,
           id

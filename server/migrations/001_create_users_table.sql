@@ -1,6 +1,12 @@
 -- ==============================================================================
--- Migration 001: Create Users Table
+-- Migration 001: Create Users Table & Define Root Identity Model
 -- Conforms to Data Definition Document (ddd.md)
+--
+-- Model: User (users)
+-- Entity Relationships:
+--   - USERS (1)  --->  (1) ALUMNI        (referenced by alumni.user_id)
+--   - USERS (1)  --->  (N) ANNOUNCEMENTS (referenced by announcements.user_id)
+--   - USERS (1)  --->  (N) JOB_POSTINGS  (referenced by job_postings.user_id)
 -- ==============================================================================
 
 -- UP

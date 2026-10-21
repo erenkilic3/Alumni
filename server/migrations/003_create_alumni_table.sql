@@ -1,6 +1,10 @@
 -- ==============================================================================
--- Migration 003: Create Alumni Table
+-- Migration 003: Create Alumni Table & Define Model Relationships
 -- Conforms to Data Definition Document (ddd.md)
+--
+-- Model: Alumni (alumni)
+-- Entity Relationships:
+--   - USERS (1)  --->  (1) ALUMNI (user_id FK -> users.id, optional 1:1)
 -- ==============================================================================
 
 -- UP
@@ -17,17 +21,25 @@ CREATE TABLE IF NOT EXISTS alumni (
   avatar TEXT,
   is_mentor BOOLEAN DEFAULT FALSE,
   bio TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  user_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+
+  -- Foreign Key Constraint (Model Relationship)
+  CONSTRAINT fk_alumni_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- Performance & Relational Indexes
+CREATE INDEX IF NOT EXISTS idx_alumni_user_id ON alumni (user_id);
 CREATE INDEX IF NOT EXISTS idx_alumni_graduation_year ON alumni (graduation_year);
 CREATE INDEX IF NOT EXISTS idx_alumni_department ON alumni (department);
 CREATE INDEX IF NOT EXISTS idx_alumni_industry ON alumni (industry);
 CREATE INDEX IF NOT EXISTS idx_alumni_is_mentor ON alumni (is_mentor);
 
 -- DOWN
+ALTER TABLE alumni DROP CONSTRAINT IF EXISTS fk_alumni_user;
 DROP INDEX IF EXISTS idx_alumni_is_mentor;
 DROP INDEX IF EXISTS idx_alumni_industry;
 DROP INDEX IF EXISTS idx_alumni_department;
 DROP INDEX IF EXISTS idx_alumni_graduation_year;
+DROP INDEX IF EXISTS idx_alumni_user_id;
 DROP TABLE IF EXISTS alumni CASCADE;

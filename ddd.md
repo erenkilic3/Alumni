@@ -27,6 +27,7 @@ erDiagram
         VARCHAR(50) category "Kategori (EVENT, CAREER, ACADEMIC, GENERAL)"
         VARCHAR(50) priority "Öncelik (NORMAL, HIGH, URGENT)"
         VARCHAR(255) author "Duyuruyu oluşturan birim/yazar"
+        VARCHAR(255) user_id FK "Duyuruyu oluşturan kullanıcı (users.id)"
         BOOLEAN is_pinned "Başa tutturulma durumu"
         VARCHAR(50) status "Yayın durumu (ACTIVE, ARCHIVED, DRAFT)"
         TIMESTAMPTZ created_at "Oluşturulma zamanı"
@@ -46,6 +47,7 @@ erDiagram
         TEXT avatar "Profil görseli URL"
         BOOLEAN is_mentor "Mentorluk veriyor mu?"
         TEXT bio "Biyografi ve tanıtım yazısı"
+        VARCHAR(255) user_id FK "İlişkili sistem kullanıcısı (users.id)"
         TIMESTAMPTZ created_at "Profil oluşturulma zamanı"
     }
 
@@ -60,16 +62,18 @@ erDiagram
         VARCHAR(100) salary_range "Maaş / Ücret skalası"
         VARCHAR(255) contact_email "Başvuru e-posta adresi"
         VARCHAR(255) posted_by "İlanı oluşturan kullanıcı / mezun"
+        VARCHAR(255) user_id FK "İlan veren kullanıcı (users.id)"
+        VARCHAR(255) alumni_id FK "İlanı öneren mezun (alumni.id)"
         DATE deadline "Son başvuru tarihi"
         VARCHAR(50) status "Yayın durumu (ACTIVE, CLOSED)"
         TIMESTAMPTZ created_at "İlan oluşturulma zamanı"
         TIMESTAMPTZ updated_at "Son güncellenme zamanı"
     }
 
-    USERS ||--o| ALUMNI : "ilişkilendirilebilir (opsiyonel)"
-    USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir / yönetebilir"
-    USERS ||--o{ JOB_POSTINGS : "yayınlar / yönetir"
-    ALUMNI ||--o{ JOB_POSTINGS : "tavsiye eder / paylaşır"
+    USERS ||--o| ALUMNI : "ilişkilendirilebilir (1:1, user_id FK)"
+    USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir (1:N, user_id FK)"
+    USERS ||--o{ JOB_POSTINGS : "yayınlar (1:N, user_id FK)"
+    ALUMNI ||--o{ JOB_POSTINGS : "tavsiye eder (1:N, alumni_id FK)"
 ```
 
 ---
@@ -115,6 +119,7 @@ Sistemdeki kullanıcı hesaplarını, rollerini ve temel profil bilgilerini sakl
 | `category` | `VARCHAR(50)` | EVET | `'GENERAL'` | Kategori: `EVENT`, `CAREER`, `ACADEMIC`, `GENERAL` |
 | `priority` | `VARCHAR(50)` | EVET | `'NORMAL'` | Öncelik derecesi: `NORMAL`, `HIGH`, `URGENT` |
 | `author` | `VARCHAR(255)` | EVET | `'Alumni Staff'` | Duyuruyu yayınlayan birim veya kişi |
+| `user_id` | `VARCHAR(255)` | EVET (FK) | — | Duyuruyu sisteme giren kullanıcı kimliği (`users.id` foreign key) |
 | `is_pinned` | `BOOLEAN` | EVET | `FALSE` | Panoda en üste sabitlenmiş duyuru mu? |
 | `status` | `VARCHAR(50)` | EVET | `'ACTIVE'` | Durum: `ACTIVE`, `ARCHIVED`, `DRAFT` |
 | `created_at` | `TIMESTAMPTZ` | EVET | `NOW()` | Duyuru yayın zamanı |
@@ -155,6 +160,7 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
 | `avatar` | `TEXT` | EVET | — | Profil fotoğrafı URL adresi |
 | `is_mentor` | `BOOLEAN` | EVET | `FALSE` | Öğrencilere mentorluk yapmaya açık mı? |
 | `bio` | `TEXT` | EVET | — | Kısa biyografi ve mezun açıklaması |
+| `user_id` | `VARCHAR(255)` | EVET (FK) | — | Mezunun bağlı olduğu sistem kullanıcısı (`users.id` foreign key) |
 | `created_at` | `TIMESTAMPTZ` | EVET | `NOW()` | Profilin veritabanına eklenme tarihi |
 
 #### Örnek Kayıt:
@@ -192,7 +198,9 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
 | `requirements` | `TEXT[]` | EVET | `'{}'` | Aranan nitelikler, teknik beceriler ve teknoloji etiketleri |
 | `salary_range` | `VARCHAR(100)` | EVET | — | Maaş veya ücret aralığı (Örn: $40,000 - $55,000) |
 | `contact_email`| `VARCHAR(255)` | EVET | — | Başvuru ve CV iletimi için iletişim e-posta adresi |
-| `posted_by` | `VARCHAR(255)` | EVET | `'Alumni Career Network'` | İlanı sisteme ekleyen mezun/yetkili adı veya kimliği |
+| `posted_by` | `VARCHAR(255)` | EVET | `'Alumni Career Network'` | İlanı sisteme ekleyen mezun/yetkili adı veya unvanı |
+| `user_id` | `VARCHAR(255)` | EVET (FK) | — | İlanı oluşturan kullanıcı kimliği (`users.id` foreign key) |
+| `alumni_id` | `VARCHAR(255)` | EVET (FK) | — | İlanı öneren/paylaşan mezun profili kimliği (`alumni.id` foreign key) |
 | `deadline` | `DATE` | EVET | — | Son başvuru tarihi (Örn: 2026-10-15) |
 | `status` | `VARCHAR(50)` | EVET | `'ACTIVE'` | İlan yayın durumu: `ACTIVE`, `CLOSED`, `DRAFT` |
 | `created_at` | `TIMESTAMPTZ` | EVET | `NOW()` | İlanın sisteme girildiği tarih ve saat |
@@ -244,10 +252,12 @@ CREATE TABLE IF NOT EXISTS announcements (
   category VARCHAR(50) DEFAULT 'GENERAL',
   priority VARCHAR(50) DEFAULT 'NORMAL',
   author VARCHAR(255) DEFAULT 'Alumni Staff',
+  user_id VARCHAR(255),
   is_pinned BOOLEAN DEFAULT FALSE,
   status VARCHAR(50) DEFAULT 'ACTIVE',
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_announcements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 3. Alumni Tablosu
@@ -264,7 +274,9 @@ CREATE TABLE IF NOT EXISTS alumni (
   avatar TEXT,
   is_mentor BOOLEAN DEFAULT FALSE,
   bio TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  user_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_alumni_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- 4. Job Postings Tablosu
@@ -279,13 +291,21 @@ CREATE TABLE IF NOT EXISTS job_postings (
   salary_range VARCHAR(100),
   contact_email VARCHAR(255),
   posted_by VARCHAR(255) DEFAULT 'Alumni Career Network',
+  user_id VARCHAR(255),
+  alumni_id VARCHAR(255),
   deadline DATE,
   status VARCHAR(50) DEFAULT 'ACTIVE',
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_job_postings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_job_postings_alumni FOREIGN KEY (alumni_id) REFERENCES alumni(id) ON DELETE SET NULL
 );
 
--- Performans İndeksleri
+-- Performans ve İlişki İndeksleri
+CREATE INDEX IF NOT EXISTS idx_announcements_user_id ON announcements (user_id);
+CREATE INDEX IF NOT EXISTS idx_alumni_user_id ON alumni (user_id);
+CREATE INDEX IF NOT EXISTS idx_job_postings_user_id ON job_postings (user_id);
+CREATE INDEX IF NOT EXISTS idx_job_postings_alumni_id ON job_postings (alumni_id);
 CREATE INDEX IF NOT EXISTS idx_job_postings_posted_by ON job_postings (posted_by);
 CREATE INDEX IF NOT EXISTS idx_job_postings_status ON job_postings (status);
 CREATE INDEX IF NOT EXISTS idx_job_postings_deadline ON job_postings (deadline);

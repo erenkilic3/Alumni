@@ -29,13 +29,16 @@ CREATE TABLE IF NOT EXISTS announcements (
   category VARCHAR(50) DEFAULT 'GENERAL',
   priority VARCHAR(50) DEFAULT 'NORMAL',
   author VARCHAR(255) DEFAULT 'Alumni Staff',
+  user_id VARCHAR(255),
   is_pinned BOOLEAN DEFAULT FALSE,
   status VARCHAR(50) DEFAULT 'ACTIVE',
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_announcements_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_announcements_user_id ON announcements (user_id);
 CREATE INDEX IF NOT EXISTS idx_announcements_pinned_priority ON announcements (is_pinned DESC, priority);
 CREATE INDEX IF NOT EXISTS idx_announcements_category ON announcements (category);
 CREATE INDEX IF NOT EXISTS idx_announcements_status ON announcements (status);
@@ -55,13 +58,17 @@ CREATE TABLE IF NOT EXISTS alumni (
   avatar TEXT,
   is_mentor BOOLEAN DEFAULT FALSE,
   bio TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
+  user_id VARCHAR(255),
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_alumni_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
 -- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_alumni_user_id ON alumni (user_id);
 CREATE INDEX IF NOT EXISTS idx_alumni_graduation_year ON alumni (graduation_year);
 CREATE INDEX IF NOT EXISTS idx_alumni_department ON alumni (department);
 CREATE INDEX IF NOT EXISTS idx_alumni_industry ON alumni (industry);
+
 -- 4. JOB_POSTINGS TABLE
 -- Stores career, internship, and employment postings from alumni and partners
 CREATE TABLE IF NOT EXISTS job_postings (
@@ -75,13 +82,19 @@ CREATE TABLE IF NOT EXISTS job_postings (
   salary_range VARCHAR(100),
   contact_email VARCHAR(255),
   posted_by VARCHAR(255) DEFAULT 'Alumni Career Network',
+  user_id VARCHAR(255),
+  alumni_id VARCHAR(255),
   deadline DATE,
   status VARCHAR(50) DEFAULT 'ACTIVE',
   created_at TIMESTAMPTZ DEFAULT NOW(),
-  updated_at TIMESTAMPTZ DEFAULT NOW()
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_job_postings_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL,
+  CONSTRAINT fk_job_postings_alumni FOREIGN KEY (alumni_id) REFERENCES alumni(id) ON DELETE SET NULL
 );
 
 -- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_job_postings_user_id ON job_postings (user_id);
+CREATE INDEX IF NOT EXISTS idx_job_postings_alumni_id ON job_postings (alumni_id);
 CREATE INDEX IF NOT EXISTS idx_job_postings_posted_by ON job_postings (posted_by);
 CREATE INDEX IF NOT EXISTS idx_job_postings_status ON job_postings (status);
 CREATE INDEX IF NOT EXISTS idx_job_postings_deadline ON job_postings (deadline);
