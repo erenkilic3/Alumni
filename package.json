@@ -18,6 +18,7 @@
     "migrate:reset": "npm --prefix server run migrate:reset",
     "seed": "npm --prefix server run seed",
     "seed:fresh": "npm --prefix server run seed:fresh",
+    "seed:jobs": "npm --prefix server run seed:jobs",
     "db:seed": "npm --prefix server run db:seed"
   },
   "keywords": ["alumni", "nodejs", "postgresql", "docker", "express"],

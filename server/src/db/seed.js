@@ -21,7 +21,9 @@ function parseArgs() {
     clean: false,
     users: 10,
     announcements: 8,
-    alumni: 10
+    alumni: 10,
+    jobs: 6,
+    applications: 6
   };
 
   for (const arg of args) {
@@ -33,11 +35,17 @@ function parseArgs() {
       options.announcements = parseInt(arg.split('=')[1], 10) || 8;
     } else if (arg.startsWith('--alumni=')) {
       options.alumni = parseInt(arg.split('=')[1], 10) || 10;
+    } else if (arg.startsWith('--jobs=') || arg.startsWith('--job-postings=')) {
+      options.jobs = parseInt(arg.split('=')[1], 10) || 6;
+    } else if (arg.startsWith('--applications=')) {
+      options.applications = parseInt(arg.split('=')[1], 10) || 6;
     } else if (arg.startsWith('--count=')) {
       const cnt = parseInt(arg.split('=')[1], 10) || 10;
       options.users = cnt;
       options.announcements = cnt;
       options.alumni = cnt;
+      options.jobs = cnt;
+      options.applications = cnt;
     }
   }
 
