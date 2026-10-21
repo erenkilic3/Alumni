@@ -17,6 +17,7 @@ function mapAnnouncementRow(row) {
     category: row.category,
     priority: row.priority,
     author: row.author,
+    userId: row.user_id !== undefined ? (row.user_id ? String(row.user_id) : null) : (row.userId !== undefined ? (row.userId ? String(row.userId) : null) : null),
     isPinned: Boolean(row.isPinned !== undefined ? row.isPinned : row.is_pinned),
     status: row.status,
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : (row.createdAt || row.created_at),
@@ -42,6 +43,7 @@ class AnnouncementModel {
         category: "EVENT",
         priority: "HIGH",
         author: "Alumni Relations Office",
+        userId: "1",
         isPinned: true,
         status: "ACTIVE",
         createdAt: new Date(Date.now() - 3600000 * 48).toISOString(),
@@ -54,6 +56,7 @@ class AnnouncementModel {
         category: "CAREER",
         priority: "URGENT",
         author: "Career Development Center",
+        userId: "1",
         isPinned: true,
         status: "ACTIVE",
         createdAt: new Date(Date.now() - 3600000 * 24).toISOString(),
@@ -66,6 +69,7 @@ class AnnouncementModel {
         category: "ACADEMIC",
         priority: "NORMAL",
         author: "Office of Academic Affairs",
+        userId: "1",
         isPinned: false,
         status: "ACTIVE",
         createdAt: new Date(Date.now() - 3600000 * 12).toISOString(),
@@ -78,6 +82,7 @@ class AnnouncementModel {
         category: "GENERAL",
         priority: "NORMAL",
         author: "Alumni Relations Office",
+        userId: "1",
         isPinned: false,
         status: "ACTIVE",
         createdAt: new Date(Date.now() - 3600000 * 6).toISOString(),
@@ -91,7 +96,7 @@ class AnnouncementModel {
    * @param {Object} announcementData - Title, content, category, priority, author, isPinned, status
    * @returns {Promise<Object>|Object} Newly created announcement object
    */
-  async create({ title, content, category = "GENERAL", priority = "NORMAL", author = "Alumni Staff", isPinned = false, status = "ACTIVE" }) {
+  async create({ title, content, category = "GENERAL", priority = "NORMAL", author = "Alumni Staff", userId = "1", isPinned = false, status = "ACTIVE" }) {
     if (!title || !title.trim()) {
       throw new Error("Title is required.");
     }
@@ -117,6 +122,7 @@ class AnnouncementModel {
 
     const isPinnedBool = Boolean(isPinned === true || isPinned === 'true' || isPinned === 'on');
     const auth = (author && author.trim()) || "Alumni Staff";
+    const uId = userId !== undefined && userId !== null ? String(userId) : "1";
 
     if (db.isDbConnected) {
       try {
@@ -126,10 +132,10 @@ class AnnouncementModel {
         const nextId = (idRes.rows[0].next_id || 1).toString();
 
         const insertRes = await db.query(
-          `INSERT INTO announcements (id, title, content, category, priority, author, is_pinned, status, created_at, updated_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
-           RETURNING id, title, content, category, priority, author, is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
-          [nextId, title.trim(), content.trim(), normalizedCategory, normalizedPriority, auth, isPinnedBool, normalizedStatus]
+          `INSERT INTO announcements (id, title, content, category, priority, author, user_id, is_pinned, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW(), NOW())
+           RETURNING id, title, content, category, priority, author, user_id AS "userId", is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+          [nextId, title.trim(), content.trim(), normalizedCategory, normalizedPriority, auth, uId, isPinnedBool, normalizedStatus]
         );
 
         const newAnnouncement = mapAnnouncementRow(insertRes.rows[0]);
@@ -152,6 +158,7 @@ class AnnouncementModel {
       category: normalizedCategory,
       priority: normalizedPriority,
       author: auth,
+      userId: uId,
       isPinned: isPinnedBool,
       status: normalizedStatus,
       createdAt: now,
@@ -170,7 +177,7 @@ class AnnouncementModel {
   async findAll(filter = {}) {
     if (db.isDbConnected) {
       try {
-        let sql = `SELECT id, title, content, category, priority, author, is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt" FROM announcements WHERE 1=1`;
+        let sql = `SELECT id, title, content, category, priority, author, user_id AS "userId", is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt" FROM announcements WHERE 1=1`;
         const params = [];
 
         if (filter.category && filter.category !== 'ALL') {
@@ -192,6 +199,11 @@ class AnnouncementModel {
           const isPinnedBool = filter.isPinned === true || filter.isPinned === 'true';
           params.push(isPinnedBool);
           sql += ` AND is_pinned = $${params.length}`;
+        }
+
+        if (filter.userId) {
+          params.push(String(filter.userId));
+          sql += ` AND user_id = $${params.length}`;
         }
 
         if (filter.search && filter.search.trim()) {
@@ -231,6 +243,10 @@ class AnnouncementModel {
       results = results.filter(a => a.isPinned === isPinnedBool);
     }
 
+    if (filter.userId) {
+      results = results.filter(a => String(a.userId) === String(filter.userId));
+    }
+
     if (filter.search && filter.search.trim()) {
       const q = filter.search.toLowerCase().trim();
       results = results.filter(a =>
@@ -260,7 +276,7 @@ class AnnouncementModel {
     if (db.isDbConnected) {
       try {
         const res = await db.query(
-          `SELECT id, title, content, category, priority, author, is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"
+          `SELECT id, title, content, category, priority, author, user_id AS "userId", is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"
            FROM announcements WHERE id = $1`,
           [strId]
         );
@@ -271,6 +287,32 @@ class AnnouncementModel {
     }
 
     return this.announcements.find(a => a.id === strId) || null;
+  }
+
+  /**
+   * READ: Find all announcements created by a specific user ID
+   * @param {string|number} userId - User ID
+   * @returns {Promise<Array<Object>>|Array<Object>} Announcements list
+   */
+  async findByUserId(userId) {
+    if (!userId) return [];
+    const strId = userId.toString();
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `SELECT id, title, content, category, priority, author, user_id AS "userId", is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"
+           FROM announcements WHERE user_id = $1
+           ORDER BY is_pinned DESC, CASE WHEN id ~ '^[0-9]+$' THEN CAST(id AS BIGINT) ELSE 0 END DESC, created_at DESC`,
+          [strId]
+        );
+        return res.rows.map(mapAnnouncementRow);
+      } catch (err) {
+        console.error('Error finding announcements by userId in DB:', err.message);
+      }
+    }
+
+    return this.announcements.filter(a => String(a.userId) === strId);
   }
 
   /**
@@ -326,15 +368,16 @@ class AnnouncementModel {
     const updatedIsPinned = isPinned !== undefined
       ? Boolean(isPinned === true || isPinned === 'true' || isPinned === 'on')
       : existing.isPinned;
+    const updatedUserId = updateData.userId !== undefined ? (updateData.userId ? String(updateData.userId) : null) : (updateData.user_id !== undefined ? (updateData.user_id ? String(updateData.user_id) : null) : existing.userId);
 
     if (db.isDbConnected) {
       try {
         const res = await db.query(
           `UPDATE announcements
-           SET title = $1, content = $2, category = $3, priority = $4, author = $5, is_pinned = $6, status = $7, updated_at = NOW()
-           WHERE id = $8
-           RETURNING id, title, content, category, priority, author, is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
-          [updatedTitle, updatedContent, updatedCategory, updatedPriority, updatedAuthor, updatedIsPinned, updatedStatus, strId]
+           SET title = $1, content = $2, category = $3, priority = $4, author = $5, is_pinned = $6, status = $7, user_id = $8, updated_at = NOW()
+           WHERE id = $9
+           RETURNING id, title, content, category, priority, author, user_id AS "userId", is_pinned AS "isPinned", status, created_at AS "createdAt", updated_at AS "updatedAt"`,
+          [updatedTitle, updatedContent, updatedCategory, updatedPriority, updatedAuthor, updatedIsPinned, updatedStatus, updatedUserId, strId]
         );
         const updated = mapAnnouncementRow(res.rows[0]);
 
@@ -359,6 +402,7 @@ class AnnouncementModel {
       category: updatedCategory,
       priority: updatedPriority,
       author: updatedAuthor,
+      userId: updatedUserId,
       isPinned: updatedIsPinned,
       status: updatedStatus,
       updatedAt: new Date().toISOString()

@@ -440,10 +440,193 @@ Sistemdeki dört ana veri tablosu (`users`, `announcements`, `alumni`, `job_post
 | **Alumni** | [`/alumni`](http://localhost:5001/alumni), [`/alumni/new`](http://localhost:5001/alumni/new) | `/api/alumni`, `/api/alumni/:id`, `/api/alumni/count` | `alumni` | `AlumniModel`, `AlumniController`, `AlumniView` |
 | **Job Postings** | [`/jobs`](http://localhost:5001/jobs) | `/api/jobs`, `/api/job/:id`, `/api/jobs/count` | `job_postings` | `JobPostingModel`, `JobPostingController` |
 
-Tüm CRUD arayüzlerinde:
-- Üst gezinme çubuğunda canlı **PostgreSQL Bağlantı Rozeti** (`🟢 PostgreSQL Connected (alumni_db:5432)`) yer alır.
-- Modüller arası hızlı geçiş menüsü (Users ↔ Announcements ↔ Alumni ↔ Jobs ↔ Swagger) mevcuttur.
-- Oluşturma, listeleme, detay görüntüleme, güncelleme ve silme (Create, Read, Update, Delete) operasyonları doğrudan PostgreSQL üzerinde transactional olarak yürütülür.
+---
+
+## 🌐 Doğrudan ve İç İçe REST Rotaları (Direct & Nested Routes)
+
+Alumni Sphere platformu, kaynak odaklı REST standartlarına (RESTful Resource-Oriented Architecture) tam uyumlu iki tip rota mimarisi sunar:
+1. **Doğrudan Rotalar (Direct Routes)**: Her bir varlık koleksiyonuna veya tekil kaynağa doğrudan kimlik (`:id`) üzerinden erişim sağlayan uç noktalar.
+2. **İç İçe Rotalar (Nested Routes)**: Veritabanı tabloları arasındaki 1:1 ve 1:N yabancı anahtar (`foreign key`) ilişkilerini HTTP yolu hiyerarşisinde ifade eden ilişkisel uç noktalar (`/api/:parent/:parentId/:child`).
+
+```mermaid
+graph TD
+    subgraph DirectRoutes ["Doğrudan Rotalar (Direct Routes)"]
+        UsersApi["/api/users (GET, POST)<br/>/api/users/:id (GET, PUT, PATCH, DELETE)"]
+        AlumniApi["/api/alumni (GET, POST)<br/>/api/alumni/:id (GET, PUT, PATCH, DELETE)"]
+        AnnounceApi["/api/announcements (GET, POST)<br/>/api/announcements/:id (GET, PUT, PATCH, DELETE)"]
+        JobsApi["/api/jobs (GET, POST)<br/>/api/jobs/:id (GET, PUT, PATCH, DELETE)"]
+    end
+
+    subgraph NestedRoutes ["İç İçe Rotalar (Nested Relational Routes)"]
+        U_Ann["/api/users/:userId/announcements<br/>(GET: Liste, POST: Kullanıcı Adına Duyuru Aç)"]
+        U_Alm["/api/users/:userId/alumni<br/>(GET: Profil Getir, POST: Profil Bağla)"]
+        U_Job["/api/users/:userId/jobs<br/>(GET: Liste, POST: Kullanıcı Adına İlan Aç)"]
+        A_Usr["/api/alumni/:alumniId/user<br/>(GET: Mezunun Kullanıcı Hesabı)"]
+        A_Job["/api/alumni/:alumniId/jobs<br/>(GET: Liste, POST: Mezun Referansıyla İlan Aç)"]
+        J_Usr["/api/jobs/:jobId/user<br/>(GET: İlanı Veren Kullanıcı)"]
+        J_Alm["/api/jobs/:jobId/alumni<br/>(GET: İlanı Öneren Mezun)"]
+    end
+
+    UsersApi -->|1:N| U_Ann
+    UsersApi -->|1:1| U_Alm
+    UsersApi -->|1:N| U_Job
+    AlumniApi -->|1:1| A_Usr
+    AlumniApi -->|1:N| A_Job
+    JobsApi -->|N:1| J_Usr
+    JobsApi -->|N:1| J_Alm
+```
+
+---
+
+### 1. 📌 Doğrudan Rotalar (Direct Resource Routes)
+
+Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile doğrudan yönetilebilir:
+
+| Modül / Varlık | HTTP Metodu | Uç Nokta (Endpoint) | Açıklama | Başarılı Kod |
+| :--- | :--- | :--- | :--- | :--- |
+| **Users** | `GET` | `/api/users` | Tüm kullanıcıları listeler (rol, bölüm, arama filtreleri) | `200 OK` |
+| **Users** | `GET` | `/api/users/count` | Toplam kullanıcı sayısını döndürür | `200 OK` |
+| **Users** | `GET` | `/api/users/:id` | ID'si verilen kullanıcının detaylarını getirir | `200 OK` |
+| **Users** | `POST` | `/api/users` | Sisteme yeni kullanıcı kaydeder | `201 Created` |
+| **Users** | `PUT` | `/api/users/:id` | Kullanıcı kaydını bütünüyle günceller | `200 OK` |
+| **Users** | `PATCH` | `/api/users/:id` | Kullanıcı kaydını kısmi olarak günceller | `200 OK` |
+| **Users** | `DELETE` | `/api/users/:id` | Kullanıcı kaydını siler | `200 OK` |
+| **Announcements** | `GET` | `/api/announcements` | Tüm duyuruları listeler (kategori, öncelik, durum) | `200 OK` |
+| **Announcements** | `GET` | `/api/announcements/count` | Toplam duyuru sayısını döndürür | `200 OK` |
+| **Announcements** | `GET` | `/api/announcements/:id` | Tekil duyuru detayını getirir | `200 OK` |
+| **Announcements** | `POST` | `/api/announcements` | Yeni duyuru oluşturur | `201 Created` |
+| **Announcements** | `PUT` | `/api/announcements/:id` | Duyuruyu bütünüyle günceller | `200 OK` |
+| **Announcements** | `PATCH` | `/api/announcements/:id` | Duyuruyu kısmi günceller | `200 OK` |
+| **Announcements** | `DELETE` | `/api/announcements/:id` | Duyuruyu siler | `200 OK` |
+| **Alumni** | `GET` | `/api/alumni` | Mezunları listeler (bölüm, mezuniyet yılı, mentor filtresi) | `200 OK` |
+| **Alumni** | `GET` | `/api/alumni/count` | Toplam kayıtlı mezun sayısını döndürür | `200 OK` |
+| **Alumni** | `GET` | `/api/alumni/:id` | Mezun profil detayını getirir | `200 OK` |
+| **Alumni** | `POST` | `/api/alumni` | Yeni mezun profili oluşturur | `201 Created` |
+| **Alumni** | `PUT` | `/api/alumni/:id` | Mezun profilini bütünüyle günceller | `200 OK` |
+| **Alumni** | `PATCH` | `/api/alumni/:id` | Mezun profilini kısmi günceller | `200 OK` |
+| **Alumni** | `DELETE` | `/api/alumni/:id` | Mezun profilini siler | `200 OK` |
+| **Job Postings** | `GET` | `/api/jobs` | Tüm iş ilanlarını listeler (tür, şirket, arama) | `200 OK` |
+| **Job Postings** | `GET` | `/api/jobs/count` | Toplam iş ilanı sayısını döndürür | `200 OK` |
+| **Job Postings** | `GET` | `/api/jobs/:id` | Tekil iş ilanı detayını getirir | `200 OK` |
+| **Job Postings** | `POST` | `/api/jobs` | Yeni iş ilanı oluşturur | `201 Created` |
+| **Job Postings** | `PUT` | `/api/jobs/:id` | İş ilanını bütünüyle günceller | `200 OK` |
+| **Job Postings** | `PATCH` | `/api/jobs/:id` | İş ilanını kısmi günceller | `200 OK` |
+| **Job Postings** | `DELETE` | `/api/jobs/:id` | İş ilanını siler | `200 OK` |
+
+---
+
+### 2. 🪢 İç İçe Rotalar (Nested Relational Routes)
+
+İç içe rotalar, veritabanındaki yabancı anahtar (`foreign key`) ilişkilerini REST standartlarına göre modeller:
+
+#### A. Kullanıcı ve Duyuru İlişkisi (`USERS (1) <---> (N) ANNOUNCEMENTS`)
+- **`GET /api/users/:userId/announcements`**:
+  - **Açıklama**: Belirtilen kullanıcının (`user_id`) yayınladığı tüm duyuruları listeler.
+  - **Örnek URL**: `http://localhost:5001/api/users/1/announcements`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "user": { "id": "1", "name": "Eren Kılıç", "email": "eren@alumni.edu", "role": "ADMIN" },
+      "count": 4,
+      "announcements": [
+        {
+          "id": "1",
+          "title": "Annual Alumni Homecoming Weekend 2026",
+          "category": "EVENT",
+          "priority": "HIGH",
+          "userId": "1"
+        }
+      ]
+    }
+    ```
+- **`POST /api/users/:userId/announcements`**:
+  - **Açıklama**: Belirtilen kullanıcı kimliği altında yeni bir duyuru oluşturur (`user_id` otomatik bağlanır).
+  - **İstek Gövdesi**: `{ "title": "Mezunlar Buluşması", "content": "Detaylı içerik...", "category": "EVENT" }`
+  - **Dönen Yanıt**: `201 Created`
+
+#### B. Kullanıcı ve Mezun Profili İlişkisi (`USERS (1) <---> (1) ALUMNI`)
+- **`GET /api/users/:userId/alumni`**:
+  - **Açıklama**: Belirtilen sistem kullanıcısına bağlı mezun profilini getirir.
+  - **Örnek URL**: `http://localhost:5001/api/users/1/alumni`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "user": { "id": "1", "name": "Eren Kılıç" },
+      "alumni": {
+        "id": "3",
+        "name": "Erenk3",
+        "company": "Spotify",
+        "role": "Full Stack Engineer",
+        "userId": "1"
+      }
+    }
+    ```
+- **`POST /api/users/:userId/alumni`**:
+  - **Açıklama**: Kullanıcı için yeni bir mezun profili oluşturur ve `user_id` ile bağlar.
+  - **Dönen Yanıt**: `201 Created`
+
+#### C. Kullanıcı ve İş İlanı İlişkisi (`USERS (1) <---> (N) JOB_POSTINGS`)
+- **`GET /api/users/:userId/jobs`**:
+  - **Açıklama**: Belirtilen kullanıcının oluşturduğu tüm iş ilanlarını listeler.
+  - **Örnek URL**: `http://localhost:5001/api/users/1/jobs`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "user": { "id": "1", "name": "Eren Kılıç" },
+      "count": 1,
+      "jobs": [
+        {
+          "id": "job-1",
+          "title": "Junior Backend Developer (Node.js / PostgreSQL)",
+          "company": "Peak Tech",
+          "userId": "1"
+        }
+      ]
+    }
+    ```
+- **`POST /api/users/:userId/jobs`**:
+  - **Açıklama**: Belirtilen kullanıcı adına yeni bir iş ilanı yayınlar.
+  - **Dönen Yanıt**: `201 Created`
+
+#### D. Mezun ve Kullanıcı Hesabı İlişkisi (`ALUMNI (1) <---> (1) USERS`)
+- **`GET /api/alumni/:alumniId/user`**:
+  - **Açıklama**: Mezun profiliyle (`alumni.user_id`) eşleşen sistem kullanıcısının hesap bilgilerini getirir.
+  - **Örnek URL**: `http://localhost:5001/api/alumni/1/user`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "alumni": { "id": "1", "name": "Hakan Tosun", "department": "Computer Engineering" },
+      "user": { "id": "6", "name": "hakan tosun", "email": "hakatosun@student.com", "role": "STUDENT" }
+    }
+    ```
+
+#### E. Mezun ve İş İlanı İlişkisi (`ALUMNI (1) <---> (N) JOB_POSTINGS`)
+- **`GET /api/alumni/:alumniId/jobs`**:
+  - **Açıklama**: Belirli bir mezunun referans olduğu (`alumni_id`) tüm kariyer fırsatlarını listeler.
+  - **Örnek URL**: `http://localhost:5001/api/alumni/1/jobs`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "alumni": { "id": "1", "name": "Hakan Tosun", "company": "Google" },
+      "count": 1,
+      "jobs": [
+        { "id": "job-1", "title": "Junior Backend Developer (Node.js / PostgreSQL)", "alumniId": "1" }
+      ]
+    }
+    ```
+- **`POST /api/alumni/:alumniId/jobs`**:
+  - **Açıklama**: Mezun profili üzerinden yeni bir iş ilanı / yönlendirme tavsiyesi yayınlar.
+  - **Dönen Yanıt**: `201 Created`
+
+#### F. İş İlanından Kullanıcı ve Mezun İlişkisi
+- **`GET /api/jobs/:jobId/user`**: İlanı oluşturan sistem kullanıcısının bilgilerini döndürür.
+- **`GET /api/jobs/:jobId/alumni`**: İlanı öneren mezun profilinin detaylarını döndürür.
+
 
 
 

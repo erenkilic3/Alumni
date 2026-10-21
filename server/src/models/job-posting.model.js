@@ -48,6 +48,8 @@ class JobPostingModel {
         salaryRange: "$40,000 - $55,000",
         contactEmail: "careers@peaktech.example.com",
         postedBy: "Burak Demir",
+        userId: "1",
+        alumniId: "1",
         deadline: "2026-10-15",
         status: "ACTIVE",
         createdAt: new Date().toISOString(),
@@ -64,6 +66,8 @@ class JobPostingModel {
         salaryRange: "Paid Internship",
         contactEmail: "interns@finanalytica.example.com",
         postedBy: "Selin Öztürk",
+        userId: "2",
+        alumniId: "2",
         deadline: "2026-11-01",
         status: "ACTIVE",
         createdAt: new Date().toISOString(),
@@ -91,6 +95,14 @@ class JobPostingModel {
           sql += ` AND company ILIKE $${idx++}`;
           params.push(`%${options.company}%`);
         }
+        if (options.userId) {
+          sql += ` AND user_id = $${idx++}`;
+          params.push(String(options.userId));
+        }
+        if (options.alumniId) {
+          sql += ` AND alumni_id = $${idx++}`;
+          params.push(String(options.alumniId));
+        }
         if (options.search) {
           sql += ` AND (title ILIKE $${idx} OR company ILIKE $${idx} OR description ILIKE $${idx})`;
           params.push(`%${options.search}%`);
@@ -116,6 +128,12 @@ class JobPostingModel {
     if (options.company) {
       results = results.filter(j => j.company.toLowerCase().includes(options.company.toLowerCase()));
     }
+    if (options.userId) {
+      results = results.filter(j => String(j.userId) === String(options.userId));
+    }
+    if (options.alumniId) {
+      results = results.filter(j => String(j.alumniId) === String(options.alumniId));
+    }
     if (options.search) {
       const q = options.search.toLowerCase();
       results = results.filter(j =>
@@ -140,6 +158,34 @@ class JobPostingModel {
       }
     }
     return this.jobs.find(j => j.id === String(id)) || null;
+  }
+
+  async findByUserId(userId) {
+    if (!userId) return [];
+    const strId = String(userId);
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query('SELECT * FROM job_postings WHERE user_id = $1 ORDER BY created_at DESC', [strId]);
+        return res.rows.map(mapJobPostingRow);
+      } catch (err) {
+        console.warn('⚠️ PostgreSQL query failed, using in-memory jobs:', err.message);
+      }
+    }
+    return this.jobs.filter(j => String(j.userId) === strId);
+  }
+
+  async findByAlumniId(alumniId) {
+    if (!alumniId) return [];
+    const strId = String(alumniId);
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query('SELECT * FROM job_postings WHERE alumni_id = $1 ORDER BY created_at DESC', [strId]);
+        return res.rows.map(mapJobPostingRow);
+      } catch (err) {
+        console.warn('⚠️ PostgreSQL query failed, using in-memory jobs:', err.message);
+      }
+    }
+    return this.jobs.filter(j => String(j.alumniId) === strId);
   }
 
   async create(data) {

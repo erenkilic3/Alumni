@@ -4,6 +4,8 @@ const AnnouncementController = require('./announcement.controller');
 const ApiAnnouncementController = require('./api-announcement.controller');
 const AlumniController = require('./alumni.controller');
 const ApiAlumniController = require('./api-alumni.controller');
+const ApiJobController = require('./api-job.controller');
+const NestedController = require('./nested.controller');
 
 module.exports = {
   UserController,
@@ -11,6 +13,8 @@ module.exports = {
   AnnouncementController,
   ApiAnnouncementController,
   AlumniController,
-  ApiAlumniController
+  ApiAlumniController,
+  ApiJobController,
+  NestedController
 };
 

@@ -23,6 +23,7 @@ function mapAlumniRow(row) {
     avatar: row.avatar,
     isMentor: Boolean(row.isMentor !== undefined ? row.isMentor : row.is_mentor),
     bio: row.bio,
+    userId: row.user_id !== undefined ? String(row.user_id) : (row.userId !== undefined ? String(row.userId) : null),
     createdAt: row.createdAt instanceof Date ? row.createdAt.toISOString() : (row.createdAt || row.created_at)
   };
 }
@@ -47,6 +48,7 @@ class AlumniModel {
         avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&auto=format&fit=crop&q=80",
         isMentor: true,
         bio: "Graduated with honors in 2021. Open for student mentorship in cloud infrastructure.",
+        userId: "6",
         createdAt: "2026-10-14T06:33:33.333Z"
       },
       {
@@ -62,6 +64,7 @@ class AlumniModel {
         avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80",
         isMentor: true,
         bio: "Passionate about building customer-centric products. Mentor for tech career transitions.",
+        userId: "7",
         createdAt: "2026-10-14T06:33:33.333Z"
       },
       {
@@ -77,6 +80,39 @@ class AlumniModel {
         avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80",
         isMentor: false,
         bio: "Building audio discovery features. Alumni representative for Nordic region.",
+        userId: "1",
+        createdAt: "2026-10-14T06:33:33.333Z"
+      },
+      {
+        id: "4",
+        name: "Emre Çelik",
+        graduationYear: 2018,
+        department: "Electrical & Electronics Engineering",
+        company: "Tesla",
+        role: "Autopilot Firmware Engineer",
+        location: "Berlin, Germany",
+        industry: "Automotive & AI",
+        skills: ["C++", "Embedded Systems", "Robotics", "Computer Vision"],
+        avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&auto=format&fit=crop&q=80",
+        isMentor: true,
+        bio: "Working on automotive autonomy. Happy to connect with junior engineers.",
+        userId: "4",
+        createdAt: "2026-10-14T06:33:33.333Z"
+      },
+      {
+        id: "5",
+        name: "Selin Öztürk",
+        graduationYear: 2022,
+        department: "Business Administration",
+        company: "McKinsey & Company",
+        role: "Associate Consultant",
+        location: "Istanbul, Turkey",
+        industry: "Management Consulting",
+        skills: ["Financial Modeling", "Corporate Strategy", "Market Research"],
+        avatar: "https://images.unsplash.com/photo-1517841905240-472988babdf9?w=150&auto=format&fit=crop&q=80",
+        isMentor: false,
+        bio: "Consulting for energy and sustainability sectors.",
+        userId: "2",
         createdAt: "2026-10-14T06:33:33.333Z"
       }
     ];
@@ -88,7 +124,7 @@ class AlumniModel {
   async findAll(filters = {}) {
     if (db.isDbConnected) {
       try {
-        let sql = `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt" FROM alumni WHERE 1=1`;
+        let sql = `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, user_id AS "userId", created_at AS "createdAt" FROM alumni WHERE 1=1`;
         const params = [];
 
         if (filters.department && filters.department !== 'All') {
@@ -146,7 +182,7 @@ class AlumniModel {
     if (db.isDbConnected) {
       try {
         const res = await db.query(
-          `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt" FROM alumni WHERE id = $1`,
+          `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, user_id AS "userId", created_at AS "createdAt" FROM alumni WHERE id = $1`,
           [strId]
         );
         return mapAlumniRow(res.rows[0]);
@@ -158,10 +194,32 @@ class AlumniModel {
   }
 
   /**
+   * READ ONE: Find alumni profile linked to a specific user ID
+   */
+  async findByUserId(userId) {
+    if (!userId) return null;
+    const strId = userId.toString();
+
+    if (db.isDbConnected) {
+      try {
+        const res = await db.query(
+          `SELECT id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, user_id AS "userId", created_at AS "createdAt" FROM alumni WHERE user_id = $1 LIMIT 1`,
+          [strId]
+        );
+        return mapAlumniRow(res.rows[0]);
+      } catch (err) {
+        console.error('Error in AlumniModel.findByUserId DB query:', err.message);
+      }
+    }
+    return this.alumni.find(a => String(a.userId) === strId) || null;
+  }
+
+  /**
    * CREATE: Insert a new alumni profile
    */
   async create(data) {
     const id = data.id || `alm_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
+    const userId = data.userId !== undefined ? (data.userId ? String(data.userId) : null) : (data.user_id !== undefined ? (data.user_id ? String(data.user_id) : null) : null);
     const newAlumni = {
       id,
       name: (data.name || '').trim(),
@@ -175,15 +233,16 @@ class AlumniModel {
       avatar: data.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
       isMentor: Boolean(data.isMentor),
       bio: (data.bio || "New alumni profile.").trim(),
+      userId,
       createdAt: data.createdAt || new Date().toISOString()
     };
 
     if (db.isDbConnected) {
       try {
         const res = await db.query(
-          `INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, created_at)
-           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-           RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt"`,
+          `INSERT INTO alumni (id, name, graduation_year, department, company, role, location, industry, skills, avatar, is_mentor, bio, user_id, created_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+           RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, user_id AS "userId", created_at AS "createdAt"`,
           [
             newAlumni.id,
             newAlumni.name,
@@ -197,6 +256,7 @@ class AlumniModel {
             newAlumni.avatar,
             newAlumni.isMentor,
             newAlumni.bio,
+            newAlumni.userId,
             newAlumni.createdAt
           ]
         );
@@ -235,15 +295,16 @@ class AlumniModel {
     const avatar = data.avatar !== undefined ? data.avatar.trim() : existing.avatar;
     const isMentor = data.isMentor !== undefined ? Boolean(data.isMentor) : existing.isMentor;
     const bio = data.bio !== undefined ? data.bio.trim() : existing.bio;
+    const userId = data.userId !== undefined ? (data.userId ? String(data.userId) : null) : (data.user_id !== undefined ? (data.user_id ? String(data.user_id) : null) : existing.userId);
 
     if (db.isDbConnected) {
       try {
         const res = await db.query(
           `UPDATE alumni
-           SET name = $1, graduation_year = $2, department = $3, company = $4, role = $5, location = $6, industry = $7, skills = $8, avatar = $9, is_mentor = $10, bio = $11
-           WHERE id = $12
-           RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, created_at AS "createdAt"`,
-          [name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio, strId]
+           SET name = $1, graduation_year = $2, department = $3, company = $4, role = $5, location = $6, industry = $7, skills = $8, avatar = $9, is_mentor = $10, bio = $11, user_id = $12
+           WHERE id = $13
+           RETURNING id, name, graduation_year AS "graduationYear", department, company, role, location, industry, skills, avatar, is_mentor AS "isMentor", bio, user_id AS "userId", created_at AS "createdAt"`,
+          [name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio, userId, strId]
         );
         const updated = mapAlumniRow(res.rows[0]);
         const idx = this.alumni.findIndex(a => a.id === strId);
@@ -256,7 +317,7 @@ class AlumniModel {
 
     const updatedAlumni = {
       ...existing,
-      name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio
+      name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio, userId
     };
     const idx = this.alumni.findIndex(a => a.id === strId);
     if (idx !== -1) this.alumni[idx] = updatedAlumni;

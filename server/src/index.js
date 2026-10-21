@@ -421,7 +421,9 @@ const {
   announcementRoutes,
   apiAnnouncementRoutes,
   alumniRoutes,
-  apiAlumniRoutes
+  apiAlumniRoutes,
+  apiJobRoutes,
+  nestedRoutes
 } = require('./routes');
 const { JobPostingModel } = require('./models');
 
@@ -442,6 +444,12 @@ app.use(alumniRoutes);
 
 // Mount REST API Alumni routes (/api/alumni, /api/alumni/:id, etc.)
 app.use(apiAlumniRoutes);
+
+// Mount REST API Direct Job routes (/api/jobs, /api/jobs/:id, /api/jobs/count, etc.)
+app.use(apiJobRoutes);
+
+// Mount REST API Nested Relational routes (/api/users/:userId/..., /api/alumni/:alumniId/..., /api/jobs/:jobId/...)
+app.use(nestedRoutes);
 
 // ==========================================================================
 // Swagger / OpenAPI 3.0 Documentation Module
@@ -476,6 +484,7 @@ const swaggerDocument = {
     { name: "Announcement", description: "Web UI and management interface endpoints for announcements (AnnouncementController)" },
     { name: "Alumni", description: "Alumni directory and search endpoints" },
     { name: "Jobs", description: "Career opportunities and job postings" },
+    { name: "NestedRoutes", description: "Hierarchical parent-child relational endpoints across Users, Alumni, Announcements, and Jobs" },
     { name: "Stats", description: "Platform overview and alumni statistics" },
     { name: "Calculator", description: "Utility arithmetic and legacy helper endpoints" }
   ],
@@ -1416,9 +1425,230 @@ const swaggerDocument = {
       get: {
         tags: ["Jobs"],
         summary: "Career and internship opportunities",
-        description: "Returns active job and internship openings for alumni and students.",
+        description: "Returns active job and internship openings for alumni and students with optional filtering.",
+        parameters: [
+          { name: "type", in: "query", required: false, schema: { type: "string" }, description: "Filter by employment type (Full-Time, Internship)" },
+          { name: "company", in: "query", required: false, schema: { type: "string" }, description: "Filter by hiring company name" },
+          { name: "status", in: "query", required: false, schema: { type: "string" }, description: "Filter by status (ACTIVE, CLOSED)" },
+          { name: "search", in: "query", required: false, schema: { type: "string" }, description: "Keyword search in title, company, description" }
+        ],
         responses: {
           "200": { description: "List of jobs and internships" }
+        }
+      },
+      post: {
+        tags: ["Jobs"],
+        summary: "Create a new job posting",
+        description: "Publishes a new job or internship opportunity.",
+        requestBody: {
+          required: true,
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                required: ["title", "company"],
+                properties: {
+                  title: { type: "string", example: "Junior Frontend Engineer" },
+                  company: { type: "string", example: "Vercel" },
+                  location: { type: "string", example: "Remote" },
+                  type: { type: "string", example: "Full-Time" },
+                  description: { type: "string", example: "Work on Next.js core ecosystem." },
+                  requirements: { type: "array", items: { type: "string" }, example: ["React", "TypeScript", "Next.js"] },
+                  salaryRange: { type: "string", example: "$60,000 - $80,000" },
+                  contactEmail: { type: "string", example: "careers@example.com" }
+                }
+              }
+            }
+          }
+        },
+        responses: {
+          "201": { description: "Job posting created successfully" }
+        }
+      }
+    },
+    "/api/jobs/count": {
+      get: {
+        tags: ["Jobs"],
+        summary: "Count total job postings",
+        description: "Returns total number of job postings registered in the system.",
+        responses: {
+          "200": { description: "Total count of jobs" }
+        }
+      }
+    },
+    "/api/jobs/{id}": {
+      get: {
+        tags: ["Jobs"],
+        summary: "Get job posting by ID",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "Job posting details" },
+          "404": { description: "Job posting not found" }
+        }
+      },
+      put: {
+        tags: ["Jobs"],
+        summary: "Full update of job posting",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "Job posting updated" },
+          "404": { description: "Job posting not found" }
+        }
+      },
+      delete: {
+        tags: ["Jobs"],
+        summary: "Delete job posting",
+        parameters: [
+          { name: "id", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "Job posting deleted" },
+          "404": { description: "Job posting not found" }
+        }
+      }
+    },
+    "/api/users/{userId}/announcements": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "List announcements authored by user",
+        description: "Nested endpoint returning all announcements published by a specific user account.",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": { description: "User details and list of announcements" },
+          "404": { description: "User not found" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Create announcement under user",
+        description: "Publishes a new announcement associated with the specified user account.",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "201": { description: "Announcement created under user" },
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/api/users/{userId}/alumni": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get alumni profile for user",
+        description: "Retrieves the single alumni profile linked to the specified user account.",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": { description: "Alumni profile linked to user" },
+          "404": { description: "User not found or no alumni profile linked" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Create and link alumni profile to user",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "201": { description: "Alumni profile created and linked" },
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/api/users/{userId}/jobs": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "List job postings created by user",
+        description: "Retrieves all career opportunities and job postings published by the specified user.",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "200": { description: "List of user job postings" },
+          "404": { description: "User not found" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Create job posting under user",
+        parameters: [
+          { name: "userId", in: "path", required: true, schema: { type: "string" }, description: "User ID" }
+        ],
+        responses: {
+          "201": { description: "Job posting created under user" },
+          "404": { description: "User not found" }
+        }
+      }
+    },
+    "/api/alumni/{alumniId}/user": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get system user account for alumni",
+        description: "Retrieves the user credentials and account linked to this alumni profile.",
+        parameters: [
+          { name: "alumniId", in: "path", required: true, schema: { type: "string" }, description: "Alumni ID" }
+        ],
+        responses: {
+          "200": { description: "User account linked to alumni" },
+          "404": { description: "Alumni or linked user not found" }
+        }
+      }
+    },
+    "/api/alumni/{alumniId}/jobs": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "List jobs referred by alumnus",
+        description: "Retrieves all job opportunities and referrals submitted by this specific alumnus.",
+        parameters: [
+          { name: "alumniId", in: "path", required: true, schema: { type: "string" }, description: "Alumni ID" }
+        ],
+        responses: {
+          "200": { description: "List of jobs referred by alumni" },
+          "404": { description: "Alumni profile not found" }
+        }
+      },
+      post: {
+        tags: ["NestedRoutes"],
+        summary: "Submit job referral by alumnus",
+        parameters: [
+          { name: "alumniId", in: "path", required: true, schema: { type: "string" }, description: "Alumni ID" }
+        ],
+        responses: {
+          "201": { description: "Job referral created under alumni" },
+          "404": { description: "Alumni profile not found" }
+        }
+      }
+    },
+    "/api/jobs/{jobId}/user": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get user account who posted this job",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "User account who posted the job" },
+          "404": { description: "Job or user not found" }
+        }
+      }
+    },
+    "/api/jobs/{jobId}/alumni": {
+      get: {
+        tags: ["NestedRoutes"],
+        summary: "Get alumni profile who referred this job",
+        parameters: [
+          { name: "jobId", in: "path", required: true, schema: { type: "string" }, description: "Job ID" }
+        ],
+        responses: {
+          "200": { description: "Alumni profile who referred the job" },
+          "404": { description: "Job or alumni not found" }
         }
       }
     },
@@ -1709,36 +1939,7 @@ app.get('/api/stats', async (req, res) => {
 });
 
 
-// Jobs Endpoints (Conforms to ddd.md)
-app.get('/api/jobs', async (req, res) => {
-  try {
-    const jobs = await JobPostingModel.findAll(req.query);
-    res.json(jobs);
-  } catch (err) {
-    res.json(mockJobs);
-  }
-});
 
-app.get('/api/jobs/count', async (req, res) => {
-  try {
-    const count = await JobPostingModel.count();
-    res.json({ count });
-  } catch (err) {
-    res.json({ count: mockJobs.length });
-  }
-});
-
-app.get('/api/job/:id', async (req, res) => {
-  try {
-    const job = await JobPostingModel.findById(req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json(job);
-  } catch (err) {
-    const job = mockJobs.find(j => j.id === req.params.id);
-    if (!job) return res.status(404).json({ error: 'Job not found' });
-    res.json(job);
-  }
-});
 
 app.listen(PORT, () => {
   console.log(`🚀 Alumni API server listening on http://localhost:${PORT}`);
