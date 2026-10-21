@@ -101,6 +101,31 @@ CREATE INDEX IF NOT EXISTS idx_job_postings_deadline ON job_postings (deadline);
 CREATE INDEX IF NOT EXISTS idx_job_postings_type ON job_postings (type);
 CREATE INDEX IF NOT EXISTS idx_job_postings_company ON job_postings (company);
 
+-- ------------------------------------------------------------------------------
+-- 5. Applications Table (Job Applications & Submissions)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS applications (
+  id VARCHAR(255) PRIMARY KEY,
+  job_id VARCHAR(255) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  applicant_name VARCHAR(255) NOT NULL,
+  applicant_email VARCHAR(255) NOT NULL,
+  resume_url TEXT,
+  cover_letter TEXT,
+  status VARCHAR(50) DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_applications_job FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE,
+  CONSTRAINT fk_applications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Performance Indexes
+CREATE INDEX IF NOT EXISTS idx_applications_job_id ON applications (job_id);
+CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications (user_id);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications (status);
+CREATE INDEX IF NOT EXISTS idx_applications_created_at ON applications (created_at);
+
+
 -- ==============================================================================
 -- INITIAL SEED DATA (Conforms to ddd.md Sample Records)
 -- ==============================================================================
@@ -282,6 +307,35 @@ VALUES
     'Selin Öztürk',
     '2026-11-01',
     'ACTIVE',
+    NOW(),
+    NOW()
+  )
+ON CONFLICT (id) DO NOTHING;
+
+-- Seed Applications
+INSERT INTO applications (id, job_id, user_id, applicant_name, applicant_email, resume_url, cover_letter, status, created_at, updated_at)
+VALUES
+  (
+    'app-1',
+    'job-1',
+    '3',
+    'Burak Demir',
+    'burak.demir@peak.com',
+    'https://storage.alumni.edu/resumes/burak_demir_cv.pdf',
+    'I have 2 years of experience with Node.js and PostgreSQL. Excited to apply for the Junior Backend role.',
+    'REVIEWING',
+    NOW(),
+    NOW()
+  ),
+  (
+    'app-2',
+    'job-2',
+    '5',
+    'Fatma Kaya',
+    'fatma@alumni.edu',
+    'https://storage.alumni.edu/resumes/fatma_kaya_portfolio.pdf',
+    'Eager to contribute to predictive data models and statistical research dashboards.',
+    'PENDING',
     NOW(),
     NOW()
   )

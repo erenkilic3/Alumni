@@ -6,6 +6,7 @@ const UserSeeder = require('./user.seeder');
 const AnnouncementSeeder = require('./announcement.seeder');
 const AlumniSeeder = require('./alumni.seeder');
 const JobPostingSeeder = require('./job-posting.seeder');
+const ApplicationSeeder = require('./application.seeder');
 const DatabaseSeeder = require('./database.seeder');
 
 module.exports = {
@@ -13,6 +14,7 @@ module.exports = {
   AnnouncementSeeder,
   AlumniSeeder,
   JobPostingSeeder,
+  ApplicationSeeder,
   DatabaseSeeder
 };
 

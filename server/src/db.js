@@ -148,6 +148,24 @@ async function initDb() {
       );
     `);
 
+    // 5. Applications Table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS applications (
+        id VARCHAR(255) PRIMARY KEY,
+        job_id VARCHAR(255) NOT NULL,
+        user_id VARCHAR(255) NOT NULL,
+        applicant_name VARCHAR(255) NOT NULL,
+        applicant_email VARCHAR(255) NOT NULL,
+        resume_url TEXT,
+        cover_letter TEXT,
+        status VARCHAR(50) DEFAULT 'PENDING',
+        created_at TIMESTAMPTZ DEFAULT NOW(),
+        updated_at TIMESTAMPTZ DEFAULT NOW(),
+        CONSTRAINT fk_applications_job FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE,
+        CONSTRAINT fk_applications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+
     // Seed Users if table is empty
     const usersCountRes = await pool.query('SELECT COUNT(*) AS count FROM users');
     if (parseInt(usersCountRes.rows[0].count, 10) === 0) {
@@ -357,6 +375,43 @@ async function initDb() {
            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, NOW(), NOW())
            ON CONFLICT (id) DO NOTHING`,
           [j.id, j.title, j.company, j.location, j.type, j.description, j.requirements, j.salaryRange, j.contactEmail, j.postedBy, j.deadline, j.status]
+        );
+      }
+    }
+
+    // Seed Applications if table is empty
+    const appCountRes = await pool.query('SELECT COUNT(*) AS count FROM applications');
+    if (parseInt(appCountRes.rows[0].count, 10) === 0) {
+      console.log('🌱 Seeding initial applications into PostgreSQL...');
+      const seedApps = [
+        {
+          id: "app-1",
+          jobId: "job-1",
+          userId: "3",
+          applicantName: "Burak Demir",
+          applicantEmail: "burak.demir@peak.com",
+          resumeUrl: "https://storage.alumni.edu/resumes/burak_demir_cv.pdf",
+          coverLetter: "I have 2 years of experience with Node.js and PostgreSQL. Excited to apply for the Junior Backend role.",
+          status: "REVIEWING"
+        },
+        {
+          id: "app-2",
+          jobId: "job-2",
+          userId: "5",
+          applicantName: "Fatma Kaya",
+          applicantEmail: "fatma@alumni.edu",
+          resumeUrl: "https://storage.alumni.edu/resumes/fatma_kaya_portfolio.pdf",
+          coverLetter: "Eager to contribute to predictive data models and statistical research dashboards.",
+          status: "PENDING"
+        }
+      ];
+
+      for (const a of seedApps) {
+        await pool.query(
+          `INSERT INTO applications (id, job_id, user_id, applicant_name, applicant_email, resume_url, cover_letter, status, created_at, updated_at)
+           VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW(), NOW())
+           ON CONFLICT (id) DO NOTHING`,
+          [a.id, a.jobId, a.userId, a.applicantName, a.applicantEmail, a.resumeUrl, a.coverLetter, a.status]
         );
       }
     }
