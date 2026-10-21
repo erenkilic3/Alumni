@@ -78,7 +78,65 @@ const fallbackAlumni = [
   }
 ];
 
+const fallbackJobs = [
+  {
+    id: "job-1",
+    title: "Junior Backend Developer (Node.js / PostgreSQL)",
+    company: "Peak Tech",
+    location: "Remote / Istanbul",
+    type: "Full-Time",
+    description: "We are seeking a junior backend engineer to join our high-growth platform team working on scalable REST APIs and PostgreSQL databases.",
+    requirements: ["Node.js", "PostgreSQL", "Express", "Docker", "Git"],
+    salaryRange: "$40,000 - $55,000",
+    contactEmail: "careers@peaktech.example.com",
+    postedBy: "Burak Demir",
+    status: "ACTIVE",
+    deadline: "2026-10-15"
+  },
+  {
+    id: "job-2",
+    title: "Data Science Intern",
+    company: "FinAnalytica",
+    location: "Hybrid (Ankara)",
+    type: "Internship",
+    description: "Join our financial analytics lab to assist senior data scientists in predictive modeling, statistical reporting, and dashboard creation.",
+    requirements: ["Python", "Pandas", "SQL", "Data Visualization", "Machine Learning Basics"],
+    salaryRange: "Paid Internship",
+    contactEmail: "interns@finanalytica.example.com",
+    postedBy: "Selin Öztürk",
+    status: "ACTIVE",
+    deadline: "2026-11-01"
+  }
+];
+
+const fallbackApplications = [
+  {
+    id: "app-1",
+    jobId: "job-1",
+    userId: "3",
+    applicantName: "Burak Demir",
+    applicantEmail: "burak.demir@peak.com",
+    resumeUrl: "https://storage.alumni.edu/resumes/burak_demir_cv.pdf",
+    coverLetter: "I have 2 years of experience with Node.js and PostgreSQL. Excited to apply for the Junior Backend role.",
+    status: "REVIEWING",
+    createdAt: "2026-10-10T12:00:00.000Z"
+  },
+  {
+    id: "app-2",
+    jobId: "job-2",
+    userId: "5",
+    applicantName: "Fatma Kaya",
+    applicantEmail: "fatma@alumni.edu",
+    resumeUrl: "https://storage.alumni.edu/resumes/fatma_kaya_portfolio.pdf",
+    coverLetter: "Eager to contribute to predictive data models and statistical research dashboards.",
+    status: "PENDING",
+    createdAt: "2026-10-12T14:30:00.000Z"
+  }
+];
+
 let alumniData = [...fallbackAlumni];
+let jobsData = [...fallbackJobs];
+let applicationsData = [...fallbackApplications];
 let activeTab = 'directory';
 
 // ==========================================================================
@@ -174,58 +232,377 @@ async function loadStats() {
   } catch (e) {}
 }
 
+// ==========================================================================
+// Job Board & Applications Management
+// ==========================================================================
 async function loadJobs() {
-  const jobsList = document.getElementById('jobsList');
-  let jobs = [
-    {
-      title: "Junior Backend Developer (Node.js / PostgreSQL)",
-      company: "Peak Tech",
-      location: "Remote / Istanbul",
-      type: "Full-Time",
-      postedBy: "Burak Demir (2019 Alumni)",
-      deadline: "Oct 15, 2026"
-    },
-    {
-      title: "Data Science Intern",
-      company: "FinAnalytica",
-      location: "Hybrid (Ankara)",
-      type: "Internship",
-      postedBy: "Selin Öztürk (2022 Alumni)",
-      deadline: "Nov 01, 2026"
-    },
-    {
-      title: "Cloud Infrastructure Specialist",
-      company: "Hyperscale Cloud",
-      location: "Zurich / Remote",
-      type: "Full-Time",
-      postedBy: "Ayşe Yılmaz (2021 Alumni)",
-      deadline: "Nov 20, 2026"
-    }
-  ];
-
   try {
     const res = await fetch(`${API_BASE_URL}/jobs`);
     if (res.ok) {
       const data = await res.json();
-      if (data.length) jobs = data;
+      if (Array.isArray(data.jobs)) {
+        jobsData = data.jobs;
+      } else if (Array.isArray(data)) {
+        jobsData = data;
+      }
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Backend API not responding for jobs, using local store.');
+  }
+  updateJobDropdowns();
+  renderJobs();
+}
 
-  jobsList.innerHTML = jobs.map(job => `
-    <div class="job-card">
-      <div class="job-main">
-        <h4>${job.title}</h4>
-        <div class="job-meta">
-          <span>🏢 ${job.company}</span>
-          <span>📍 ${job.location}</span>
-          <span>💼 ${job.type}</span>
-          <span>👤 Posted by: ${job.postedBy}</span>
+function updateJobDropdowns() {
+  const appJobFilter = document.getElementById('appJobSelectFilter');
+  const appFormJobSelect = document.getElementById('appFormJobSelect');
+
+  if (appJobFilter) {
+    const currentVal = appJobFilter.value;
+    appJobFilter.innerHTML = '<option value="All">All Jobs</option>' +
+      jobsData.map(j => `<option value="${j.id}">${j.title} (${j.company})</option>`).join('');
+    if (currentVal) appJobFilter.value = currentVal;
+  }
+
+  if (appFormJobSelect) {
+    appFormJobSelect.innerHTML = jobsData.map(j =>
+      `<option value="${j.id}">${j.title} — ${j.company} [${j.type}]</option>`
+    ).join('');
+  }
+}
+
+function getFilteredJobs() {
+  const search = (document.getElementById('jobSearchInput')?.value || '').trim().toLowerCase();
+  const type = document.getElementById('jobTypeFilter')?.value || 'All';
+  const status = document.getElementById('jobStatusFilter')?.value || 'All';
+
+  return jobsData.filter(j => {
+    const matchesSearch = !search ||
+      j.title.toLowerCase().includes(search) ||
+      j.company.toLowerCase().includes(search) ||
+      (j.description && j.description.toLowerCase().includes(search)) ||
+      (Array.isArray(j.requirements) && j.requirements.some(r => r.toLowerCase().includes(search)));
+
+    const matchesType = type === 'All' || j.type.toLowerCase() === type.toLowerCase();
+    const matchesStatus = status === 'All' || j.status.toUpperCase() === status.toUpperCase();
+
+    return matchesSearch && matchesType && matchesStatus;
+  });
+}
+
+function renderJobs() {
+  const jobsList = document.getElementById('jobsList');
+  const counter = document.getElementById('jobsCount');
+  if (!jobsList) return;
+
+  const filtered = getFilteredJobs();
+  if (counter) counter.textContent = `Showing ${filtered.length} of ${jobsData.length} career opportunities`;
+
+  if (filtered.length === 0) {
+    jobsList.innerHTML = `
+      <div style="text-align: center; padding: 50px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">💼</div>
+        <h3 style="font-family: var(--font-heading); margin-bottom: 4px;">No job postings found</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">Try adjusting your keyword search or employment type filter.</p>
+      </div>
+    `;
+    return;
+  }
+
+  jobsList.innerHTML = filtered.map(job => {
+    const reqs = Array.isArray(job.requirements) ? job.requirements : [];
+    const statusClass = (job.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'status-active' : 'status-closed';
+
+    return `
+      <div class="job-card" data-job-id="${job.id}">
+        <div class="job-card-header">
+          <div class="job-title-group">
+            <h3>${job.title}</h3>
+            <div class="job-company-badge">
+              <span>🏢</span> ${job.company}
+            </div>
+          </div>
+          <div class="job-badges">
+            <span class="type-pill">${job.type || 'Full-Time'}</span>
+            <span class="status-pill-badge ${statusClass}">${job.status || 'ACTIVE'}</span>
+          </div>
+        </div>
+
+        <div class="job-meta-grid">
+          <span class="job-meta-item">📍 ${job.location || 'Remote'}</span>
+          ${job.salaryRange ? `<span class="job-meta-item">💰 ${job.salaryRange}</span>` : ''}
+          ${job.deadline ? `<span class="job-meta-item">📅 Deadline: ${job.deadline}</span>` : ''}
+          ${job.contactEmail ? `<span class="job-meta-item">✉️ ${job.contactEmail}</span>` : ''}
+        </div>
+
+        <p class="job-description">${job.description || 'Join our engineering network team.'}</p>
+
+        ${reqs.length ? `
+          <div class="job-requirements-list">
+            ${reqs.map(r => `<span class="req-tag">${r}</span>`).join('')}
+          </div>
+        ` : ''}
+
+        <div class="job-card-footer">
+          <div class="job-poster-info">
+            👤 Posted by: <strong>${job.postedBy || 'Alumni Career Network'}</strong>
+          </div>
+          <div class="job-card-actions">
+            <button class="btn btn-outline btn-sm" onclick="window.openJobAppsModal('${job.id}')">
+              <span>👥 View Applicants</span>
+            </button>
+            <button class="btn btn-primary btn-sm" onclick="window.openApplyModal('${job.id}')">
+              <span>✍️ Apply Now</span>
+            </button>
+          </div>
         </div>
       </div>
-      <button class="btn btn-primary" onclick="alert('Application request forwarded to ${job.postedBy}!')">Apply Now</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
+
+// --------------------------------------------------------------------------
+// Applications Hub Engine
+// --------------------------------------------------------------------------
+async function loadApplications() {
+  try {
+    const res = await fetch(`${API_BASE_URL}/applications`);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.applications)) {
+        applicationsData = data.applications;
+      } else if (Array.isArray(data)) {
+        applicationsData = data;
+      }
+    }
+  } catch (e) {
+    console.warn('Backend API not responding for applications, using local store.');
+  }
+  renderApplications();
+}
+
+function getFilteredApplications() {
+  const search = (document.getElementById('appSearchInput')?.value || '').trim().toLowerCase();
+  const status = document.getElementById('appStatusFilter')?.value || 'All';
+  const jobId = document.getElementById('appJobSelectFilter')?.value || 'All';
+
+  return applicationsData.filter(app => {
+    const matchesSearch = !search ||
+      app.applicantName.toLowerCase().includes(search) ||
+      app.applicantEmail.toLowerCase().includes(search) ||
+      (app.coverLetter && app.coverLetter.toLowerCase().includes(search));
+
+    const matchesStatus = status === 'All' || app.status.toUpperCase() === status.toUpperCase();
+    const matchesJob = jobId === 'All' || String(app.jobId) === String(jobId);
+
+    return matchesSearch && matchesStatus && matchesJob;
+  });
+}
+
+function renderApplications() {
+  const list = document.getElementById('applicationsList');
+  const counter = document.getElementById('applicationsCount');
+  if (!list) return;
+
+  const filtered = getFilteredApplications();
+  if (counter) counter.textContent = `Showing ${filtered.length} of ${applicationsData.length} candidate applications`;
+
+  if (filtered.length === 0) {
+    list.innerHTML = `
+      <div style="text-align: center; padding: 50px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
+        <div style="font-size: 2.2rem; margin-bottom: 8px;">📄</div>
+        <h3 style="font-family: var(--font-heading); margin-bottom: 4px;">No applications found</h3>
+        <p style="color: var(--text-muted); font-size: 0.9rem;">No candidate submissions match your current filters.</p>
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = filtered.map(app => {
+    const job = jobsData.find(j => String(j.id) === String(app.jobId));
+    const jobTitle = job ? `${job.title} (${job.company})` : `Job #${app.jobId}`;
+    const statusKey = (app.status || 'PENDING').toLowerCase();
+
+    return `
+      <div class="application-card" data-app-id="${app.id}">
+        <div class="app-card-header">
+          <div class="applicant-info">
+            <h4>${app.applicantName}</h4>
+            <div class="applicant-email">
+              <span>✉️</span> ${app.applicantEmail} • <span style="color: var(--text-muted);">Candidate #${app.userId}</span>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span class="app-target-job">💼 ${jobTitle}</span>
+            <span class="app-status-badge status-badge-${statusKey}">
+              ● ${app.status}
+            </span>
+          </div>
+        </div>
+
+        ${app.coverLetter ? `
+          <div class="app-cover-letter">
+            "${app.coverLetter}"
+          </div>
+        ` : ''}
+
+        <div class="app-card-footer">
+          <div class="app-links">
+            ${app.resumeUrl ? `
+              <a href="${app.resumeUrl}" target="_blank" rel="noopener noreferrer" class="resume-btn-link">
+                <span>📄 View Candidate Resume</span> ↗
+              </a>
+            ` : '<span style="color: var(--text-muted);">No resume link attached</span>'}
+            <span style="color: var(--border-color);">|</span>
+            <span style="font-size: 0.8rem; color: var(--text-muted);">Submitted: ${new Date(app.createdAt).toLocaleDateString()}</span>
+          </div>
+
+          <div class="app-action-buttons">
+            <span style="font-size: 0.78rem; color: var(--text-muted); margin-right: 4px;">Set Status:</span>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REVIEWING')" title="Mark as Reviewing">Reviewing</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'SHORTLISTED')" title="Shortlist Candidate">Shortlist</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')" title="Accept Candidate" style="color: var(--success);">Accept</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REJECTED')" title="Reject Candidate" style="color: #ef4444;">Reject</button>
+            <button class="btn-tag btn-tag-danger" onclick="window.deleteApp('${app.id}')" title="Delete Application">🗑️</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// --------------------------------------------------------------------------
+// Window Application Actions
+// --------------------------------------------------------------------------
+window.openApplyModal = function(jobId = null) {
+  const modal = document.getElementById('applyModalOverlay');
+  const targetInput = document.getElementById('appTargetJobId');
+  const jobSelectGroup = document.getElementById('appJobSelectGroup');
+  const jobSelect = document.getElementById('appFormJobSelect');
+  const title = document.getElementById('applyModalTitle');
+  const subtitle = document.getElementById('applyModalSubtitle');
+
+  updateJobDropdowns();
+
+  if (jobId) {
+    const job = jobsData.find(j => String(j.id) === String(jobId));
+    targetInput.value = jobId;
+    if (jobSelect) jobSelect.value = jobId;
+    if (job) {
+      title.textContent = `Apply for: ${job.title}`;
+      subtitle.textContent = `Hiring at ${job.company} • ${job.location || 'Remote'}`;
+    }
+  } else {
+    targetInput.value = '';
+    title.textContent = 'Submit Job Application';
+    subtitle.textContent = 'Choose an active opening and submit your qualifications';
+  }
+
+  modal.classList.add('open');
+};
+
+window.openJobAppsModal = async function(jobId) {
+  const modal = document.getElementById('viewJobAppsModalOverlay');
+  const title = document.getElementById('jobAppsModalJobTitle');
+  const sub = document.getElementById('jobAppsModalJobSub');
+  const container = document.getElementById('jobSpecificAppsList');
+
+  const job = jobsData.find(j => String(j.id) === String(jobId));
+  const jobName = job ? `${job.title} (${job.company})` : `Job #${jobId}`;
+  title.textContent = `Applicants for: ${jobName}`;
+
+  container.innerHTML = '<div style="text-align: center; padding: 24px;">Loading candidate applications...</div>';
+  modal.classList.add('open');
+
+  try {
+    let jobApps = [];
+    const res = await fetch(`${API_BASE_URL}/jobs/${jobId}/applications`);
+    if (res.ok) {
+      const data = await res.json();
+      jobApps = data.applications || [];
+    } else {
+      jobApps = applicationsData.filter(a => String(a.jobId) === String(jobId));
+    }
+
+    sub.textContent = `${jobApps.length} candidate application(s) received for this role`;
+
+    if (jobApps.length === 0) {
+      container.innerHTML = `
+        <div style="text-align: center; padding: 40px 16px;">
+          <div style="font-size: 2rem; margin-bottom: 8px;">📭</div>
+          <h4>No applications received yet</h4>
+          <p style="color: var(--text-muted); font-size: 0.9rem;">Be the first candidate to apply for this career opening!</p>
+        </div>
+      `;
+      return;
+    }
+
+    container.innerHTML = jobApps.map(app => `
+      <div class="candidate-item-card">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+          <div>
+            <h4 style="font-size: 1.05rem; font-weight: 700;">${app.applicantName}</h4>
+            <div style="font-size: 0.85rem; color: var(--text-muted);">✉️ ${app.applicantEmail} • User #${app.userId}</div>
+          </div>
+          <span class="app-status-badge status-badge-${(app.status || 'PENDING').toLowerCase()}">
+            ● ${app.status}
+          </span>
+        </div>
+
+        ${app.coverLetter ? `
+          <div style="font-size: 0.88rem; color: var(--text-secondary); background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent-primary);">
+            "${app.coverLetter}"
+          </div>
+        ` : ''}
+
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
+          ${app.resumeUrl ? `<a href="${app.resumeUrl}" target="_blank" class="resume-btn-link" style="font-size: 0.84rem;">📄 View Resume ↗</a>` : '<span style="font-size: 0.8rem; color: var(--text-muted);">No CV link</span>'}
+          <div class="app-action-buttons">
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REVIEWING')">Review</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'SHORTLISTED')">Shortlist</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')" style="color: var(--success);">Accept</button>
+            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REJECTED')" style="color: #ef4444;">Reject</button>
+          </div>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = `<div style="color: #ef4444; padding: 20px;">Failed to load job applications: ${err.message}</div>`;
+  }
+};
+
+window.updateAppStatus = async function(appId, newStatus) {
+  try {
+    const res = await fetch(`${API_BASE_URL}/applications/${appId}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: newStatus })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      const updated = data.application;
+      const idx = applicationsData.findIndex(a => String(a.id) === String(appId));
+      if (idx !== -1) applicationsData[idx] = updated;
+    } else {
+      const idx = applicationsData.findIndex(a => String(a.id) === String(appId));
+      if (idx !== -1) applicationsData[idx].status = newStatus;
+    }
+  } catch (err) {
+    const idx = applicationsData.findIndex(a => String(a.id) === String(appId));
+    if (idx !== -1) applicationsData[idx].status = newStatus;
+  }
+  renderApplications();
+  alert(`Application status updated to: ${newStatus}`);
+};
+
+window.deleteApp = async function(appId) {
+  if (!confirm('Are you sure you want to withdraw/delete this application?')) return;
+  try {
+    await fetch(`${API_BASE_URL}/applications/${appId}`, { method: 'DELETE' });
+  } catch (e) {}
+  applicationsData = applicationsData.filter(a => String(a.id) !== String(appId));
+  renderApplications();
+};
 
 // ==========================================================================
 // Filtering & Rendering
@@ -336,6 +713,44 @@ function setupEventListeners() {
   document.getElementById('yearFilter').addEventListener('change', renderAlumni);
   document.getElementById('mentorFilter').addEventListener('change', renderAlumni);
 
+  // Job Filter Listeners
+  const jobSearchInput = document.getElementById('jobSearchInput');
+  const clearJobSearchBtn = document.getElementById('clearJobSearchBtn');
+  if (jobSearchInput) {
+    jobSearchInput.addEventListener('input', () => {
+      if (clearJobSearchBtn) clearJobSearchBtn.style.display = jobSearchInput.value.length > 0 ? 'block' : 'none';
+      renderJobs();
+    });
+  }
+  if (clearJobSearchBtn) {
+    clearJobSearchBtn.addEventListener('click', () => {
+      if (jobSearchInput) jobSearchInput.value = '';
+      clearJobSearchBtn.style.display = 'none';
+      renderJobs();
+    });
+  }
+  document.getElementById('jobTypeFilter')?.addEventListener('change', renderJobs);
+  document.getElementById('jobStatusFilter')?.addEventListener('change', renderJobs);
+
+  // Application Filter Listeners
+  const appSearchInput = document.getElementById('appSearchInput');
+  const clearAppSearchBtn = document.getElementById('clearAppSearchBtn');
+  if (appSearchInput) {
+    appSearchInput.addEventListener('input', () => {
+      if (clearAppSearchBtn) clearAppSearchBtn.style.display = appSearchInput.value.length > 0 ? 'block' : 'none';
+      renderApplications();
+    });
+  }
+  if (clearAppSearchBtn) {
+    clearAppSearchBtn.addEventListener('click', () => {
+      if (appSearchInput) appSearchInput.value = '';
+      clearAppSearchBtn.style.display = 'none';
+      renderApplications();
+    });
+  }
+  document.getElementById('appStatusFilter')?.addEventListener('change', renderApplications);
+  document.getElementById('appJobSelectFilter')?.addEventListener('change', renderApplications);
+
   // Tabs switching
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -348,28 +763,69 @@ function setupEventListeners() {
       if (targetContent) targetContent.classList.add('active');
 
       if (btn.dataset.tab === 'jobs') loadJobs();
+      if (btn.dataset.tab === 'applications') loadApplications();
     });
   });
 
-  // Modal handlers
+  // Alumni Modal Handlers
   const modal = document.getElementById('addModalOverlay');
   const openBtn = document.getElementById('openModalBtn');
   const closeBtn = document.getElementById('closeModalBtn');
   const cancelBtn = document.getElementById('cancelModalBtn');
 
-  const openModal = () => modal.classList.add('open');
-  const closeModal = () => modal.classList.remove('open');
+  const openModal = () => modal?.classList.add('open');
+  const closeModal = () => modal?.classList.remove('open');
 
-  openBtn.addEventListener('click', openModal);
-  closeBtn.addEventListener('click', closeModal);
-  cancelBtn.addEventListener('click', closeModal);
-  modal.addEventListener('click', (e) => {
+  openBtn?.addEventListener('click', openModal);
+  closeBtn?.addEventListener('click', closeModal);
+  cancelBtn?.addEventListener('click', closeModal);
+  modal?.addEventListener('click', (e) => {
     if (e.target === modal) closeModal();
   });
 
-  // Form Submission
+  // Post Job Modal Handlers
+  const jobModal = document.getElementById('addJobModalOverlay');
+  const openJobBtn = document.getElementById('openAddJobModalBtn');
+  const closeJobBtn = document.getElementById('closeJobModalBtn');
+  const cancelJobBtn = document.getElementById('cancelJobModalBtn');
+
+  const openJobModal = () => jobModal?.classList.add('open');
+  const closeJobModal = () => jobModal?.classList.remove('open');
+
+  openJobBtn?.addEventListener('click', openJobModal);
+  closeJobBtn?.addEventListener('click', closeJobModal);
+  cancelJobBtn?.addEventListener('click', closeJobModal);
+  jobModal?.addEventListener('click', (e) => {
+    if (e.target === jobModal) closeJobModal();
+  });
+
+  // Apply Modal Handlers
+  const applyModal = document.getElementById('applyModalOverlay');
+  const openApplyBtn = document.getElementById('openDirectApplyModalBtn');
+  const closeApplyBtn = document.getElementById('closeApplyModalBtn');
+  const cancelApplyBtn = document.getElementById('cancelApplyModalBtn');
+
+  openApplyBtn?.addEventListener('click', () => window.openApplyModal());
+  closeApplyBtn?.addEventListener('click', () => applyModal?.classList.remove('open'));
+  cancelApplyBtn?.addEventListener('click', () => applyModal?.classList.remove('open'));
+  applyModal?.addEventListener('click', (e) => {
+    if (e.target === applyModal) applyModal?.classList.remove('open');
+  });
+
+  // View Applicants Modal Handlers
+  const jobAppsModal = document.getElementById('viewJobAppsModalOverlay');
+  const closeJobAppsBtn = document.getElementById('closeJobAppsModalBtn');
+  const closeJobAppsFooterBtn = document.getElementById('closeJobAppsFooterBtn');
+
+  closeJobAppsBtn?.addEventListener('click', () => jobAppsModal?.classList.remove('open'));
+  closeJobAppsFooterBtn?.addEventListener('click', () => jobAppsModal?.classList.remove('open'));
+  jobAppsModal?.addEventListener('click', (e) => {
+    if (e.target === jobAppsModal) jobAppsModal?.classList.remove('open');
+  });
+
+  // Alumni Form Submission
   const form = document.getElementById('alumniForm');
-  form.addEventListener('submit', async (e) => {
+  form?.addEventListener('submit', async (e) => {
     e.preventDefault();
     const newProfile = {
       name: document.getElementById('formName').value.trim(),
@@ -384,7 +840,6 @@ function setupEventListeners() {
       avatar: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80"
     };
 
-    // Attempt backend save
     try {
       const res = await fetch(`${API_BASE_URL}/alumni`, {
         method: 'POST',
@@ -406,6 +861,88 @@ function setupEventListeners() {
     renderAlumni();
     alert(`🎉 Successfully registered ${newProfile.name} in the Alumni Network!`);
   });
+
+  // Job Form Submission
+  const jobForm = document.getElementById('jobForm');
+  jobForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const newJob = {
+      title: document.getElementById('jobFormTitle').value.trim(),
+      company: document.getElementById('jobFormCompany').value.trim(),
+      location: document.getElementById('jobFormLocation').value.trim() || 'Remote',
+      type: document.getElementById('jobFormType').value,
+      salaryRange: document.getElementById('jobFormSalary').value.trim(),
+      contactEmail: document.getElementById('jobFormEmail').value.trim(),
+      postedBy: document.getElementById('jobFormPostedBy').value.trim() || 'Alumni Career Network',
+      deadline: document.getElementById('jobFormDeadline').value || null,
+      requirements: document.getElementById('jobFormRequirements').value.split(',').map(s => s.trim()).filter(Boolean),
+      description: document.getElementById('jobFormDescription').value.trim(),
+      status: 'ACTIVE'
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/jobs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newJob)
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        jobsData.unshift(saved.job);
+      } else {
+        jobsData.unshift({ id: `job-${Date.now()}`, ...newJob });
+      }
+    } catch (err) {
+      jobsData.unshift({ id: `job-${Date.now()}`, ...newJob });
+    }
+
+    jobForm.reset();
+    closeJobModal();
+    updateJobDropdowns();
+    renderJobs();
+    alert(`🎉 Job opportunity "${newJob.title}" published successfully!`);
+  });
+
+  // Application Form Submission
+  const applicationForm = document.getElementById('applicationForm');
+  applicationForm?.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const explicitJobId = document.getElementById('appTargetJobId').value;
+    const selectedJobId = document.getElementById('appFormJobSelect').value;
+    const finalJobId = explicitJobId || selectedJobId || 'job-1';
+
+    const newApp = {
+      jobId: finalJobId,
+      applicantName: document.getElementById('appFormName').value.trim(),
+      applicantEmail: document.getElementById('appFormEmail').value.trim(),
+      userId: document.getElementById('appFormUserId').value,
+      resumeUrl: document.getElementById('appFormResume').value.trim(),
+      coverLetter: document.getElementById('appFormCoverLetter').value.trim(),
+      status: 'PENDING'
+    };
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/applications`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newApp)
+      });
+      if (res.ok) {
+        const saved = await res.json();
+        applicationsData.unshift(saved.application);
+      } else {
+        applicationsData.unshift({ id: `app-${Date.now()}`, createdAt: new Date().toISOString(), ...newApp });
+      }
+    } catch (err) {
+      applicationsData.unshift({ id: `app-${Date.now()}`, createdAt: new Date().toISOString(), ...newApp });
+    }
+
+    applicationForm.reset();
+    document.getElementById('appTargetJobId').value = '';
+    applyModal?.classList.remove('open');
+    renderApplications();
+    alert(`🎉 Application successfully submitted for ${newApp.applicantName}!`);
+  });
 }
 
 // Initialize on DOM load
@@ -413,6 +950,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initTheme();
   setupEventListeners();
   loadAlumni();
+  loadJobs();
+  loadApplications();
   loadStats();
   checkBackendHealth();
   setInterval(checkBackendHealth, 10000);

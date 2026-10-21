@@ -142,6 +142,10 @@
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
           Job & Internship Board
         </button>
+        <button class="tab-btn" data-tab="applications">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          Applications Hub
+        </button>
         <button class="tab-btn" data-tab="architecture">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
           Docker & System Specs
@@ -212,11 +216,107 @@
 
     <!-- Tab 2: Job Board -->
     <section id="tab-jobs" class="tab-content">
-      <div class="section-intro">
-        <h2>Career & Internship Opportunities</h2>
-        <p>Curated roles posted directly by alumni network members and verified enterprise partners.</p>
+      <div class="section-header-row">
+        <div class="section-intro">
+          <h2>Career & Internship Opportunities</h2>
+          <p>Curated roles posted directly by alumni network members and verified enterprise partners.</p>
+        </div>
+        <button class="btn btn-primary" id="openAddJobModalBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Post New Job</span>
+        </button>
       </div>
+
+      <!-- Job Search & Filter Toolbar -->
+      <div class="filter-card">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="jobSearchInput" placeholder="Search by job title, company, skills, or keywords...">
+          <button id="clearJobSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+        </div>
+
+        <div class="filter-controls">
+          <div class="select-group">
+            <label for="jobTypeFilter">Employment Type</label>
+            <select id="jobTypeFilter">
+              <option value="All">All Types</option>
+              <option value="Full-Time">Full-Time</option>
+              <option value="Internship">Internship</option>
+              <option value="Part-Time">Part-Time</option>
+              <option value="Contract">Contract</option>
+            </select>
+          </div>
+
+          <div class="select-group">
+            <label for="jobStatusFilter">Status</label>
+            <select id="jobStatusFilter">
+              <option value="All">All Statuses</option>
+              <option value="ACTIVE">Active Only</option>
+              <option value="CLOSED">Closed Only</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Header -->
+      <div class="results-header">
+        <span id="jobsCount">Loading career opportunities...</span>
+      </div>
+
       <div class="jobs-list" id="jobsList">
+        <!-- Injected via JS -->
+      </div>
+    </section>
+
+    <!-- Tab 3: Applications Hub -->
+    <section id="tab-applications" class="tab-content">
+      <div class="section-header-row">
+        <div class="section-intro">
+          <h2>Candidate Applications Hub</h2>
+          <p>Track, evaluate, and manage candidate submissions and resume reviews.</p>
+        </div>
+        <button class="btn btn-primary" id="openDirectApplyModalBtn">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+          <span>Submit Application</span>
+        </button>
+      </div>
+
+      <!-- Applications Filter Toolbar -->
+      <div class="filter-card">
+        <div class="search-input-wrapper">
+          <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+          <input type="text" id="appSearchInput" placeholder="Search by candidate name, email, or cover note...">
+          <button id="clearAppSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+        </div>
+
+        <div class="filter-controls">
+          <div class="select-group">
+            <label for="appStatusFilter">Application Status</label>
+            <select id="appStatusFilter">
+              <option value="All">All Statuses</option>
+              <option value="PENDING">Pending Review</option>
+              <option value="REVIEWING">Reviewing</option>
+              <option value="SHORTLISTED">Shortlisted</option>
+              <option value="ACCEPTED">Accepted</option>
+              <option value="REJECTED">Rejected</option>
+            </select>
+          </div>
+
+          <div class="select-group">
+            <label for="appJobSelectFilter">Target Job</label>
+            <select id="appJobSelectFilter">
+              <option value="All">All Jobs</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Results Header -->
+      <div class="results-header">
+        <span id="applicationsCount">Loading applications...</span>
+      </div>
+
+      <div class="applications-container" id="applicationsList">
         <!-- Injected via JS -->
       </div>
     </section>
@@ -340,6 +440,167 @@ npm run client</code></pre>
           <button type="submit" class="btn btn-primary" id="saveProfileBtn">Save & Publish Profile</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Modal: Post New Job -->
+  <div class="modal-overlay" id="addJobModalOverlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3>Post Career Opportunity</h3>
+          <p>Publish a job opening or internship for the alumni network</p>
+        </div>
+        <button class="modal-close" id="closeJobModalBtn">&times;</button>
+      </div>
+      <form id="jobForm" class="modal-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="jobFormTitle">Job Title *</label>
+            <input type="text" id="jobFormTitle" required placeholder="e.g. Senior Frontend Engineer">
+          </div>
+          <div class="form-group">
+            <label for="jobFormCompany">Company Name *</label>
+            <input type="text" id="jobFormCompany" required placeholder="e.g. Stripe / Trendyol">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="jobFormLocation">Location</label>
+            <input type="text" id="jobFormLocation" placeholder="e.g. Remote / Istanbul" value="Remote">
+          </div>
+          <div class="form-group">
+            <label for="jobFormType">Employment Type *</label>
+            <select id="jobFormType" required>
+              <option value="Full-Time">Full-Time</option>
+              <option value="Internship">Internship</option>
+              <option value="Part-Time">Part-Time</option>
+              <option value="Contract">Contract</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="jobFormSalary">Salary / Compensation</label>
+            <input type="text" id="jobFormSalary" placeholder="e.g. $60,000 - $80,000 / Paid">
+          </div>
+          <div class="form-group">
+            <label for="jobFormEmail">Contact Email</label>
+            <input type="email" id="jobFormEmail" placeholder="e.g. careers@company.com">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="jobFormPostedBy">Posted By (Alumnus / Recruiter)</label>
+            <input type="text" id="jobFormPostedBy" placeholder="e.g. Burak Demir" value="Alumni Career Network">
+          </div>
+          <div class="form-group">
+            <label for="jobFormDeadline">Application Deadline</label>
+            <input type="date" id="jobFormDeadline">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="jobFormRequirements">Requirements / Tech Stack (comma-separated)</label>
+          <input type="text" id="jobFormRequirements" placeholder="React, Node.js, PostgreSQL, Docker">
+        </div>
+
+        <div class="form-group">
+          <label for="jobFormDescription">Job Description & Responsibilities *</label>
+          <textarea id="jobFormDescription" rows="3" required placeholder="Outline key duties, scope, and technical stack..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelJobModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveJobBtn">Publish Job Opportunity</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: Submit Job Application -->
+  <div class="modal-overlay" id="applyModalOverlay">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="applyModalTitle">Submit Job Application</h3>
+          <p id="applyModalSubtitle">Submit your resume and details to the hiring team</p>
+        </div>
+        <button class="modal-close" id="closeApplyModalBtn">&times;</button>
+      </div>
+      <form id="applicationForm" class="modal-form">
+        <input type="hidden" id="appTargetJobId" value="">
+
+        <div class="form-group" id="appJobSelectGroup">
+          <label for="appFormJobSelect">Target Opportunity *</label>
+          <select id="appFormJobSelect" required>
+            <!-- Populated dynamically -->
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="appFormName">Full Name *</label>
+            <input type="text" id="appFormName" required placeholder="e.g. Fatma Kaya">
+          </div>
+          <div class="form-group">
+            <label for="appFormEmail">Email Address *</label>
+            <input type="email" id="appFormEmail" required placeholder="e.g. fatma@alumni.edu">
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="appFormUserId">Applicant User Account *</label>
+            <select id="appFormUserId" required>
+              <option value="3">Burak Demir (Student / Eng)</option>
+              <option value="5">Fatma Kaya (Student / Architecture)</option>
+              <option value="1">Eren Kılıç (Admin / Software Eng)</option>
+              <option value="2">Ayşe Yılmaz (Alumni / Google)</option>
+              <option value="6">Hakan Tosun (Student / Medicine)</option>
+              <option value="7">Mehmet Raşit FamousHand (Student)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="appFormResume">Resume / Portfolio Link</label>
+            <input type="url" id="appFormResume" placeholder="https://storage.alumni.edu/resumes/my_cv.pdf">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="appFormCoverLetter">Cover Letter / Introduction Note</label>
+          <textarea id="appFormCoverLetter" rows="3" placeholder="Briefly introduce your qualifications and motivation for this role..."></textarea>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" id="cancelApplyModalBtn">Cancel</button>
+          <button type="submit" class="btn btn-primary" id="saveApplicationBtn">Send Application</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal: View Job Applications -->
+  <div class="modal-overlay" id="viewJobAppsModalOverlay">
+    <div class="modal-card modal-card-large">
+      <div class="modal-header">
+        <div class="modal-title-group">
+          <h3 id="jobAppsModalJobTitle">Job Applications</h3>
+          <p id="jobAppsModalJobSub">Review all applicants for this career opening</p>
+        </div>
+        <button class="modal-close" id="closeJobAppsModalBtn">&times;</button>
+      </div>
+      <div class="modal-body-scrollable">
+        <div id="jobSpecificAppsList">
+          <!-- Injected via JS -->
+        </div>
+      </div>
+      <div class="modal-actions" style="margin-top: 16px;">
+        <button type="button" class="btn btn-secondary" id="closeJobAppsFooterBtn">Close</button>
+      </div>
     </div>
   </div>
 
