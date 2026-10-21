@@ -70,10 +70,25 @@ erDiagram
         TIMESTAMPTZ updated_at "Son güncellenme zamanı"
     }
 
+    APPLICATIONS {
+        VARCHAR(255) id PK "Benzersiz başvuru ID"
+        VARCHAR(255) job_id FK "Başvurulan iş ilanı (job_postings.id)"
+        VARCHAR(255) user_id FK "Başvuran kullanıcı (users.id)"
+        VARCHAR(255) applicant_name "Adayın adı ve soyadı"
+        VARCHAR(255) applicant_email "Adayın iletişim e-postası"
+        TEXT resume_url "Özgeçmiş / CV dosya bağlantısı"
+        TEXT cover_letter "Aday ön yazısı / Başvuru notu"
+        VARCHAR(50) status "Durum (PENDING, REVIEWING, ACCEPTED, REJECTED)"
+        TIMESTAMPTZ created_at "Başvuru tarihi"
+        TIMESTAMPTZ updated_at "Son güncelleme tarihi"
+    }
+
     USERS ||--o| ALUMNI : "ilişkilendirilebilir (1:1, user_id FK)"
     USERS ||--o{ ANNOUNCEMENTS : "oluşturabilir (1:N, user_id FK)"
     USERS ||--o{ JOB_POSTINGS : "yayınlar (1:N, user_id FK)"
     ALUMNI ||--o{ JOB_POSTINGS : "tavsiye eder (1:N, alumni_id FK)"
+    USERS ||--o{ APPLICATIONS : "başvurur (1:N, user_id FK)"
+    JOB_POSTINGS ||--o{ APPLICATIONS : "başvuru alır (1:N, job_id FK)"
 ```
 
 ---
@@ -228,6 +243,40 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
 
 ---
 
+### 5. `applications` Tablosu
+Öğrencilerin ve mezunların kariyer merkezinde veya mezunlar ağında yayınlanan iş ilanlarına yaptıkları başvuruları, ön yazılarını ve başvuru değerlendirme süreçlerini saklar.
+
+| Alan Adı (Column) | Veri Tipi (Type) | Zorunlu (Nullable) | Varsayılan (Default) | Açıklama |
+| :--- | :--- | :--- | :--- | :--- |
+| `id` | `VARCHAR(255)` | **HAYIR** (PK) | — | Başvurunun tekil kimliği (Primary Key) |
+| `job_id` | `VARCHAR(255)` | **HAYIR** (FK) | — | Başvurulan iş ilanı (`job_postings.id` foreign key) |
+| `user_id` | `VARCHAR(255)` | **HAYIR** (FK) | — | Başvuruyu yapan aday / kullanıcı (`users.id` foreign key) |
+| `applicant_name` | `VARCHAR(255)` | EVET | — | Adayın tam adı ve soyadı |
+| `applicant_email` | `VARCHAR(255)` | EVET | — | Adayın iletişim e-posta adresi |
+| `resume_url` | `TEXT` | EVET | — | Adayın PDF / dijital özgeçmiş dosya bağlantısı |
+| `cover_letter` | `TEXT` | EVET | — | Adayın işe başvuru ön yazısı / motivasyon notu |
+| `status` | `VARCHAR(50)` | EVET | `'PENDING'` | Başvuru durumu: `PENDING`, `REVIEWING`, `SHORTLISTED`, `ACCEPTED`, `REJECTED` |
+| `created_at` | `TIMESTAMPTZ` | EVET | `NOW()` | Başvurunun yapıldığı zaman damgası |
+| `updated_at` | `TIMESTAMPTZ` | EVET | `NOW()` | Başvuru durumunun son güncellendiği zaman damgası |
+
+#### Örnek Kayıt:
+```json
+{
+  "id": "app-1",
+  "job_id": "job-1",
+  "user_id": "3",
+  "applicant_name": "Burak Demir",
+  "applicant_email": "burak.demir@peak.com",
+  "resume_url": "https://storage.example.com/resumes/burak-demir-cv.pdf",
+  "cover_letter": "I am passionate about backend distributed systems with Node.js and PostgreSQL.",
+  "status": "PENDING",
+  "created_at": "2026-10-15T11:00:00.000Z",
+  "updated_at": "2026-10-15T11:00:00.000Z"
+}
+```
+
+---
+
 ## 🛠️ DDL (Data Definition Language) SQL Tanımları
 
 PostgreSQL veritabanı başlatıldığında [server/src/db.js](file:///Users/erenkilic/repo/Alumni/server/src/db.js) tarafından otomatik olarak yürütülen SQL şeması:
@@ -301,6 +350,22 @@ CREATE TABLE IF NOT EXISTS job_postings (
   CONSTRAINT fk_job_postings_alumni FOREIGN KEY (alumni_id) REFERENCES alumni(id) ON DELETE SET NULL
 );
 
+-- 5. Applications Tablosu
+CREATE TABLE IF NOT EXISTS applications (
+  id VARCHAR(255) PRIMARY KEY,
+  job_id VARCHAR(255) NOT NULL,
+  user_id VARCHAR(255) NOT NULL,
+  applicant_name VARCHAR(255),
+  applicant_email VARCHAR(255),
+  resume_url TEXT,
+  cover_letter TEXT,
+  status VARCHAR(50) DEFAULT 'PENDING',
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  CONSTRAINT fk_applications_job FOREIGN KEY (job_id) REFERENCES job_postings(id) ON DELETE CASCADE,
+  CONSTRAINT fk_applications_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Performans ve İlişki İndeksleri
 CREATE INDEX IF NOT EXISTS idx_announcements_user_id ON announcements (user_id);
 CREATE INDEX IF NOT EXISTS idx_alumni_user_id ON alumni (user_id);
@@ -311,6 +376,9 @@ CREATE INDEX IF NOT EXISTS idx_job_postings_status ON job_postings (status);
 CREATE INDEX IF NOT EXISTS idx_job_postings_deadline ON job_postings (deadline);
 CREATE INDEX IF NOT EXISTS idx_job_postings_type ON job_postings (type);
 CREATE INDEX IF NOT EXISTS idx_job_postings_company ON job_postings (company);
+CREATE INDEX IF NOT EXISTS idx_applications_job_id ON applications (job_id);
+CREATE INDEX IF NOT EXISTS idx_applications_user_id ON applications (user_id);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications (status);
 ```
 
 ---
@@ -354,6 +422,7 @@ Migrasyon dosyaları sıralı öneklerle adlandırılır ve her biri hem `-- UP`
 3. **[003_create_alumni_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/003_create_alumni_table.sql)**: `alumni` tablosu, indeksler ve rollback komutları.
 4. **[004_seed_initial_data.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/004_seed_initial_data.sql)**: Başlangıç mock/seed verileri ve rollback temizleme komutları.
 5. **[005_create_job_postings_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/005_create_job_postings_table.sql)**: `job_postings` tablosu, indeksler, kısıtlamalar ve rollback komutları.
+6. **[006_create_applications_table.sql](file:///Users/erenkilic/repo/Alumni/server/migrations/006_create_applications_table.sql)**: `applications` tablosu, indeksler, kısıtlamalar, seed veriler ve rollback komutları.
 
 ### 📋 Takip Tablosu: `schema_migrations`
 
@@ -396,10 +465,11 @@ Nesne yönelimli fabrika kalıbı (Factory Pattern) ile modellenmiştir:
 - **`AnnouncementFactory`** ([server/src/factories/announcement.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/announcement.factory.js)): Kategori, öncelik ve yayın durumları (`.pinned()`, `.urgent()`, `.event()`, `.career()`).
 - **`AlumniFactory`** ([server/src/factories/alumni.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/alumni.factory.js)): Mezuniyet yılı, şirket, unvan, lokasyon, yetenek etiketleri ve mentorluk durumu (`.mentor()`, `.inCompany()`, `.graduatedIn()`).
 - **`JobPostingFactory`** ([server/src/factories/job-posting.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/job-posting.factory.js)): Pozisyon unvanı, şirket, lokasyon, istihdam türü, teknik gereksinimler, maaş skalası ve yayın durumu (`.internship()`, `.fullTime()`, `.remote()`, `.inCompany()`, `.active()`).
+- **`ApplicationFactory`** ([server/src/factories/application.factory.js](file:///Users/erenkilic/repo/Alumni/server/src/factories/application.factory.js)): Başvuru CV bağlantısı, ön yazı, aday iletişim bilgileri ve durum trait'leri (`.pending()`, `.reviewing()`, `.shortlisted()`, `.accepted()`, `.rejected()`).
 
 #### Örnek Fabrika Kullanımı:
 ```javascript
-const { UserFactory, AlumniFactory, JobPostingFactory } = require('./server/src/factories');
+const { UserFactory, AlumniFactory, JobPostingFactory, ApplicationFactory } = require('./server/src/factories');
 
 // Bellekte 5 adet öğrenci oluştur (DB'ye yazmaz)
 const students = UserFactory.student().make(5);
@@ -409,6 +479,9 @@ const mentors = await AlumniFactory.mentor().inCompany('Google').create(3);
 
 // Doğrudan 4 adet uzaktan staj/iş ilanı oluştur ve DB'ye ekle
 const remoteJobs = await JobPostingFactory.internship().remote().create(4);
+
+// Bir ilana 3 adet bekleyen başvuru oluştur ve DB'ye ekle
+const applications = await ApplicationFactory.pending().forJob('job-1').create(3);
 ```
 
 ### 🌱 Tohumlayıcılar (`server/src/seeders/`)
@@ -417,21 +490,22 @@ const remoteJobs = await JobPostingFactory.internship().remote().create(4);
 - **`AnnouncementSeeder`**: Temel kampüs duyurularını ve dinamik duyuruları ekler.
 - **`AlumniSeeder`**: Örnek lider mezun profillerini ve dinamik mezunları ekler.
 - **`JobPostingSeeder`**: Temel kariyer fırsatlarını (`job-1`, `job-2`) ve dinamik fabrika iş ilanlarını ekler.
+- **`ApplicationSeeder`**: Temel iş başvurularını (`app-1`, `app-2`) ve dinamik fabrika başvurularını ekler.
 - **`DatabaseSeeder`**: Tüm tohumlayıcıları koordine eden ana orkestratör (`--clean` seçeneğiyle tabloları sıfırlayıp baştan tohumlama yapabilir).
 
 ### 💻 Tohumlama CLI Komutları
 
 | Komut | Açıklama |
 | :--- | :--- |
-| `npm run seed` veya `npm run db:seed` | Temel kayıtları ve varsayılan fabrika verilerini (10 kullanıcı, 8 duyuru, 10 mezun, 6 iş ilanı) veritabanına ekler. |
+| `npm run seed` veya `npm run db:seed` | Temel kayıtları ve varsayılan fabrika verilerini (10 kullanıcı, 8 duyuru, 10 mezun, 6 iş ilanı, 6 başvuru) veritabanına ekler. |
 | `npm run seed:fresh` | Mevcut tabloları temizler (`TRUNCATE CASCADE`) ve sıfırdan temiz tohum verileri oluşturur. |
-| `node server/src/db/seed.js --users=25 --alumni=30 --jobs=15` | İstenilen adetlerde özel dinamik tohumlama yapar. |
+| `node server/src/db/seed.js --users=25 --alumni=30 --jobs=15 --applications=20` | İstenilen adetlerde özel dinamik tohumlama yapar. |
 
 ---
 
 ## 🖥️ Veritabanı Bağlantılı CRUD Arayüzleri (MVC CRUD Interfaces)
 
-Sistemdeki dört ana veri tablosu (`users`, `announcements`, `alumni`, `job_postings`) için PostgreSQL veritabanına doğrudan bağlı, server-side rendered (SSR) web arayüzleri ve tam REST API uçları sunulmaktadır:
+Sistemdeki beş ana veri tablosu (`users`, `announcements`, `alumni`, `job_postings`, `applications`) için PostgreSQL veritabanına doğrudan bağlı, server-side rendered (SSR) web arayüzleri ve tam REST API uçları sunulmaktadır:
 
 | Varlık / Modül | Web CRUD Arayüzü | REST API Uçları | Veritabanı Tablosu | Model & Controller |
 | :--- | :--- | :--- | :--- | :--- |
@@ -439,6 +513,7 @@ Sistemdeki dört ana veri tablosu (`users`, `announcements`, `alumni`, `job_post
 | **Announcements** | [`/announcements`](http://localhost:5001/announcements), [`/announcements/new`](http://localhost:5001/announcements/new) | `/api/announcements`, `/api/announcement/:id`, `/api/announcements/count` | `announcements` | `AnnouncementModel`, `AnnouncementController`, `AnnouncementView` |
 | **Alumni** | [`/alumni`](http://localhost:5001/alumni), [`/alumni/new`](http://localhost:5001/alumni/new) | `/api/alumni`, `/api/alumni/:id`, `/api/alumni/count` | `alumni` | `AlumniModel`, `AlumniController`, `AlumniView` |
 | **Job Postings** | [`/jobs`](http://localhost:5001/jobs) | `/api/jobs`, `/api/job/:id`, `/api/jobs/count` | `job_postings` | `JobPostingModel`, `JobPostingController` |
+| **Applications** | [`/applications`](http://localhost:5001/applications) | `/api/applications`, `/api/application/:id`, `/api/applications/count` | `applications` | `ApplicationModel`, `ApiApplicationController` |
 
 ---
 
@@ -455,25 +530,34 @@ graph TD
         AlumniApi["/api/alumni (GET, POST)<br/>/api/alumni/:id (GET, PUT, PATCH, DELETE)"]
         AnnounceApi["/api/announcements (GET, POST)<br/>/api/announcements/:id (GET, PUT, PATCH, DELETE)"]
         JobsApi["/api/jobs (GET, POST)<br/>/api/jobs/:id (GET, PUT, PATCH, DELETE)"]
+        AppsApi["/api/applications (GET, POST)<br/>/api/applications/:id (GET, PUT, PATCH, DELETE)"]
     end
 
     subgraph NestedRoutes ["İç İçe Rotalar (Nested Relational Routes)"]
-        U_Ann["/api/users/:userId/announcements<br/>(GET: Liste, POST: Kullanıcı Adına Duyuru Aç)"]
+        U_Ann["/api/users/:userId/announcements<br/>(GET: Liste, POST: Duyuru Aç)"]
         U_Alm["/api/users/:userId/alumni<br/>(GET: Profil Getir, POST: Profil Bağla)"]
-        U_Job["/api/users/:userId/jobs<br/>(GET: Liste, POST: Kullanıcı Adına İlan Aç)"]
+        U_Job["/api/users/:userId/jobs<br/>(GET: Liste, POST: İlan Aç)"]
+        U_App["/api/users/:userId/applications<br/>(GET: Liste, POST: Başvuru Yap)"]
         A_Usr["/api/alumni/:alumniId/user<br/>(GET: Mezunun Kullanıcı Hesabı)"]
-        A_Job["/api/alumni/:alumniId/jobs<br/>(GET: Liste, POST: Mezun Referansıyla İlan Aç)"]
+        A_Job["/api/alumni/:alumniId/jobs<br/>(GET: Liste, POST: İlan Öner)"]
         J_Usr["/api/jobs/:jobId/user<br/>(GET: İlanı Veren Kullanıcı)"]
         J_Alm["/api/jobs/:jobId/alumni<br/>(GET: İlanı Öneren Mezun)"]
+        J_App["/api/jobs/:jobId/applications<br/>(GET: Başvuru Listesi, POST: İlana Başvur)"]
+        App_Usr["/api/applications/:applicationId/user<br/>(GET: Başvuran Kullanıcı)"]
+        App_Job["/api/applications/:applicationId/job<br/>(GET: Başvurulan İş İlanı)"]
     end
 
     UsersApi -->|1:N| U_Ann
     UsersApi -->|1:1| U_Alm
     UsersApi -->|1:N| U_Job
+    UsersApi -->|1:N| U_App
     AlumniApi -->|1:1| A_Usr
     AlumniApi -->|1:N| A_Job
     JobsApi -->|N:1| J_Usr
     JobsApi -->|N:1| J_Alm
+    JobsApi -->|1:N| J_App
+    AppsApi -->|N:1| App_Usr
+    AppsApi -->|N:1| App_Job
 ```
 
 ---
@@ -512,6 +596,13 @@ Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile do
 | **Job Postings** | `PUT` | `/api/jobs/:id` | İş ilanını bütünüyle günceller | `200 OK` |
 | **Job Postings** | `PATCH` | `/api/jobs/:id` | İş ilanını kısmi günceller | `200 OK` |
 | **Job Postings** | `DELETE` | `/api/jobs/:id` | İş ilanını siler | `200 OK` |
+| **Applications** | `GET` | `/api/applications` | Tüm başvuruları listeler (durum, jobId, userId filtreleri) | `200 OK` |
+| **Applications** | `GET` | `/api/applications/count` | Toplam başvuru sayısını döndürür | `200 OK` |
+| **Applications** | `GET` | `/api/applications/:id` | Tekil başvuru detayını getirir | `200 OK` |
+| **Applications** | `POST` | `/api/applications` | Yeni iş başvurusu oluşturur | `201 Created` |
+| **Applications** | `PUT` | `/api/applications/:id` | Başvuruyu bütünüyle günceller | `200 OK` |
+| **Applications** | `PATCH` | `/api/applications/:id` | Başvuru durumunu kısmi günceller | `200 OK` |
+| **Applications** | `DELETE` | `/api/applications/:id` | Başvuruyu siler | `200 OK` |
 
 ---
 
@@ -523,46 +614,14 @@ Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile do
 - **`GET /api/users/:userId/announcements`**:
   - **Açıklama**: Belirtilen kullanıcının (`user_id`) yayınladığı tüm duyuruları listeler.
   - **Örnek URL**: `http://localhost:5001/api/users/1/announcements`
-  - **Dönen Yanıt (200 OK)**:
-    ```json
-    {
-      "success": true,
-      "user": { "id": "1", "name": "Eren Kılıç", "email": "eren@alumni.edu", "role": "ADMIN" },
-      "count": 4,
-      "announcements": [
-        {
-          "id": "1",
-          "title": "Annual Alumni Homecoming Weekend 2026",
-          "category": "EVENT",
-          "priority": "HIGH",
-          "userId": "1"
-        }
-      ]
-    }
-    ```
 - **`POST /api/users/:userId/announcements`**:
   - **Açıklama**: Belirtilen kullanıcı kimliği altında yeni bir duyuru oluşturur (`user_id` otomatik bağlanır).
-  - **İstek Gövdesi**: `{ "title": "Mezunlar Buluşması", "content": "Detaylı içerik...", "category": "EVENT" }`
   - **Dönen Yanıt**: `201 Created`
 
 #### B. Kullanıcı ve Mezun Profili İlişkisi (`USERS (1) <---> (1) ALUMNI`)
 - **`GET /api/users/:userId/alumni`**:
   - **Açıklama**: Belirtilen sistem kullanıcısına bağlı mezun profilini getirir.
   - **Örnek URL**: `http://localhost:5001/api/users/1/alumni`
-  - **Dönen Yanıt (200 OK)**:
-    ```json
-    {
-      "success": true,
-      "user": { "id": "1", "name": "Eren Kılıç" },
-      "alumni": {
-        "id": "3",
-        "name": "Erenk3",
-        "company": "Spotify",
-        "role": "Full Stack Engineer",
-        "userId": "1"
-      }
-    }
-    ```
 - **`POST /api/users/:userId/alumni`**:
   - **Açıklama**: Kullanıcı için yeni bir mezun profili oluşturur ve `user_id` ile bağlar.
   - **Dönen Yanıt**: `201 Created`
@@ -571,22 +630,6 @@ Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile do
 - **`GET /api/users/:userId/jobs`**:
   - **Açıklama**: Belirtilen kullanıcının oluşturduğu tüm iş ilanlarını listeler.
   - **Örnek URL**: `http://localhost:5001/api/users/1/jobs`
-  - **Dönen Yanıt (200 OK)**:
-    ```json
-    {
-      "success": true,
-      "user": { "id": "1", "name": "Eren Kılıç" },
-      "count": 1,
-      "jobs": [
-        {
-          "id": "job-1",
-          "title": "Junior Backend Developer (Node.js / PostgreSQL)",
-          "company": "Peak Tech",
-          "userId": "1"
-        }
-      ]
-    }
-    ```
 - **`POST /api/users/:userId/jobs`**:
   - **Açıklama**: Belirtilen kullanıcı adına yeni bir iş ilanı yayınlar.
   - **Dönen Yanıt**: `201 Created`
@@ -595,30 +638,11 @@ Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile do
 - **`GET /api/alumni/:alumniId/user`**:
   - **Açıklama**: Mezun profiliyle (`alumni.user_id`) eşleşen sistem kullanıcısının hesap bilgilerini getirir.
   - **Örnek URL**: `http://localhost:5001/api/alumni/1/user`
-  - **Dönen Yanıt (200 OK)**:
-    ```json
-    {
-      "success": true,
-      "alumni": { "id": "1", "name": "Hakan Tosun", "department": "Computer Engineering" },
-      "user": { "id": "6", "name": "hakan tosun", "email": "hakatosun@student.com", "role": "STUDENT" }
-    }
-    ```
 
 #### E. Mezun ve İş İlanı İlişkisi (`ALUMNI (1) <---> (N) JOB_POSTINGS`)
 - **`GET /api/alumni/:alumniId/jobs`**:
   - **Açıklama**: Belirli bir mezunun referans olduğu (`alumni_id`) tüm kariyer fırsatlarını listeler.
   - **Örnek URL**: `http://localhost:5001/api/alumni/1/jobs`
-  - **Dönen Yanıt (200 OK)**:
-    ```json
-    {
-      "success": true,
-      "alumni": { "id": "1", "name": "Hakan Tosun", "company": "Google" },
-      "count": 1,
-      "jobs": [
-        { "id": "job-1", "title": "Junior Backend Developer (Node.js / PostgreSQL)", "alumniId": "1" }
-      ]
-    }
-    ```
 - **`POST /api/alumni/:alumniId/jobs`**:
   - **Açıklama**: Mezun profili üzerinden yeni bir iş ilanı / yönlendirme tavsiyesi yayınlar.
   - **Dönen Yanıt**: `201 Created`
@@ -626,6 +650,59 @@ Tüm ana varlıklar bağımsız koleksiyon ve tekil kaynak uç noktaları ile do
 #### F. İş İlanından Kullanıcı ve Mezun İlişkisi
 - **`GET /api/jobs/:jobId/user`**: İlanı oluşturan sistem kullanıcısının bilgilerini döndürür.
 - **`GET /api/jobs/:jobId/alumni`**: İlanı öneren mezun profilinin detaylarını döndürür.
+
+#### G. Kullanıcı ve Başvuru İlişkisi (`USERS (1) <---> (N) APPLICATIONS`)
+- **`GET /api/users/:userId/applications`**:
+  - **Açıklama**: Belirtilen kullanıcının yaptığı tüm iş başvurularını listeler.
+  - **Örnek URL**: `http://localhost:5001/api/users/3/applications`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "user": { "id": "3", "name": "Burak Demir" },
+      "count": 1,
+      "applications": [
+        {
+          "id": "app-1",
+          "jobId": "job-1",
+          "userId": "3",
+          "status": "PENDING"
+        }
+      ]
+    }
+    ```
+- **`POST /api/users/:userId/applications`**:
+  - **Açıklama**: Belirtilen kullanıcı adına yeni bir iş başvurusu oluşturur.
+  - **Dönen Yanıt**: `201 Created`
+
+#### H. İş İlanı ve Başvuru İlişkisi (`JOB_POSTINGS (1) <---> (N) APPLICATIONS`)
+- **`GET /api/jobs/:jobId/applications`**:
+  - **Açıklama**: Belirli bir iş ilanına gelen tüm başvuruları listeler.
+  - **Örnek URL**: `http://localhost:5001/api/jobs/job-1/applications`
+  - **Dönen Yanıt (200 OK)**:
+    ```json
+    {
+      "success": true,
+      "job": { "id": "job-1", "title": "Junior Backend Developer (Node.js / PostgreSQL)" },
+      "count": 1,
+      "applications": [
+        {
+          "id": "app-1",
+          "jobId": "job-1",
+          "userId": "3",
+          "applicantName": "Burak Demir",
+          "status": "PENDING"
+        }
+      ]
+    }
+    ```
+- **`POST /api/jobs/:jobId/applications`**:
+  - **Açıklama**: İlgili ilana doğrudan başvuru kaydı oluşturur.
+  - **Dönen Yanıt**: `201 Created`
+
+#### I. Başvuru Üzerinden Kullanıcı ve İş İlanı İlişkisi
+- **`GET /api/applications/:applicationId/user`**: Başvuruyu yapan adayın sistem kullanıcı profilini getirir.
+- **`GET /api/applications/:applicationId/job`**: Başvurulan iş ilanının detaylarını getirir.
 
 
 
