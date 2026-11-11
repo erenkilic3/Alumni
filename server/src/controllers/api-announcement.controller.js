@@ -165,7 +165,17 @@ class ApiAnnouncementController {
   async patch(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.patch(id, req.body || {});
+      const body = req.body || {};
+      const allowedFields = ['title', 'content', 'category', 'priority', 'author', 'isPinned', 'status', 'userId', 'user_id'];
+      const hasValidField = allowedFields.some(f => body[f] !== undefined);
+      if (!hasValidField) {
+        return res.status(400).json({
+          success: false,
+          error: 'PATCH request requires at least one valid field to update.'
+        });
+      }
+
+      const updated = await this.model.patch(id, body);
 
       if (!updated) {
         return res.status(404).json({

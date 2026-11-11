@@ -2205,10 +2205,33 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-
-
-
-app.listen(PORT, () => {
-  console.log(`🚀 Alumni API server listening on http://localhost:${PORT}`);
+// Catch-all 404 handler for unknown /api/* endpoints
+app.use('/api', (req, res) => {
+  return res.status(404).json({
+    success: false,
+    error: `API endpoint not found: ${req.method} ${req.originalUrl}`
+  });
 });
+
+// Global error handler (handles malformed JSON payloads cleanly)
+app.use((err, req, res, next) => {
+  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
+    return res.status(400).json({
+      success: false,
+      error: `Invalid JSON payload: ${err.message}`
+    });
+  }
+  return res.status(err.status || 500).json({
+    success: false,
+    error: err.message || 'Internal Server Error'
+  });
+});
+
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Alumni API server listening on http://localhost:${PORT}`);
+  });
+}
+
+module.exports = app;
 

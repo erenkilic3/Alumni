@@ -1,4 +1,6 @@
 const ApplicationModel = require('../models/application.model');
+const JobPostingModel = require('../models/job-posting.model');
+const UserModel = require('../models/user.model');
 
 /**
  * ApiApplicationController
@@ -7,8 +9,10 @@ const ApplicationModel = require('../models/application.model');
  * Handles pure JSON request/response workflows with standard HTTP status codes.
  */
 class ApiApplicationController {
-  constructor(model = ApplicationModel) {
+  constructor(model = ApplicationModel, jobModel = JobPostingModel, userModel = UserModel) {
     this.model = model;
+    this.jobModel = jobModel;
+    this.userModel = userModel;
 
     this.getAll = this.getAll.bind(this);
     this.getById = this.getById.bind(this);
@@ -103,12 +107,28 @@ class ApiApplicationController {
         resumeUrl,
         coverLetter,
         status
-      } = req.body;
+      } = req.body || {};
 
-      if (!jobId || !userId || !applicantName || !applicantEmail) {
+      if (!jobId || !String(jobId).trim() || !userId || !String(userId).trim() || !applicantName || !String(applicantName).trim() || !applicantEmail || !String(applicantEmail).trim()) {
         return res.status(400).json({
           success: false,
           error: 'jobId, userId, applicantName, and applicantEmail are required fields.'
+        });
+      }
+
+      const job = await this.jobModel.findById(jobId);
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Job posting not found (ID: ${jobId})`
+        });
+      }
+
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User not found (ID: ${userId})`
         });
       }
 
@@ -128,9 +148,9 @@ class ApiApplicationController {
         application: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create application: ' + err.message
+        error: err.message
       });
     }
   }
@@ -142,7 +162,33 @@ class ApiApplicationController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.update(id, req.body);
+      const body = req.body || {};
+      const { jobId, userId, applicantName, applicantEmail } = body;
+
+      if (!jobId || !String(jobId).trim() || !userId || !String(userId).trim() || !applicantName || !String(applicantName).trim() || !applicantEmail || !String(applicantEmail).trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'PUT request requires jobId, userId, applicantName, and applicantEmail fields.'
+        });
+      }
+
+      const job = await this.jobModel.findById(jobId);
+      if (!job) {
+        return res.status(404).json({
+          success: false,
+          error: `Job posting not found (ID: ${jobId})`
+        });
+      }
+
+      const user = await this.userModel.findById(userId);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: `User not found (ID: ${userId})`
+        });
+      }
+
+      const updated = await this.model.update(id, body, false);
 
       if (!updated) {
         return res.status(404).json({
@@ -157,9 +203,9 @@ class ApiApplicationController {
         application: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to update application: ' + err.message
+        error: err.message
       });
     }
   }
@@ -171,7 +217,38 @@ class ApiApplicationController {
   async patch(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.update(id, req.body);
+      const body = req.body || {};
+      const allowedFields = ['jobId', 'job_id', 'userId', 'user_id', 'applicantName', 'applicant_name', 'applicantEmail', 'applicant_email', 'resumeUrl', 'resume_url', 'coverLetter', 'cover_letter', 'status'];
+      if (!allowedFields.some(f => body[f] !== undefined)) {
+        return res.status(400).json({
+          success: false,
+          error: 'PATCH request requires at least one valid field to update.'
+        });
+      }
+
+      const targetJobId = body.jobId !== undefined ? body.jobId : body.job_id;
+      if (targetJobId !== undefined && String(targetJobId).trim() !== '') {
+        const job = await this.jobModel.findById(targetJobId);
+        if (!job) {
+          return res.status(404).json({
+            success: false,
+            error: `Job posting not found (ID: ${targetJobId})`
+          });
+        }
+      }
+
+      const targetUserId = body.userId !== undefined ? body.userId : body.user_id;
+      if (targetUserId !== undefined && String(targetUserId).trim() !== '') {
+        const user = await this.userModel.findById(targetUserId);
+        if (!user) {
+          return res.status(404).json({
+            success: false,
+            error: `User not found (ID: ${targetUserId})`
+          });
+        }
+      }
+
+      const updated = await this.model.update(id, body, true);
 
       if (!updated) {
         return res.status(404).json({
@@ -186,9 +263,9 @@ class ApiApplicationController {
         application: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to patch application: ' + err.message
+        error: err.message
       });
     }
   }

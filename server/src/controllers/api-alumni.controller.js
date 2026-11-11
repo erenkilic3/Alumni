@@ -71,9 +71,9 @@ class ApiAlumniController {
    */
   async create(req, res) {
     try {
-      const { name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio } = req.body;
+      const { name, graduationYear, department, company, role, location, industry, skills, avatar, isMentor, bio, userId } = req.body || {};
 
-      if (!name || !graduationYear || !department) {
+      if (!name || !String(name).trim() || graduationYear === undefined || graduationYear === null || graduationYear === '' || !department || !String(department).trim()) {
         return res.status(400).json({
           success: false,
           error: 'Name, graduationYear, and department are required.'
@@ -91,7 +91,8 @@ class ApiAlumniController {
         skills,
         avatar,
         isMentor,
-        bio
+        bio,
+        userId
       });
 
       return res.status(201).json({
@@ -101,9 +102,9 @@ class ApiAlumniController {
         profile: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create alumni profile: ' + err.message
+        error: err.message
       });
     }
   }
@@ -114,7 +115,15 @@ class ApiAlumniController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.update(id, req.body, false);
+      const body = req.body || {};
+      if (!body.name || !String(body.name).trim() || body.graduationYear === undefined || body.graduationYear === null || body.graduationYear === '' || !body.department || !String(body.department).trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'PUT request requires name, graduationYear, and department fields.'
+        });
+      }
+
+      const updated = await this.model.update(id, body, false);
 
       if (!updated) {
         return res.status(404).json({
@@ -129,9 +138,9 @@ class ApiAlumniController {
         alumni: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to update alumni: ' + err.message
+        error: err.message
       });
     }
   }
@@ -142,7 +151,16 @@ class ApiAlumniController {
   async patch(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.patch(id, req.body);
+      const body = req.body || {};
+      const allowedFields = ['name', 'graduationYear', 'department', 'company', 'role', 'location', 'industry', 'skills', 'avatar', 'isMentor', 'bio', 'userId', 'user_id'];
+      if (!allowedFields.some(f => body[f] !== undefined)) {
+        return res.status(400).json({
+          success: false,
+          error: 'PATCH request requires at least one valid field to update.'
+        });
+      }
+
+      const updated = await this.model.patch(id, body);
 
       if (!updated) {
         return res.status(404).json({
@@ -157,9 +175,9 @@ class ApiAlumniController {
         alumni: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to patch alumni: ' + err.message
+        error: err.message
       });
     }
   }

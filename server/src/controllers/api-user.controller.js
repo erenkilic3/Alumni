@@ -113,10 +113,17 @@ class ApiUserController {
       const isPartial = req.method === 'PATCH';
 
       // Full update (PUT) requires name and email
-      if (!isPartial && (!name || !email)) {
+      if (!isPartial && (!name || !String(name).trim() || !email || !String(email).trim())) {
         return res.status(400).json({
           success: false,
           error: 'PUT request requires both "name" and "email" fields.'
+        });
+      }
+
+      if (isPartial && name === undefined && email === undefined && role === undefined && department === undefined) {
+        return res.status(400).json({
+          success: false,
+          error: 'PATCH request requires at least one field to update (name, email, role, department).'
         });
       }
 

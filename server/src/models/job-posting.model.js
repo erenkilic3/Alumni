@@ -188,18 +188,58 @@ class JobPostingModel {
     return this.jobs.filter(j => String(j.alumniId) === strId);
   }
 
-  async create(data) {
+  async create(data = {}) {
+    if (!data.title || !String(data.title).trim() || !data.company || !String(data.company).trim()) {
+      throw new Error('Title and company are required.');
+    }
+
+    if (String(data.title).trim().length > 120) {
+      throw new Error('Job title must not exceed 120 characters.');
+    }
+
+    const validTypes = ['Full-Time', 'Part-Time', 'Internship', 'Contract'];
+    if (data.type !== undefined && data.type !== null && String(data.type).trim() !== '') {
+      const matchedType = validTypes.find(t => t.toLowerCase() === String(data.type).trim().toLowerCase());
+      if (!matchedType) {
+        throw new Error(`Invalid job type "${data.type}". Allowed types: ${validTypes.join(', ')}.`);
+      }
+      data.type = matchedType;
+    }
+
+    const validStatuses = ['ACTIVE', 'CLOSED', 'DRAFT'];
+    if (data.status !== undefined && data.status !== null && String(data.status).trim() !== '') {
+      if (!validStatuses.includes(String(data.status).trim().toUpperCase())) {
+        throw new Error(`Invalid status "${data.status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+      data.status = String(data.status).trim().toUpperCase();
+    }
+
+    const contactEmail = data.contactEmail || data.contact_email || null;
+    if (contactEmail) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(contactEmail).trim())) {
+        throw new Error('Invalid contactEmail format.');
+      }
+    }
+
+    if (data.deadline) {
+      const parsedDate = Date.parse(data.deadline);
+      if (isNaN(parsedDate)) {
+        throw new Error(`Invalid deadline date format "${data.deadline}". Expected YYYY-MM-DD.`);
+      }
+    }
+
     const id = data.id || `job-${Date.now()}`;
     const newJob = {
       id,
-      title: data.title,
-      company: data.company,
-      location: data.location || 'Remote',
+      title: String(data.title).trim(),
+      company: String(data.company).trim(),
+      location: data.location ? String(data.location).trim() : 'Remote',
       type: data.type || 'Full-Time',
-      description: data.description || '',
+      description: data.description ? String(data.description).trim() : '',
       requirements: Array.isArray(data.requirements) ? data.requirements : (data.requirements ? [data.requirements] : []),
       salaryRange: data.salaryRange || data.salary_range || null,
-      contactEmail: data.contactEmail || data.contact_email || null,
+      contactEmail: contactEmail ? String(contactEmail).trim() : null,
       postedBy: data.postedBy || data.posted_by || 'Alumni Career Network',
       userId: data.userId || data.user_id || null,
       alumniId: data.alumniId || data.alumni_id || null,
@@ -237,7 +277,13 @@ class JobPostingModel {
         this.jobs.push(saved);
         return saved;
       } catch (err) {
-        console.warn('⚠️ PostgreSQL insert failed, saving to memory only:', err.message);
+        if (err.code === '23503') {
+          throw new Error('Foreign key violation: referenced userId or alumniId does not exist.');
+        }
+        if (err.code === '22007' || err.code === '22008') {
+          throw new Error(`Invalid deadline date "${newJob.deadline}".`);
+        }
+        throw err;
       }
     }
 
@@ -245,15 +291,73 @@ class JobPostingModel {
     return newJob;
   }
 
-  async update(id, data) {
+  async update(id, data = {}, isPartial = false) {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+
+    if (!isPartial) {
+      if (!data.title || !String(data.title).trim() || !data.company || !String(data.company).trim()) {
+        throw new Error('PUT request requires both title and company fields.');
+      }
+      if (String(data.title).trim().length > 120) {
+        throw new Error('Job title must not exceed 120 characters.');
+      }
+    } else {
+      if (data.title !== undefined) {
+        if (!String(data.title).trim()) {
+          throw new Error('Title cannot be empty.');
+        }
+        if (String(data.title).trim().length > 120) {
+          throw new Error('Job title must not exceed 120 characters.');
+        }
+      }
+      if (data.company !== undefined && !String(data.company).trim()) {
+        throw new Error('Company cannot be empty.');
+      }
+    }
+
+    const validTypes = ['Full-Time', 'Part-Time', 'Internship', 'Contract'];
+    let updatedType = existing.type;
+    if (data.type !== undefined && data.type !== null && String(data.type).trim() !== '') {
+      const matchedType = validTypes.find(t => t.toLowerCase() === String(data.type).trim().toLowerCase());
+      if (!matchedType) {
+        throw new Error(`Invalid job type "${data.type}". Allowed types: ${validTypes.join(', ')}.`);
+      }
+      updatedType = matchedType;
+    }
+
+    const validStatuses = ['ACTIVE', 'CLOSED', 'DRAFT'];
+    let updatedStatus = existing.status;
+    if (data.status !== undefined && data.status !== null && String(data.status).trim() !== '') {
+      if (!validStatuses.includes(String(data.status).trim().toUpperCase())) {
+        throw new Error(`Invalid status "${data.status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+      updatedStatus = String(data.status).trim().toUpperCase();
+    }
+
+    const rawContactEmail = data.contactEmail !== undefined ? data.contactEmail : data.contact_email;
+    if (rawContactEmail !== undefined && rawContactEmail !== null && String(rawContactEmail).trim() !== '') {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(rawContactEmail).trim())) {
+        throw new Error('Invalid contactEmail format.');
+      }
+    }
+
+    if (data.deadline !== undefined && data.deadline !== null && String(data.deadline).trim() !== '') {
+      if (isNaN(Date.parse(data.deadline))) {
+        throw new Error(`Invalid deadline date format "${data.deadline}". Expected YYYY-MM-DD.`);
+      }
+    }
+
     if (db.isDbConnected) {
       try {
-        const existing = await this.findById(id);
-        if (!existing) return null;
-
         const updated = {
           ...existing,
           ...data,
+          title: data.title !== undefined ? String(data.title).trim() : existing.title,
+          company: data.company !== undefined ? String(data.company).trim() : existing.company,
+          type: updatedType,
+          status: updatedStatus,
           requirements: Array.isArray(data.requirements) ? data.requirements : (data.requirements ? [data.requirements] : existing.requirements),
           userId: data.userId !== undefined ? data.userId : (data.user_id !== undefined ? data.user_id : existing.userId),
           alumniId: data.alumniId !== undefined ? data.alumniId : (data.alumni_id !== undefined ? data.alumni_id : existing.alumniId),
@@ -292,7 +396,13 @@ class JobPostingModel {
           return saved;
         }
       } catch (err) {
-        console.warn('⚠️ PostgreSQL update failed, falling back to memory:', err.message);
+        if (err.code === '23503') {
+          throw new Error('Foreign key violation: referenced userId or alumniId does not exist.');
+        }
+        if (err.code === '22007' || err.code === '22008') {
+          throw new Error(`Invalid deadline date "${data.deadline}".`);
+        }
+        throw err;
       }
     }
 
@@ -301,6 +411,10 @@ class JobPostingModel {
     this.jobs[memIdx] = {
       ...this.jobs[memIdx],
       ...data,
+      title: data.title !== undefined ? String(data.title).trim() : this.jobs[memIdx].title,
+      company: data.company !== undefined ? String(data.company).trim() : this.jobs[memIdx].company,
+      type: updatedType,
+      status: updatedStatus,
       updatedAt: new Date().toISOString()
     };
     return this.jobs[memIdx];

@@ -53,11 +53,11 @@ erDiagram
 
     JOB_POSTINGS {
         VARCHAR(255) id PK "Benzersiz iş ilanı ID"
-        VARCHAR(255) title "Pozisyon unvanı / Rol"
-        VARCHAR(255) company "İlanı açan şirket / kurum"
-        VARCHAR(255) location "Çalışma lokasyonu (Remote / Şehir)"
+        VARCHAR(120) title "Pozisyon unvanı / Rol (Max 120)"
+        VARCHAR(255) company "İlanı açan şirket / kurum (Zorunlu)"
+        VARCHAR(255) location "Çalışma lokasyonu / Şehir (Opsiyonel)"
         VARCHAR(50) type "İstihdam türü (Full-Time, Internship)"
-        TEXT description "İş ilanı detay metni"
+        TEXT description "İş ilanı detay metni (Opsiyonel)"
         TEXT[] requirements "Aranan teknik nitelikler"
         VARCHAR(100) salary_range "Maaş / Ücret skalası"
         VARCHAR(255) contact_email "Başvuru e-posta adresi"
@@ -205,11 +205,11 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
 | Alan Adı (Column) | Veri Tipi (Type) | Zorunlu (Nullable) | Varsayılan (Default) | Açıklama |
 | :--- | :--- | :--- | :--- | :--- |
 | `id` | `VARCHAR(255)` | **HAYIR** (PK) | — | İş ilanının benzersiz kimliği (Primary Key) |
-| `title` | `VARCHAR(255)` | **HAYIR** | — | Pozisyon veya staj unvanı (Örn: Junior Backend Developer) |
-| `company` | `VARCHAR(255)` | **HAYIR** | — | İlanı yayınlayan şirket veya kuruluş |
-| `location` | `VARCHAR(255)` | EVET | `'Remote'` | Çalışma yeri / modeli (Örn: Remote / Istanbul, Hybrid) |
+| `title` | `VARCHAR(120)` | **HAYIR** | — | Pozisyon veya staj unvanı (Zorunlu, Maksimum 120 karakter) |
+| `company` | `VARCHAR(255)` | **HAYIR** | — | İlanı yayınlayan şirket veya kuruluş (Zorunlu) |
+| `location` | `VARCHAR(255)` | EVET | `'Remote'` | Çalışma yeri / Şehir (Opsiyonel - Remote / Istanbul, Hybrid) |
 | `type` | `VARCHAR(50)` | EVET | `'Full-Time'` | İstihdam türü: `Full-Time`, `Part-Time`, `Internship`, `Contract` |
-| `description` | `TEXT` | **HAYIR** | — | İlanın kapsamlı iş tanımı, sorumlulukları ve detayları |
+| `description` | `TEXT` | EVET | — | İlanın kapsamlı iş tanımı, sorumlulukları ve detayları (Opsiyonel) |
 | `requirements` | `TEXT[]` | EVET | `'{}'` | Aranan nitelikler, teknik beceriler ve teknoloji etiketleri |
 | `salary_range` | `VARCHAR(100)` | EVET | — | Maaş veya ücret aralığı (Örn: $40,000 - $55,000) |
 | `contact_email`| `VARCHAR(255)` | EVET | — | Başvuru ve CV iletimi için iletişim e-posta adresi |
@@ -240,6 +240,17 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
   "updated_at": "2026-10-14T06:33:33.335Z"
 }
 ```
+
+### JobPosting Business Rules
+
+1. A job posting must have a title.
+2. The title must not exceed 120 characters.
+3. A job posting must have a company name.
+4. City is optional.
+5. Description is optional.
+6. Title and company fields cannot be null or empty.
+7. The system must validate all required fields before creating a job posting.
+8. If the title exceeds 120 characters, the system must return a validation error.
 
 ---
 
@@ -331,11 +342,11 @@ CREATE TABLE IF NOT EXISTS alumni (
 -- 4. Job Postings Tablosu
 CREATE TABLE IF NOT EXISTS job_postings (
   id VARCHAR(255) PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
+  title VARCHAR(120) NOT NULL,
   company VARCHAR(255) NOT NULL,
   location VARCHAR(255) DEFAULT 'Remote',
   type VARCHAR(50) DEFAULT 'Full-Time',
-  description TEXT NOT NULL,
+  description TEXT,
   requirements TEXT[] DEFAULT '{}',
   salary_range VARCHAR(100),
   contact_email VARCHAR(255),

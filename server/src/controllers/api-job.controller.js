@@ -108,9 +108,9 @@ class ApiJobController {
         alumniId,
         deadline,
         status
-      } = req.body;
+      } = req.body || {};
 
-      if (!title || !company) {
+      if (!title || !String(title).trim() || !company || !String(company).trim()) {
         return res.status(400).json({
           success: false,
           error: 'Title and company are required.'
@@ -139,9 +139,9 @@ class ApiJobController {
         job: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create job posting: ' + err.message
+        error: err.message
       });
     }
   }
@@ -153,7 +153,15 @@ class ApiJobController {
   async update(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.update(id, req.body);
+      const body = req.body || {};
+      if (!body.title || !String(body.title).trim() || !body.company || !String(body.company).trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'PUT request requires both title and company fields.'
+        });
+      }
+
+      const updated = await this.model.update(id, body, false);
 
       if (!updated) {
         return res.status(404).json({
@@ -168,9 +176,9 @@ class ApiJobController {
         job: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to update job posting: ' + err.message
+        error: err.message
       });
     }
   }
@@ -182,7 +190,21 @@ class ApiJobController {
   async patch(req, res) {
     try {
       const { id } = req.params;
-      const updated = await this.model.update(id, req.body);
+      const body = req.body || {};
+      const allowedFields = [
+        'title', 'company', 'location', 'type', 'description',
+        'requirements', 'salaryRange', 'salary_range', 'contactEmail',
+        'contact_email', 'postedBy', 'posted_by', 'userId', 'user_id',
+        'alumniId', 'alumni_id', 'deadline', 'status'
+      ];
+      if (!allowedFields.some(f => body[f] !== undefined)) {
+        return res.status(400).json({
+          success: false,
+          error: 'PATCH request requires at least one valid field to update.'
+        });
+      }
+
+      const updated = await this.model.update(id, body, true);
 
       if (!updated) {
         return res.status(404).json({
@@ -197,9 +219,9 @@ class ApiJobController {
         job: updated
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to patch job posting: ' + err.message
+        error: err.message
       });
     }
   }

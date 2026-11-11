@@ -104,8 +104,8 @@ class NestedController {
         });
       }
 
-      const { title, content, category, priority, isPinned, status } = req.body;
-      if (!title || !content) {
+      const { title, content, category, priority, isPinned, status } = req.body || {};
+      if (!title || !String(title).trim() || !content || !String(content).trim()) {
         return res.status(400).json({
           success: false,
           error: 'Title and content are required.'
@@ -129,9 +129,9 @@ class NestedController {
         announcement: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create announcement: ' + err.message
+        error: err.message
       });
     }
   }
@@ -213,11 +213,11 @@ class NestedController {
         avatar,
         isMentor,
         bio
-      } = req.body;
+      } = req.body || {};
 
       const created = await this.alumniModel.create({
-        name: req.body.name || user.name,
-        graduationYear: graduationYear || 2024,
+        name: (req.body && req.body.name) || user.name,
+        graduationYear: graduationYear !== undefined ? graduationYear : 2024,
         department: department || user.department,
         company,
         role,
@@ -236,9 +236,9 @@ class NestedController {
         alumni: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create alumni profile: ' + err.message
+        error: err.message
       });
     }
   }
@@ -294,8 +294,8 @@ class NestedController {
         });
       }
 
-      const { title, company, location, type, description, requirements, salaryRange, contactEmail, deadline, status, alumniId } = req.body;
-      if (!title || !company) {
+      const { title, company, location, type, description, requirements, salaryRange, contactEmail, deadline, status, alumniId } = req.body || {};
+      if (!title || !String(title).trim() || !company || !String(company).trim()) {
         return res.status(400).json({
           success: false,
           error: 'Title and company are required.'
@@ -324,9 +324,9 @@ class NestedController {
         job: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create job posting: ' + err.message
+        error: err.message
       });
     }
   }
@@ -430,8 +430,8 @@ class NestedController {
         });
       }
 
-      const { title, company, location, type, description, requirements, salaryRange, contactEmail, deadline, status } = req.body;
-      if (!title || !company) {
+      const { title, company, location, type, description, requirements, salaryRange, contactEmail, deadline, status } = req.body || {};
+      if (!title || !String(title).trim() || !company || !String(company).trim()) {
         return res.status(400).json({
           success: false,
           error: 'Title and company are required.'
@@ -460,9 +460,9 @@ class NestedController {
         job: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to create alumni job: ' + err.message
+        error: err.message
       });
     }
   }
@@ -610,8 +610,8 @@ class NestedController {
         });
       }
 
-      const { jobId, resumeUrl, coverLetter, status } = req.body;
-      if (!jobId) {
+      const { jobId, resumeUrl, coverLetter, status } = req.body || {};
+      if (!jobId || !String(jobId).trim()) {
         return res.status(400).json({
           success: false,
           error: 'jobId is required to submit an application.'
@@ -626,8 +626,8 @@ class NestedController {
         });
       }
 
-      const applicantName = req.body.applicantName || user.name;
-      const applicantEmail = req.body.applicantEmail || user.email;
+      const applicantName = (req.body && req.body.applicantName) || user.name;
+      const applicantEmail = (req.body && req.body.applicantEmail) || user.email;
 
       const created = await this.applicationModel.create({
         jobId,
@@ -645,9 +645,9 @@ class NestedController {
         application: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to submit user application: ' + err.message
+        error: err.message
       });
     }
   }
@@ -703,8 +703,8 @@ class NestedController {
         });
       }
 
-      const { userId, applicantName, applicantEmail, resumeUrl, coverLetter, status } = req.body;
-      if (!userId) {
+      const { userId, applicantName, applicantEmail, resumeUrl, coverLetter, status } = req.body || {};
+      if (!userId || !String(userId).trim()) {
         return res.status(400).json({
           success: false,
           error: 'userId is required to submit an application.'
@@ -738,9 +738,9 @@ class NestedController {
         application: created
       });
     } catch (err) {
-      return res.status(500).json({
+      return res.status(400).json({
         success: false,
-        error: 'Failed to submit job application: ' + err.message
+        error: err.message
       });
     }
   }

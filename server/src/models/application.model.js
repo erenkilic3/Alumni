@@ -156,17 +156,38 @@ class ApplicationModel {
     return this.applications.filter(a => String(a.jobId) === strId);
   }
 
-  async create(data) {
+  async create(data = {}) {
+    const rawJobId = data.jobId !== undefined ? data.jobId : data.job_id;
+    const rawUserId = data.userId !== undefined ? data.userId : data.user_id;
+    const rawName = data.applicantName !== undefined ? data.applicantName : data.applicant_name;
+    const rawEmail = data.applicantEmail !== undefined ? data.applicantEmail : data.applicant_email;
+
+    if (!rawJobId || !String(rawJobId).trim() || !rawUserId || !String(rawUserId).trim() || !rawName || !String(rawName).trim() || !rawEmail || !String(rawEmail).trim()) {
+      throw new Error('jobId, userId, applicantName, and applicantEmail are required fields.');
+    }
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(String(rawEmail).trim())) {
+      throw new Error('Invalid applicantEmail format.');
+    }
+
+    const validStatuses = ['PENDING', 'REVIEWING', 'SHORTLISTED', 'ACCEPTED', 'REJECTED'];
+    if (data.status !== undefined && data.status !== null && String(data.status).trim() !== '') {
+      if (!validStatuses.includes(String(data.status).trim().toUpperCase())) {
+        throw new Error(`Invalid status "${data.status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+    }
+
     const id = data.id || `app-${Date.now()}`;
     const newApp = {
       id,
-      jobId: String(data.jobId || data.job_id),
-      userId: String(data.userId || data.user_id),
-      applicantName: data.applicantName || data.applicant_name,
-      applicantEmail: data.applicantEmail || data.applicant_email,
+      jobId: String(rawJobId).trim(),
+      userId: String(rawUserId).trim(),
+      applicantName: String(rawName).trim(),
+      applicantEmail: String(rawEmail).trim(),
       resumeUrl: data.resumeUrl || data.resume_url || null,
       coverLetter: data.coverLetter || data.cover_letter || null,
-      status: (data.status || 'PENDING').toUpperCase(),
+      status: (data.status ? String(data.status).trim() : 'PENDING').toUpperCase(),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
@@ -193,7 +214,10 @@ class ApplicationModel {
         this.applications.push(saved);
         return saved;
       } catch (err) {
-        console.warn('⚠️ PostgreSQL insert failed, saving to memory only:', err.message);
+        if (err.code === '23503') {
+          throw new Error('Foreign key violation: referenced jobId or userId does not exist.');
+        }
+        throw err;
       }
     }
 
@@ -201,22 +225,60 @@ class ApplicationModel {
     return newApp;
   }
 
-  async update(id, data) {
+  async update(id, data = {}, isPartial = false) {
+    const existing = await this.findById(id);
+    if (!existing) return null;
+
+    const rawJobId = data.jobId !== undefined ? data.jobId : data.job_id;
+    const rawUserId = data.userId !== undefined ? data.userId : data.user_id;
+    const rawName = data.applicantName !== undefined ? data.applicantName : data.applicant_name;
+    const rawEmail = data.applicantEmail !== undefined ? data.applicantEmail : data.applicant_email;
+
+    if (!isPartial) {
+      if (!rawJobId || !String(rawJobId).trim() || !rawUserId || !String(rawUserId).trim() || !rawName || !String(rawName).trim() || !rawEmail || !String(rawEmail).trim()) {
+        throw new Error('PUT request requires jobId, userId, applicantName, and applicantEmail fields.');
+      }
+    } else {
+      if (rawJobId !== undefined && !String(rawJobId).trim()) {
+        throw new Error('jobId cannot be empty.');
+      }
+      if (rawUserId !== undefined && !String(rawUserId).trim()) {
+        throw new Error('userId cannot be empty.');
+      }
+      if (rawName !== undefined && !String(rawName).trim()) {
+        throw new Error('applicantName cannot be empty.');
+      }
+      if (rawEmail !== undefined && !String(rawEmail).trim()) {
+        throw new Error('applicantEmail cannot be empty.');
+      }
+    }
+
+    if (rawEmail !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(rawEmail).trim())) {
+        throw new Error('Invalid applicantEmail format.');
+      }
+    }
+
+    const validStatuses = ['PENDING', 'REVIEWING', 'SHORTLISTED', 'ACCEPTED', 'REJECTED'];
+    if (data.status !== undefined && data.status !== null && String(data.status).trim() !== '') {
+      if (!validStatuses.includes(String(data.status).trim().toUpperCase())) {
+        throw new Error(`Invalid status "${data.status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+    }
+
     if (db.isDbConnected) {
       try {
-        const existing = await this.findById(id);
-        if (!existing) return null;
-
         const updated = {
           ...existing,
           ...data,
-          jobId: data.jobId !== undefined ? String(data.jobId) : (data.job_id !== undefined ? String(data.job_id) : existing.jobId),
-          userId: data.userId !== undefined ? String(data.userId) : (data.user_id !== undefined ? String(data.user_id) : existing.userId),
-          applicantName: data.applicantName !== undefined ? data.applicantName : (data.applicant_name !== undefined ? data.applicant_name : existing.applicantName),
-          applicantEmail: data.applicantEmail !== undefined ? data.applicantEmail : (data.applicant_email !== undefined ? data.applicant_email : existing.applicantEmail),
+          jobId: rawJobId !== undefined ? String(rawJobId).trim() : existing.jobId,
+          userId: rawUserId !== undefined ? String(rawUserId).trim() : existing.userId,
+          applicantName: rawName !== undefined ? String(rawName).trim() : existing.applicantName,
+          applicantEmail: rawEmail !== undefined ? String(rawEmail).trim() : existing.applicantEmail,
           resumeUrl: data.resumeUrl !== undefined ? data.resumeUrl : (data.resume_url !== undefined ? data.resume_url : existing.resumeUrl),
           coverLetter: data.coverLetter !== undefined ? data.coverLetter : (data.cover_letter !== undefined ? data.cover_letter : existing.coverLetter),
-          status: data.status !== undefined ? data.status.toUpperCase() : existing.status,
+          status: data.status !== undefined ? String(data.status).trim().toUpperCase() : existing.status,
           updatedAt: new Date().toISOString()
         };
 
@@ -245,7 +307,10 @@ class ApplicationModel {
           return saved;
         }
       } catch (err) {
-        console.warn('⚠️ PostgreSQL update failed, falling back to memory:', err.message);
+        if (err.code === '23503') {
+          throw new Error('Foreign key violation: referenced jobId or userId does not exist.');
+        }
+        throw err;
       }
     }
 
@@ -254,13 +319,13 @@ class ApplicationModel {
     this.applications[memIdx] = {
       ...this.applications[memIdx],
       ...data,
-      jobId: data.jobId !== undefined ? String(data.jobId) : (data.job_id !== undefined ? String(data.job_id) : this.applications[memIdx].jobId),
-      userId: data.userId !== undefined ? String(data.userId) : (data.user_id !== undefined ? String(data.user_id) : this.applications[memIdx].userId),
-      applicantName: data.applicantName !== undefined ? data.applicantName : (data.applicant_name !== undefined ? data.applicant_name : this.applications[memIdx].applicantName),
-      applicantEmail: data.applicantEmail !== undefined ? data.applicantEmail : (data.applicant_email !== undefined ? data.applicant_email : this.applications[memIdx].applicantEmail),
+      jobId: rawJobId !== undefined ? String(rawJobId).trim() : this.applications[memIdx].jobId,
+      userId: rawUserId !== undefined ? String(rawUserId).trim() : this.applications[memIdx].userId,
+      applicantName: rawName !== undefined ? String(rawName).trim() : this.applications[memIdx].applicantName,
+      applicantEmail: rawEmail !== undefined ? String(rawEmail).trim() : this.applications[memIdx].applicantEmail,
       resumeUrl: data.resumeUrl !== undefined ? data.resumeUrl : (data.resume_url !== undefined ? data.resume_url : this.applications[memIdx].resumeUrl),
       coverLetter: data.coverLetter !== undefined ? data.coverLetter : (data.cover_letter !== undefined ? data.cover_letter : this.applications[memIdx].coverLetter),
-      status: data.status !== undefined ? data.status.toUpperCase() : this.applications[memIdx].status,
+      status: data.status !== undefined ? String(data.status).trim().toUpperCase() : this.applications[memIdx].status,
       updatedAt: new Date().toISOString()
     };
     return this.applications[memIdx];

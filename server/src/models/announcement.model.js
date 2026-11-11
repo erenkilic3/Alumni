@@ -108,6 +108,22 @@ class AnnouncementModel {
     const validPriorities = ["NORMAL", "HIGH", "URGENT"];
     const validStatuses = ["ACTIVE", "ARCHIVED", "DRAFT"];
 
+    if (category !== undefined && category !== null && String(category).trim() !== '') {
+      if (!validCategories.includes(String(category).toUpperCase())) {
+        throw new Error(`Invalid category "${category}". Allowed categories: ${validCategories.join(', ')}.`);
+      }
+    }
+    if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
+      if (!validPriorities.includes(String(priority).toUpperCase())) {
+        throw new Error(`Invalid priority "${priority}". Allowed priorities: ${validPriorities.join(', ')}.`);
+      }
+    }
+    if (status !== undefined && status !== null && String(status).trim() !== '') {
+      if (!validStatuses.includes(String(status).toUpperCase())) {
+        throw new Error(`Invalid status "${status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+    }
+
     const normalizedCategory = validCategories.includes(String(category).toUpperCase())
       ? String(category).toUpperCase()
       : "GENERAL";
@@ -333,8 +349,17 @@ class AnnouncementModel {
 
     const { title, content, category, priority, author, isPinned, status } = updateData;
 
-    if (!isPartial && (!title || !content)) {
+    if (!isPartial && (!title || !String(title).trim() || !content || !String(content).trim())) {
       throw new Error('Both title and content are required for update.');
+    }
+
+    if (isPartial) {
+      if (title !== undefined && !String(title).trim()) {
+        throw new Error('Title cannot be empty.');
+      }
+      if (content !== undefined && !String(content).trim()) {
+        throw new Error('Content cannot be empty.');
+      }
     }
 
     const validCategories = ["EVENT", "CAREER", "ACADEMIC", "GENERAL"];
@@ -342,24 +367,27 @@ class AnnouncementModel {
     const validStatuses = ["ACTIVE", "ARCHIVED", "DRAFT"];
 
     let updatedCategory = existing.category;
-    if (category !== undefined) {
-      updatedCategory = validCategories.includes(String(category).toUpperCase())
-        ? String(category).toUpperCase()
-        : existing.category;
+    if (category !== undefined && category !== null && String(category).trim() !== '') {
+      if (!validCategories.includes(String(category).toUpperCase())) {
+        throw new Error(`Invalid category "${category}". Allowed categories: ${validCategories.join(', ')}.`);
+      }
+      updatedCategory = String(category).toUpperCase();
     }
 
     let updatedPriority = existing.priority;
-    if (priority !== undefined) {
-      updatedPriority = validPriorities.includes(String(priority).toUpperCase())
-        ? String(priority).toUpperCase()
-        : existing.priority;
+    if (priority !== undefined && priority !== null && String(priority).trim() !== '') {
+      if (!validPriorities.includes(String(priority).toUpperCase())) {
+        throw new Error(`Invalid priority "${priority}". Allowed priorities: ${validPriorities.join(', ')}.`);
+      }
+      updatedPriority = String(priority).toUpperCase();
     }
 
     let updatedStatus = existing.status;
-    if (status !== undefined) {
-      updatedStatus = validStatuses.includes(String(status).toUpperCase())
-        ? String(status).toUpperCase()
-        : existing.status;
+    if (status !== undefined && status !== null && String(status).trim() !== '') {
+      if (!validStatuses.includes(String(status).toUpperCase())) {
+        throw new Error(`Invalid status "${status}". Allowed statuses: ${validStatuses.join(', ')}.`);
+      }
+      updatedStatus = String(status).toUpperCase();
     }
 
     const updatedTitle = title !== undefined ? title.trim() : existing.title;

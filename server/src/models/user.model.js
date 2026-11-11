@@ -117,11 +117,26 @@ class UserModel {
       throw new Error('Email (email) is required.');
     }
 
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      throw new Error('Invalid email address format.');
+    }
+
     const allowedRoles = ['ADMIN', 'ALUMNI', 'STUDENT'];
+    if (role !== undefined && role !== null && String(role).trim() !== '') {
+      if (!allowedRoles.includes(role.toString().toUpperCase())) {
+        throw new Error(`Invalid role "${role}". Allowed roles: ${allowedRoles.join(', ')}.`);
+      }
+    }
     const normalizedRole = role && allowedRoles.includes(role.toString().toUpperCase())
       ? role.toString().toUpperCase()
       : 'STUDENT';
     const dept = department && department.trim() ? department.trim() : 'Belirtilmedi';
+
+    const existingByEmail = await this.findByEmail(email.trim());
+    if (existingByEmail) {
+      throw new Error(`Email "${email.trim()}" is already registered.`);
+    }
 
     if (db.isDbConnected) {
       try {
@@ -294,16 +309,37 @@ class UserModel {
 
     const { name, email, role, department } = updateData;
 
-    if (!isPartial && (!name || !email)) {
+    if (!isPartial && (!name || !String(name).trim() || !email || !String(email).trim())) {
       throw new Error('PUT update requires both "name" and "email".');
+    }
+
+    if (isPartial) {
+      if (name !== undefined && !String(name).trim()) {
+        throw new Error('Name cannot be empty.');
+      }
+      if (email !== undefined && !String(email).trim()) {
+        throw new Error('Email cannot be empty.');
+      }
+    }
+
+    if (email !== undefined) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(String(email).trim())) {
+        throw new Error('Invalid email address format.');
+      }
+      const existingByEmail = await this.findByEmail(String(email).trim());
+      if (existingByEmail && String(existingByEmail.id) !== strId) {
+        throw new Error(`Email "${String(email).trim()}" is already registered to another user.`);
+      }
     }
 
     const allowedRoles = ['ADMIN', 'ALUMNI', 'STUDENT'];
     let updatedRole = existing.role;
-    if (role !== undefined) {
-      updatedRole = allowedRoles.includes(role.toString().toUpperCase())
-        ? role.toString().toUpperCase()
-        : existing.role;
+    if (role !== undefined && role !== null && String(role).trim() !== '') {
+      if (!allowedRoles.includes(role.toString().toUpperCase())) {
+        throw new Error(`Invalid role "${role}". Allowed roles: ${allowedRoles.join(', ')}.`);
+      }
+      updatedRole = role.toString().toUpperCase();
     }
 
     const newName = name !== undefined ? name.trim() : existing.name;

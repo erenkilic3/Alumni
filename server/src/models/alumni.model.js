@@ -217,19 +217,30 @@ class AlumniModel {
   /**
    * CREATE: Insert a new alumni profile
    */
-  async create(data) {
+  async create(data = {}) {
+    if (!data.name || !String(data.name).trim()) {
+      throw new Error('Name (name) is required.');
+    }
+    if (!data.department || !String(data.department).trim()) {
+      throw new Error('Department (department) is required.');
+    }
+    const parsedYear = Number(data.graduationYear);
+    if (!Number.isInteger(parsedYear) || parsedYear < 1950 || parsedYear > 2035) {
+      throw new Error(`Invalid graduationYear "${data.graduationYear}". Must be a valid year between 1950 and 2035.`);
+    }
+
     const id = data.id || `alm_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const userId = data.userId !== undefined ? (data.userId ? String(data.userId) : null) : (data.user_id !== undefined ? (data.user_id ? String(data.user_id) : null) : null);
     const newAlumni = {
       id,
-      name: (data.name || '').trim(),
-      graduationYear: parseInt(data.graduationYear, 10),
-      department: (data.department || '').trim(),
+      name: String(data.name).trim(),
+      graduationYear: parsedYear,
+      department: String(data.department).trim(),
       company: (data.company || "Freelance / Independent").trim(),
       role: (data.role || "Specialist").trim(),
       location: (data.location || "Remote").trim(),
       industry: (data.industry || "Technology").trim(),
-      skills: Array.isArray(data.skills) ? data.skills : (data.skills ? data.skills.split(',').map(s => s.trim()).filter(Boolean) : []),
+      skills: Array.isArray(data.skills) ? data.skills : (data.skills ? String(data.skills).split(',').map(s => s.trim()).filter(Boolean) : []),
       avatar: data.avatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80",
       isMentor: Boolean(data.isMentor),
       bio: (data.bio || "New alumni profile.").trim(),
@@ -264,7 +275,10 @@ class AlumniModel {
         this.alumni.unshift(saved);
         return saved;
       } catch (err) {
-        console.error('Error in AlumniModel.create DB insert:', err.message);
+        if (err.code === '23503') {
+          throw new Error(`Invalid userId "${newAlumni.userId}": referenced user does not exist.`);
+        }
+        throw err;
       }
     }
 
@@ -281,20 +295,41 @@ class AlumniModel {
     const existing = await this.findById(strId);
     if (!existing) return null;
 
-    const name = data.name !== undefined ? data.name.trim() : existing.name;
-    const graduationYear = data.graduationYear !== undefined ? parseInt(data.graduationYear, 10) : existing.graduationYear;
-    const department = data.department !== undefined ? data.department.trim() : existing.department;
-    const company = data.company !== undefined ? data.company.trim() : existing.company;
-    const role = data.role !== undefined ? data.role.trim() : existing.role;
-    const location = data.location !== undefined ? data.location.trim() : existing.location;
-    const industry = data.industry !== undefined ? data.industry.trim() : existing.industry;
+    if (!isPartial) {
+      if (!data.name || !String(data.name).trim() || data.graduationYear === undefined || data.graduationYear === null || !data.department || !String(data.department).trim()) {
+        throw new Error('PUT request requires name, graduationYear, and department fields.');
+      }
+    } else {
+      if (data.name !== undefined && !String(data.name).trim()) {
+        throw new Error('Name cannot be empty.');
+      }
+      if (data.department !== undefined && !String(data.department).trim()) {
+        throw new Error('Department cannot be empty.');
+      }
+    }
+
+    let graduationYear = existing.graduationYear;
+    if (data.graduationYear !== undefined) {
+      const parsedYear = Number(data.graduationYear);
+      if (!Number.isInteger(parsedYear) || parsedYear < 1950 || parsedYear > 2035) {
+        throw new Error(`Invalid graduationYear "${data.graduationYear}". Must be a valid year between 1950 and 2035.`);
+      }
+      graduationYear = parsedYear;
+    }
+
+    const name = data.name !== undefined ? String(data.name).trim() : existing.name;
+    const department = data.department !== undefined ? String(data.department).trim() : existing.department;
+    const company = data.company !== undefined ? String(data.company).trim() : existing.company;
+    const role = data.role !== undefined ? String(data.role).trim() : existing.role;
+    const location = data.location !== undefined ? String(data.location).trim() : existing.location;
+    const industry = data.industry !== undefined ? String(data.industry).trim() : existing.industry;
     let skills = existing.skills;
     if (data.skills !== undefined) {
-      skills = Array.isArray(data.skills) ? data.skills : data.skills.split(',').map(s => s.trim()).filter(Boolean);
+      skills = Array.isArray(data.skills) ? data.skills : String(data.skills).split(',').map(s => s.trim()).filter(Boolean);
     }
-    const avatar = data.avatar !== undefined ? data.avatar.trim() : existing.avatar;
+    const avatar = data.avatar !== undefined ? String(data.avatar).trim() : existing.avatar;
     const isMentor = data.isMentor !== undefined ? Boolean(data.isMentor) : existing.isMentor;
-    const bio = data.bio !== undefined ? data.bio.trim() : existing.bio;
+    const bio = data.bio !== undefined ? String(data.bio).trim() : existing.bio;
     const userId = data.userId !== undefined ? (data.userId ? String(data.userId) : null) : (data.user_id !== undefined ? (data.user_id ? String(data.user_id) : null) : existing.userId);
 
     if (db.isDbConnected) {
@@ -311,7 +346,10 @@ class AlumniModel {
         if (idx !== -1) this.alumni[idx] = updated;
         return updated;
       } catch (err) {
-        console.error('Error in AlumniModel.update DB query:', err.message);
+        if (err.code === '23503') {
+          throw new Error(`Invalid userId "${userId}": referenced user does not exist.`);
+        }
+        throw err;
       }
     }
 
