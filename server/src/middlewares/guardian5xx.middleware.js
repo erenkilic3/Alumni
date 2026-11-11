@@ -6,6 +6,8 @@
  * protecting sensitive internal stack traces while providing helpful diagnostics.
  */
 
+const { writeErrorLog, formatTime } = require('./logger.middleware');
+
 /**
  * Classify a 5xx error and determine its HTTP status code and descriptive reason
  * @param {Error|any} err
@@ -277,6 +279,9 @@ function guardian5xxMiddleware(err, req, res, next) {
   if (err && err.stack && process.env.NODE_ENV !== 'production') {
     console.error(`   Stack: ${err.stack.split('\n').slice(0, 4).join('\n')}`);
   }
+
+  // Write error report to logs/error.logs
+  writeErrorLog(`[${formatTime()}] [${incidentId}] ${statusCode} ${method} ${route} - Reason: ${reason}`);
 
   // Prevent sending headers if already sent
   if (res.headersSent) {
