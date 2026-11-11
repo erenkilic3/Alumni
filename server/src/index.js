@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
-const { loggerMiddleware } = require('./middlewares');
+const { loggerMiddleware, guardian404Middleware } = require('./middlewares');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -2207,13 +2207,8 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-// Catch-all 404 handler for unknown /api/* endpoints
-app.use('/api', (req, res) => {
-  return res.status(404).json({
-    success: false,
-    error: `API endpoint not found: ${req.method} ${req.originalUrl}`
-  });
-});
+// 404 Guardian Middleware: Intercepts all unmatched routes and returns structured 404 with reason
+app.use(guardian404Middleware);
 
 // Global error handler (handles malformed JSON payloads cleanly)
 app.use((err, req, res, next) => {

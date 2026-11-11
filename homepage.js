@@ -9,9 +9,11 @@ const express = (() => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+let guardian404 = null;
 try {
-  const { loggerMiddleware } = require('./server/src/middlewares');
-  app.use(loggerMiddleware);
+  const middlewares = require('./server/src/middlewares');
+  app.use(middlewares.loggerMiddleware);
+  guardian404 = middlewares.guardian404Middleware;
 } catch (e) {
   // If middlewares not available, continue without crashing
 }
@@ -1389,6 +1391,11 @@ app.get('/api/docs', handleSwagger);
 app.get('/', (req, res) => {
   res.redirect('/homepage');
 });
+
+// 404 Guardian Middleware
+if (guardian404) {
+  app.use(guardian404);
+}
 
 app.listen(PORT, () => {
   console.log(`🚀 Bağımsız Homepage sunucusu localhost üzerinde çalışıyor: http://localhost:${PORT}/homepage`);
