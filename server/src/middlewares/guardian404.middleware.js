@@ -1,10 +1,13 @@
 /**
- * 404 Guardian Middleware
+ * 404 Guardian Middleware & Generic 404 Page Handler
  *
- * Catches unhandled routes and returns standard 404 Not Found responses
- * with an informative and context-aware "reason".
- * Supports both JSON APIs and Server-Rendered HTML browser fallbacks.
+ * Catches unhandled/invalid routes and:
+ * 1. Serves a rich, generic 404 page on `/404` and `/not-found`.
+ * 2. Redirects invalid web/browser requests to `/404` with route and reason parameters.
+ * 3. Returns structured 404 JSON with descriptive reason for REST API clients.
  */
+
+const NotFoundView = require('../views/not-found.view');
 
 /**
  * Determine a descriptive reason why the 404 error occurred
@@ -41,176 +44,79 @@ function determine404Reason(req) {
 }
 
 /**
- * Render a styled HTML 404 page for browser requests
- * @param {string} method
- * @param {string} route
- * @param {string} reason
- * @returns {string} HTML markup
+ * Route handler for GET /404 and GET /not-found
+ * Serves the generic 404 page (or JSON when format=json or Accept: application/json)
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
  */
-function render404Html(method, route, reason) {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 Not Found - AlumniSphere Guardian</title>
-  <style>
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-      background: linear-gradient(135deg, #090d16 0%, #0f172a 50%, #1e293b 100%);
-      color: #f8fafc;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-    }
-    .guardian-card {
-      background: rgba(30, 41, 59, 0.75);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 20px;
-      padding: 3rem 2.5rem;
-      max-width: 580px;
-      width: 100%;
-      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.7);
-      text-align: center;
-    }
-    .badge {
-      display: inline-block;
-      padding: 0.35rem 0.85rem;
-      border-radius: 9999px;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.3);
-      color: #f87171;
-      font-weight: 700;
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-      text-transform: uppercase;
-      margin-bottom: 1.25rem;
-    }
-    h1 {
-      font-size: 3.5rem;
-      font-weight: 800;
-      line-height: 1;
-      color: #38bdf8;
-      margin-bottom: 0.5rem;
-    }
-    h2 {
-      font-size: 1.35rem;
-      font-weight: 600;
-      color: #e2e8f0;
-      margin-bottom: 1rem;
-    }
-    .route-chip {
-      background: #0f172a;
-      border: 1px solid #334155;
-      padding: 0.5rem 1rem;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 0.95rem;
-      color: #cbd5e1;
-      display: inline-block;
-      margin-bottom: 1.5rem;
-      word-break: break-all;
-    }
-    .reason-box {
-      background: rgba(15, 23, 42, 0.85);
-      border-left: 4px solid #f59e0b;
-      padding: 1rem 1.25rem;
-      border-radius: 0 10px 10px 0;
-      text-align: left;
-      margin-bottom: 2rem;
-    }
-    .reason-title {
-      font-size: 0.75rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      color: #f59e0b;
-      margin-bottom: 0.35rem;
-    }
-    .reason-text {
-      color: #cbd5e1;
-      font-size: 0.92rem;
-      line-height: 1.5;
-    }
-    .actions {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 0.75rem;
-      justify-content: center;
-    }
-    .btn {
-      padding: 0.7rem 1.25rem;
-      border-radius: 10px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s;
-    }
-    .btn-primary {
-      background: #0284c7;
-      color: white;
-    }
-    .btn-primary:hover {
-      background: #0369a1;
-      transform: translateY(-1px);
-    }
-    .btn-secondary {
-      background: #1e293b;
-      border: 1px solid #334155;
-      color: #94a3b8;
-    }
-    .btn-secondary:hover {
-      color: white;
-      border-color: #38bdf8;
-    }
-  </style>
-</head>
-<body>
-  <div class="guardian-card">
-    <div class="badge">404 Guardian</div>
-    <h1>404</h1>
-    <h2>Resource Not Found</h2>
-    <div class="route-chip">${method} ${route}</div>
-    
-    <div class="reason-box">
-      <div class="reason-title">Reason</div>
-      <div class="reason-text">${reason}</div>
-    </div>
+function handle404Page(req, res) {
+  const route = req.query.route || req.query.from || req.query.path || '';
+  const method = req.query.method || 'GET';
+  const reason = req.query.reason || 'Aradığınız sayfa veya kaynak mevcut değil.';
 
-    <div class="actions">
-      <a href="/" class="btn btn-primary">🏠 Home</a>
-      <a href="/users" class="btn btn-secondary">👥 Users</a>
-      <a href="/announcements" class="btn btn-secondary">📢 Announcements</a>
-      <a href="/api/swagger" class="btn btn-secondary">📖 Swagger Docs</a>
-    </div>
-  </div>
-</body>
-</html>`;
+  const wantsJson = (req.headers.accept &&
+    req.headers.accept.includes('application/json') &&
+    !req.headers.accept.includes('text/html')) ||
+    req.query.format === 'json';
+
+  if (wantsJson) {
+    return res.status(404).json({
+      success: false,
+      status: 404,
+      error: 'Not Found',
+      reason,
+      message: reason,
+      method,
+      route: route || '/404',
+      timestamp: new Date().toISOString(),
+      documentation: '/api/swagger'
+    });
+  }
+
+  return res.status(404).send(NotFoundView.renderNotFoundPage({
+    route,
+    method,
+    reason
+  }));
 }
 
 /**
  * 404 Guardian Middleware
- * Handles all unmatched routes and returns a structured 404 error with reason.
+ * Handles all unmatched routes and redirects invalid requests to the generic 404 page
+ * or returns structured 404 JSON for REST API callers.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
  */
 function guardian404Middleware(req, res, next) {
-  const reason = determine404Reason(req);
   const route = req.originalUrl || req.url;
+  const path = (req.path || route.split('?')[0]).toLowerCase();
+
+  // If already at /404 or /not-found, render page directly to prevent redirect loop
+  if (path === '/404' || path === '/not-found') {
+    return handle404Page(req, res);
+  }
+
+  const reason = determine404Reason(req);
   const method = req.method;
 
   const isBrowserHtml = req.headers.accept &&
     req.headers.accept.includes('text/html') &&
     !req.headers.accept.includes('application/json') &&
-    req.query.format !== 'json' &&
-    !route.startsWith('/api/');
+    req.query.format !== 'json';
 
-  if (isBrowserHtml) {
-    return res.status(404).send(render404Html(method, route, reason));
+  const isApiRequest = route.startsWith('/api/') ||
+    (req.headers.accept && req.headers.accept.includes('application/json') && !req.headers.accept.includes('text/html'));
+
+  // 1. Browser navigation or general invalid web request -> Redirect to generic 404 page
+  if (isBrowserHtml || !isApiRequest || req.query.redirect === 'true') {
+    const redirectUrl = `/404?route=${encodeURIComponent(route)}&method=${encodeURIComponent(method)}&reason=${encodeURIComponent(reason)}`;
+    return res.redirect(302, redirectUrl);
   }
 
+  // 2. REST API Request -> Return structured 404 JSON with reason & redirect link
   return res.status(404).json({
     success: false,
     status: 404,
@@ -219,6 +125,7 @@ function guardian404Middleware(req, res, next) {
     message: reason,
     method,
     route,
+    redirectUrl: `/404?route=${encodeURIComponent(route)}`,
     timestamp: new Date().toISOString(),
     documentation: '/api/swagger'
   });
@@ -226,6 +133,5 @@ function guardian404Middleware(req, res, next) {
 
 module.exports = guardian404Middleware;
 module.exports.guardian404Middleware = guardian404Middleware;
+module.exports.handle404Page = handle404Page;
 module.exports.determine404Reason = determine404Reason;
-module.exports.render404Html = render404Html;
-

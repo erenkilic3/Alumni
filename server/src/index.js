@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
-const { loggerMiddleware, guardian404Middleware, guardian5xxMiddleware } = require('./middlewares');
+const { loggerMiddleware, guardian404Middleware, handle404Page, guardian5xxMiddleware } = require('./middlewares');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -2207,7 +2207,10 @@ app.get('/api/stats', async (req, res) => {
   });
 });
 
-// 404 Guardian Middleware: Intercepts all unmatched routes and returns structured 404 with reason
+// Generic 404 Page Route (Explicit endpoint)
+app.get(['/404', '/not-found'], handle404Page);
+
+// 404 Guardian Middleware: Intercepts all unmatched routes and redirects invalid requests
 app.use(guardian404Middleware);
 
 // 5xx Guardian Middleware: Intercepts unhandled exceptions and returns structured 5xx with reason

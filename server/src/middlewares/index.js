@@ -6,6 +6,7 @@ module.exports = {
   loggerMiddleware,
   guardian404Middleware,
   guardian404: guardian404Middleware,
+  handle404Page: guardian404Middleware.handle404Page,
   guardian5xxMiddleware,
   guardian5xx: guardian5xxMiddleware
 };

@@ -10,11 +10,13 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 let guardian404 = null;
+let handle404Page = null;
 let guardian5xx = null;
 try {
   const middlewares = require('./server/src/middlewares');
   app.use(middlewares.loggerMiddleware);
   guardian404 = middlewares.guardian404Middleware;
+  handle404Page = middlewares.handle404Page;
   guardian5xx = middlewares.guardian5xxMiddleware;
 } catch (e) {
   // If middlewares not available, continue without crashing
@@ -1393,6 +1395,11 @@ app.get('/api/docs', handleSwagger);
 app.get('/', (req, res) => {
   res.redirect('/homepage');
 });
+
+// Generic 404 Page Route
+if (handle404Page) {
+  app.get(['/404', '/not-found'], handle404Page);
+}
 
 // 404 Guardian Middleware
 if (guardian404) {
