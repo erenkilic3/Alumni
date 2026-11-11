@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
-const { loggerMiddleware, guardian404Middleware } = require('./middlewares');
+const { loggerMiddleware, guardian404Middleware, guardian5xxMiddleware } = require('./middlewares');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -2210,19 +2210,8 @@ app.get('/api/stats', async (req, res) => {
 // 404 Guardian Middleware: Intercepts all unmatched routes and returns structured 404 with reason
 app.use(guardian404Middleware);
 
-// Global error handler (handles malformed JSON payloads cleanly)
-app.use((err, req, res, next) => {
-  if (err instanceof SyntaxError && err.status === 400 && 'body' in err) {
-    return res.status(400).json({
-      success: false,
-      error: `Invalid JSON payload: ${err.message}`
-    });
-  }
-  return res.status(err.status || 500).json({
-    success: false,
-    error: err.message || 'Internal Server Error'
-  });
-});
+// 5xx Guardian Middleware: Intercepts unhandled exceptions and returns structured 5xx with reason
+app.use(guardian5xxMiddleware);
 
 if (require.main === module) {
   app.listen(PORT, () => {

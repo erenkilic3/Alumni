@@ -10,10 +10,12 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 let guardian404 = null;
+let guardian5xx = null;
 try {
   const middlewares = require('./server/src/middlewares');
   app.use(middlewares.loggerMiddleware);
   guardian404 = middlewares.guardian404Middleware;
+  guardian5xx = middlewares.guardian5xxMiddleware;
 } catch (e) {
   // If middlewares not available, continue without crashing
 }
@@ -1395,6 +1397,11 @@ app.get('/', (req, res) => {
 // 404 Guardian Middleware
 if (guardian404) {
   app.use(guardian404);
+}
+
+// 5xx Guardian Middleware
+if (guardian5xx) {
+  app.use(guardian5xx);
 }
 
 app.listen(PORT, () => {
