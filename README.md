@@ -43,10 +43,28 @@ A modern, containerized platform designed for universities and educational insti
 
 ```mermaid
 graph TD
-    User([Web Client / Mobile Browser]) -->|HTTP / SPA Navigation :3000| Frontend[Frontend: Express Web Client & Static SPA\n:3000]
+    User([Web Client / Mobile Browser / API Client]) -->|HTTP / SPA Navigation :3000| Frontend[Frontend: Express Web Client & Static SPA\n:3000]
     Frontend -->|REST API Requests / JSON| Backend[Backend API: Node.js / Express\n:5001]
-    Backend -->|Connection Pool via pg| DB[(PostgreSQL Database\n:5432)]
-    Backend -.->|In-Memory Resilient Fallback| RAMStore[(RAM Store: Users, Alumni, Jobs)]
+    User -.->|Direct API & SSR Navigation :5001| Backend
+
+    subgraph Pipeline ["🛡️ Middleware Pipeline (:5001)"]
+        Logger["Terminal Request Logger\nlogger.middleware.js\n&lt;time&gt; &lt;method&gt; &lt;route&gt; &lt;restype&gt; &lt;duration&gt;"]
+        Routers["Express Routers & Controllers\n(Users, Alumni, Jobs, Applications, Nested)"]
+        Guardian404["404 Guardian\nReason Reporting & /404 Redirect"]
+        Guardian5xx["5xx Guardian\nIncident Tracking & Error Classifier"]
+        ErrorLog[("Error Log File\nlogs/error.logs (Status >= 400)")]
+    end
+
+    Backend --> Logger
+    Logger --> Routers
+    Routers -->|404 Unmapped Route| Guardian404
+    Routers -->|5xx Server Error| Guardian5xx
+    Logger -.->|HTTP >= 400| ErrorLog
+    Guardian5xx -.->|Persist Incident Trace| ErrorLog
+    Guardian404 -->|Browser Redirect| NotFoundPage["Generic 404 View\n/404 & /not-found"]
+
+    Routers -->|Connection Pool via pg| DB[(PostgreSQL Database\n:5432)]
+    Routers -.->|In-Memory Resilient Fallback| RAMStore[(RAM Store: Users, Alumni, Jobs, Applications)]
 ```
 
 ---
@@ -63,13 +81,17 @@ graph TD
         HTML["client/public/index.html\n(SPA Dashboard, Modals, Metric Cards)"]
         CSS["client/public/styles.css\n(Glassmorphism, Dark/Light Mode Themes)"]
         ClientRender["client/public/app.js (Render Methods)\n(renderAlumniList, renderJobsList, renderStats)"]
-        SSRUsers["server/src/index.js: renderUsersPage()\n(User Management HTML Interface & CRUD Table)"]
+        SSRUsers["server/src/views/user.view.js\n(User Management HTML Interface & CRUD Forms)"]
+        SSRAnnouncements["server/src/views/announcement.view.js\n(Announcement Management Interface & CRUD)"]
+        SSRAlumni["server/src/views/alumni.view.js\n(Alumni Profiles HTML Views & Directory)"]
+        SSRNotFound["server/src/views/not-found.view.js\n(Generic 404 Error Page & Status Reporting)"]
         SSRSwagger["server/src/index.js: renderSwaggerUI()\n(Interactive OpenAPI / Swagger UI Interface)"]
         SSRHomepage["server/src/index.js: handleHomepage()\n(Standalone Landing & About View)"]
     end
 
-    subgraph ControllerLayer ["⚙️ CONTROLLER (Routing & Business Logic)"]
-        ServerCtrl["server/src/index.js (API Handlers)\n- Users CRUD: GET, POST, PUT, PATCH, DELETE\n- Alumni Controller: Search, Filter, Registration\n- Jobs, Stats, Health & Calculator Handlers"]
+    subgraph ControllerLayer ["⚙️ CONTROLLER & MIDDLEWARE (Routing, Business Logic & Guards)"]
+        ServerCtrl["server/src/controllers/ (API & Web Handlers)\n- Users, Announcements, Alumni, Jobs, Applications\n- Nested Relational Controller\n- Stats, Health & Calculator Handlers"]
+        Middlewares["server/src/middlewares/\n- Terminal Request Logger (HH.mm.ss format)\n- 404 Guardian (Reason analysis & web redirect)\n- 5xx Guardian (Exception handling & incident IDs)\n- Error Log Recorder (logs/error.logs)"]
         ClientServerCtrl["client/server.js\n- Static Asset File Server (express.static)\n- Swagger Reverse Redirect (/api/swagger)\n- SPA Fallback Route Controller (GET *)"]
         ClientEventCtrl["client/public/app.js (Event & API Handlers)\n- Dynamic Filter & Search Listeners\n- Modal & Theme State Handlers\n- Async Fetch API Dispatchers"]
     end
@@ -149,12 +171,17 @@ Alumni/
 │   │   │   ├── api-job.controller.js        # ⚙️ [CONTROLLER] Pure JSON REST API Job Posting Controller
 │   │   │   ├── api-application.controller.js # ⚙️ [CONTROLLER] Pure JSON REST API Application Controller
 │   │   │   └── nested.controller.js         # 🪢 [CONTROLLER] Nested Relational Controller (Users, Alumni, Jobs, Applications)
+│   │   ├── middlewares/                     # 🛡️ [MIDDLEWARE] Express Request Middlewares & Error Guardians
+│   │   │   ├── index.js                     # 🛡️ Barrel Export for Middlewares
+│   │   │   ├── logger.middleware.js         # ⏱️ Terminal Request Logger (<time> <method> <route> <restype> <duration>) & Error Log Writer
+│   │   │   ├── guardian404.middleware.js    # 🧭 404 Guardian Middleware (Descriptive Reason Reporting, JSON API & /404 Redirect)
+│   │   │   └── guardian5xx.middleware.js    # 🚨 5xx Guardian Middleware (Exception Classification, Incident IDs & Diagnostics)
 │   │   ├── models/                          # 🗄️ [MODEL] Data Models & Repository Layer
 │   │   │   ├── index.js                     # 🗄️ [MODEL] Barrel Export for Models
 │   │   │   ├── user.model.js                # 🗄️ [MODEL] Persistent PostgreSQL User Model with In-Memory Fallback
 │   │   │   ├── announcement.model.js        # 🗄️ [MODEL] Persistent PostgreSQL Announcement Model with In-Memory Fallback
 │   │   │   ├── alumni.model.js              # 🗄️ [MODEL] Persistent PostgreSQL Alumni Model with In-Memory Fallback
-│   │   │   ├── job-posting.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Job Posting Model with In-Memory Fallback
+│   │   │   ├── job-posting.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Job Posting Model with In-Memory Fallback (Max 120 Title Validation)
 │   │   │   └── application.model.js         # 🗄️ [MODEL] Persistent PostgreSQL Application Model with In-Memory Fallback
 │   │   ├── routes/                          # 🚦 [ROUTER] Application Routes Layer
 │   │   │   ├── index.js                     # 🚦 [ROUTER] Barrel Export & Composite Router
@@ -170,11 +197,15 @@ Alumni/
 │   │   ├── views/                           # 🎨 [VIEW] Server-Side Rendered Presentation Layer
 │   │   │   ├── index.js                     # 🎨 [VIEW] Barrel Export for Views
 │   │   │   ├── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (Full CRUD)
-│   │   │   └── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
+│   │   │   ├── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
+│   │   │   ├── alumni.view.js               # 🎨 [VIEW] Alumni Profiles Directory HTML View (Full CRUD)
+│   │   │   └── not-found.view.js            # 🎨 [VIEW] Generic 404 Not Found Page HTML View (Responsive Glassmorphism UI)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies, Migrations & Seed Scripts
 │   └── package-lock.json                    # 🔒 [CONFIG] Dependency Lockfile
+├── logs/                                    # 📋 [LOGS & OBSERVABILITY] Application Log Storage
+│   └── error.logs                           # ⚠️ [LOGS] HTTP Error Logs (Status >= 400 with Timestamp, Route, Status, Duration)
 ├── scripts/                                 # 🧪 [TEST & AUTOMATION] Test and Automation Scripts
 │   └── test-forgetting.sh                   # 🧪 [TEST] Docker Compose Persistence "The Forgetting Test" Script
 ├── postman/                                 # 🧪 [TEST & DOCS] API Testing Collections & Environments
@@ -201,7 +232,14 @@ Alumni/
 | `server/src/models/application.model.js` | **Model (M)** | Backend | Standalone in-memory & PostgreSQL Application repository with full CRUD operations, relational links (`jobId`, `userId`, `findByUserId`, `findByJobId`). |
 | `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `renderUserDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders user management dashboard and forms. |
 | `server/src/views/announcement.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAnnouncementsList`, `renderAnnouncementDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders interactive announcement interface, metrics bar, and publication forms. |
-| `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views. |
+| `server/src/views/alumni.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAlumniList`, `renderAlumniDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders alumni profiles directory and profile registration/update views. |
+| `server/src/views/not-found.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderNotFoundPage`, `escapeHtml`); renders responsive generic 404 error page with route context, explanatory failure reason, and quick navigation links. |
+| `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views (`UserView`, `AnnouncementView`, `AlumniView`, `NotFoundView`). |
+| `server/src/middlewares/logger.middleware.js` | **Middleware / Controller (C)** | Backend | Request lifecycle logging middleware; writes `<time> <method> <route> <restype> <duration>` to stdout and appends client/server errors (`status >= 400`) to `logs/error.logs`. |
+| `server/src/middlewares/guardian404.middleware.js` | **Middleware / Controller (C)** | Backend | 404 Guardian; catches unhandled routes, diagnoses cause (missing ID, unsupported HTTP verb, unrecognized path), redirects browsers to `/404`, and returns JSON for API clients. |
+| `server/src/middlewares/guardian5xx.middleware.js` | **Middleware / Controller (C)** | Backend | 5xx Guardian; centralized Express error handler classifying 503 (DB down), 504 (timeout), 502 (bad gateway), 400 (malformed JSON), generating incident tracking IDs (`inc-xxxx`), and persisting stack traces. |
+| `server/src/middlewares/index.js` | **Middleware / Controller (C)** | Backend | Barrel export for middlewares (`loggerMiddleware`, `guardian404Middleware`, `guardian5xxMiddleware`, `handle404Page`). |
+| `logs/error.logs` | **Infrastructure (Infra)** | Root | Persistent append-only error tracking log file capturing timestamps, HTTP methods, routes, error status codes, and durations. |
 | `server/src/controllers/api-user.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles User API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`) with standard HTTP status codes. |
 | `server/src/controllers/api-announcement.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Announcement API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
 | `server/src/controllers/api-alumni.controller.js` | **Controller (C)** | Backend | Pure JSON RESTful API controller; handles Alumni API CRUD workflows (`getAll`, `getById`, `create`, `update`, `patch`, `delete`, `count`). |
@@ -256,7 +294,10 @@ The View layer delivers an interactive, modern, and accessible user experience:
 - **Client-Side Dynamic DOM Rendering**:
   - `client/public/app.js`: Consumes API JSON payloads and dynamically generates DOM nodes using `renderAlumniList()`, `renderJobsList()`, and `renderStats()`.
 - **Server-Side Rendered (SSR) Views**:
-  - `renderUsersPage()` in `server/src/controllers/user.controller.js`: Interactive HTML dashboard for `/users` and browser `/api/users` featuring inline edit (`✏️ Edit` via PUT/PATCH) and delete (`🗑️ Delete` via DELETE) controls, live alert notices, and a user registration form.
+  - `server/src/views/user.view.js`: Dedicated server-side HTML view layer for `/users` and browser `/api/users` featuring inline edit (`✏️ Edit` via PUT/PATCH) and delete (`🗑️ Delete` via DELETE) controls, live alert notices, and a user registration form.
+  - `server/src/views/announcement.view.js`: Interactive bulletin board with priority badges, status filters, and publication forms.
+  - `server/src/views/alumni.view.js`: Alumni profiles directory, graduate cards, and search filters.
+  - `server/src/views/not-found.view.js`: Responsive Generic 404 error page (`renderNotFoundPage`) with animated badge, route/method context, explanatory failure reason, and quick return links.
   - `renderSwaggerUI()`: Embedded Swagger UI client presenting the OpenAPI 3.0 specification (`/api/swagger`).
   - `handleHomepage()` & `handleSum()`: Dedicated server-rendered HTML presentation pages.
 
@@ -276,14 +317,34 @@ The Controller layer handles client requests, enforces input validation, mutates
     - `create`: Processes HTML form submissions (`POST /users`), re-rendering with alerts.
     - `update`: Handles web updates via modal prompts or PUT/PATCH requests.
     - `delete`: Handles web deletion via inline action buttons.
-- **Other Controllers & Handlers (`server/src/index.js`)**:
-  - **Alumni Controller**: `GET /api/alumni` (multi-filter search), `POST /api/alumni` (alumni registration).
-  - **Jobs & Analytics Controllers**: `GET /api/stats` (employment rates, metrics), `GET /api/jobs` (opportunities).
-  - **System & Swagger Controllers**: `handleHealth` (status check), `handleSwagger` (OpenAPI schema & UI).
+- **Dedicated Announcement & Alumni Controllers**:
+  - `ApiAnnouncementController` & `AnnouncementController`: Full CRUD for university and career bulletins.
+  - `ApiAlumniController` & `AlumniController`: Alumni profiles, mentor status, graduation search.
+- **Dedicated Job & Application Controllers**:
+  - `ApiJobController` (`server/src/controllers/api-job.controller.js`): Job posting CRUD, enforcing title length limit (≤ 120 chars) and company name validation.
+  - `ApiApplicationController` (`server/src/controllers/api-application.controller.js`): Job application lifecycle management, resume links, and status transitions.
+  - `NestedController` (`server/src/controllers/nested.controller.js`): Relational nested endpoints linking users, alumni, jobs, and applications.
 - **Frontend Web Server Controller (`client/server.js`)**:
   - Serves static assets via `express.static`, redirects documentation traffic to the API server, and forwards unknown routes to `index.html` for client-side routing.
 - **Client Event Controllers (`client/public/app.js`)**:
   - Attaches event listeners (`keyup`, `change`, `submit`, `click`) to trigger filter recalculations, modal toggles, theme switching, and asynchronous `fetch()` API calls.
+
+#### 4. Middleware & Guardian Layer (Cross-Cutting Concerns & Resiliency)
+The Middleware layer intercepts requests and responses to provide observability, security, and graceful error handling:
+- **Terminal Request Logger (`server/src/middlewares/logger.middleware.js`)**:
+  - Intercepts every incoming HTTP transaction and measures round-trip duration using high-precision process timers (`process.hrtime.bigint()`).
+  - Emits formatted log output on the terminal: `<time> <method> <route> <restype> <duration>` (e.g. `10.20.30 POST /user 201 18ms`).
+  - Automatically identifies error responses (status codes ≥ 400) and persists them to `logs/error.logs`.
+- **404 Guardian Middleware (`server/src/middlewares/guardian404.middleware.js`)**:
+  - Catches unmatched routes and diagnoses the root cause of the 404 (e.g. unrecognized path, unsupported HTTP method, missing sub-resource ID).
+  - Web browser requests are redirected to `/404?route=...&reason=...` to display the generic 404 page.
+  - REST API clients receive structured JSON with error classification, reason, and documentation links.
+- **5xx Guardian Middleware (`server/src/middlewares/guardian5xx.middleware.js`)**:
+  - Express global 4-parameter error handler `(err, req, res, next)`.
+  - Classifies server exceptions: 503 for PostgreSQL connection failures/pool exhaustion, 504 for network/gateway timeouts, 502 for bad gateway, 400 for malformed JSON bodies, and 500 for general exceptions.
+  - Generates unique incident IDs (`inc-xxxx-xxxx`) to correlate production logs with user reports without leaking raw stack traces.
+- **Persistent Error Log Storage (`logs/error.logs`)**:
+  - Non-blocking append-only error log file created automatically upon the first error occurrence.
 
 ---
 
@@ -507,6 +568,82 @@ node server/src/db/seed.js --users=30 --alumni=25 --announcements=15
 
 ---
 
+## 🛡️ Middlewares, Error Guardians & Observability
+
+AlumniSphere implements an enterprise-grade middleware pipeline designed for high availability, zero unhandled crash policy, automated diagnostics, and transparent request observability.
+
+```mermaid
+flowchart LR
+    Req[Incoming HTTP Request] --> Logger[Terminal Request Logger\nlogger.middleware.js]
+    Logger --> Router{Express Routing Engine}
+    Router -->|Matched Route| Controller[API / Web Controller]
+    Router -->|Unmatched Route| G404[404 Guardian\nguardian404.middleware.js]
+    Controller -->|Success 2xx/3xx| Res[Client Response]
+    Controller -->|Client Error 4xx| LogFile[("logs/error.logs\n(Status >= 400)")]
+    Controller -->|Unhandled Exception| G5xx[5xx Guardian\nguardian5xx.middleware.js]
+    G404 -->|Browser Request| Page404["Generic 404 View\n(/404 & /not-found)"]
+    G404 -->|API / JSON Request| Res
+    G404 -.-> LogFile
+    G5xx -.->|Append Incident Trace| LogFile
+    G5xx -->|Structured JSON / HTML| Res
+```
+
+### 1. ⏱️ Terminal Request Logger Middleware (`logger.middleware.js`)
+Intercepts every incoming HTTP request and calculates real execution latency using high-resolution timers (`process.hrtime.bigint()`):
+- **Output Format**: `<time> <method> <route> <restype> <duration>`
+- **Live Terminal Samples**:
+  ```text
+  10.20.30 POST /user 201 18ms
+  10.25.14 GET /api/alumni 200 12ms
+  10.33.02 POST /api/jobs 400 4ms
+  10.40.15 GET /api/non-existent-route 404 2ms
+  10.55.20 GET /unknown-page 302 3ms
+  ```
+- **Error Interception**: If `res.statusCode >= 400`, the logger asynchronously appends the record to `logs/error.logs`.
+
+### 2. 🧭 404 Guardian Middleware & Generic 404 Page (`guardian404.middleware.js`)
+Replaces generic, uninformative 404 messages with intelligent root-cause diagnosis and content-negotiated responses:
+- **Intelligent Reason Reporting**:
+  - **Unrecognized API Endpoint**: Informs the client that the route is not registered and points to `/api/swagger`.
+  - **Unsupported HTTP Verb**: Informs the client when a collection endpoint does not accept a specific method (e.g. `PUT /api/users`).
+  - **Missing Resource ID**: Differentiates missing endpoints from valid collections where a specific record ID was not found.
+  - **Invalid Web Page**: Suggests navigation return paths.
+- **Smart Content Negotiation & Generic 404 View**:
+  - **Web Browsers**: Automatically redirected (`302`) to `/404?route=<route>&method=<method>&reason=<reason>`, rendering the dedicated SSR Generic 404 page ([`server/src/views/not-found.view.js`](file:///Users/erenkilic/repo/Alumni/server/src/views/not-found.view.js)) styled with responsive glassmorphism cards and quick return links.
+  - **REST API Clients**: Direct JSON response with HTTP 404:
+    ```json
+    {
+      "success": false,
+      "status": 404,
+      "error": "Not Found",
+      "reason": "Unrecognized API endpoint: 'GET /api/unknown' is not registered in the API routing table. Refer to /api/swagger for available endpoints.",
+      "message": "Unrecognized API endpoint: 'GET /api/unknown' is not registered in the API routing table. Refer to /api/swagger for available endpoints.",
+      "method": "GET",
+      "route": "/api/unknown",
+      "timestamp": "2026-11-11T10:25:21.000Z",
+      "documentation": "/api/swagger"
+    }
+    ```
+- **Dedicated Generic 404 Endpoints**: Both `GET /404` and `GET /not-found` are available directly for testing and custom error redirects.
+
+### 3. 🚨 5xx Guardian Middleware (`guardian5xx.middleware.js`)
+A centralized 4-parameter Express error handler `(err, req, res, next)` designed to prevent unhandled service crashes and classify internal errors:
+- **Error Classification**:
+  - `503 Service Unavailable`: PostgreSQL connection failures (`ECONNREFUSED`, `57P01`, pool exhaustion).
+  - `504 Gateway Timeout`: Upstream socket or network timeouts (`ETIMEDOUT`, `ESOCKETTIMEDOUT`).
+  - `502 Bad Gateway`: Upstream proxy or gateway invalid response.
+  - `400 Bad Request`: Malformed JSON payloads in request body.
+  - `500 Internal Server Error`: Standard unhandled application exceptions.
+- **Incident Tracking IDs (`incidentId`)**:
+  - Every server failure receives a unique incident code (e.g. `inc-1731310383000-a1b2c3d4`).
+  - Internal stack traces are scrubbed from production responses to prevent security leaks, while full diagnostics are recorded in `logs/error.logs`.
+
+### 4. 📋 Persistent Error Logging (`logs/error.logs`)
+- Real-time logging of all HTTP errors (status codes ≥ 400).
+- Handled safely via `writeErrorLog()`: automatically checks for directory existence, creates `logs/` recursively if missing, and appends without blocking request execution.
+
+---
+
 ## 📖 API Documentation (Swagger / OpenAPI)
 
 All RESTful API endpoints across the project are defined according to the OpenAPI 3.0 standard and exposed via an interactive, modern **Swagger UI** interface for seamless in-browser testing and schema inspection.
@@ -564,7 +701,21 @@ All RESTful API endpoints across the project are defined according to the OpenAP
 | `PATCH` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Partially update alumni profile in PostgreSQL |
 | `DELETE` | `/api/alumni/{id}` | `ApiAlumniController` | JSON | Delete an alumni profile from PostgreSQL by ID |
 | `GET` | `/api/stats` | Native | JSON | Platform statistics (total alumni, employment rate, industry breakdown) |
-| `GET` | `/api/jobs` | Native | JSON | Career and internship opportunities list |
+| `GET` | `/api/jobs` | `ApiJobController` | JSON | Career and internship opportunities list (`type`, `company`, `location`, `search`) |
+| `POST` | `/api/jobs` | `ApiJobController` | JSON | Create job posting (validates title max 120 chars, company required) |
+| `GET` | `/api/jobs/count` | `ApiJobController` | JSON | Total count of registered job postings |
+| `GET` | `/api/jobs/{id}` | `ApiJobController` | JSON | Query specific job posting by ID |
+| `PUT` | `/api/jobs/{id}` | `ApiJobController` | JSON | Fully update job posting attributes |
+| `PATCH` | `/api/jobs/{id}` | `ApiJobController` | JSON | Partially update job posting attributes |
+| `DELETE` | `/api/jobs/{id}` | `ApiJobController` | JSON | Delete a job posting from PostgreSQL |
+| `GET` | `/api/applications` | `ApiApplicationController` | JSON | List all applications from PostgreSQL (`jobId`, `userId`, `status`) |
+| `POST` | `/api/applications` | `ApiApplicationController` | JSON | Submit new job application with resume and cover letter |
+| `GET` | `/api/applications/count` | `ApiApplicationController` | JSON | Total count of submitted applications |
+| `GET` | `/api/applications/{id}` | `ApiApplicationController` | JSON | Query specific application by ID |
+| `PATCH` | `/api/applications/{id}/status`| `ApiApplicationController` | JSON | Update application status (`PENDING`, `REVIEWING`, `ACCEPTED`, `REJECTED`) |
+| `DELETE` | `/api/applications/{id}` | `ApiApplicationController` | JSON | Withdraw or remove application |
+| `GET` | `/404` | `guardian404Middleware` | `NotFoundView.renderNotFoundPage` | Generic 404 Page (HTML SSR; returns JSON with `?format=json` or `Accept: application/json`) |
+| `GET` | `/not-found` | `guardian404Middleware` | `NotFoundView.renderNotFoundPage` | Alias route for `/404` Generic Not Found page |
 | `GET` | `/sum` | Native | Form / JSON | Calculate sum of two numbers (`?number1=X&number2=Y`) or interactive form |
 | `GET` | `/homepage` | Native | HTML | Standalone landing page and about view |
 
