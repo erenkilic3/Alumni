@@ -9,6 +9,13 @@ const express = (() => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+try {
+  const { loggerMiddleware } = require('./server/src/middlewares');
+  app.use(loggerMiddleware);
+} catch (e) {
+  // If middlewares not available, continue without crashing
+}
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

@@ -3,10 +3,12 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
+const { loggerMiddleware } = require('./middlewares');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
 
+app.use(loggerMiddleware);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
