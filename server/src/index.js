@@ -117,6 +117,76 @@ const mockJobs = [
   }
 ];
 
+const utilityPageStyles = `
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    padding: 24px;
+    color: #111412;
+    background: #fff;
+    font: 14px/1.6 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .card {
+    width: min(100%, 480px);
+    padding: clamp(24px, 5vw, 40px);
+    border: 1px solid #e6e8e7;
+    border-top: 2px solid #00d4a4;
+    border-radius: 8px;
+    background: #fff;
+    box-shadow: none;
+    text-align: left;
+  }
+  h1 {
+    margin: 0 0 10px;
+    color: #111412;
+    font-size: clamp(26px, 5vw, 32px);
+    font-weight: 600;
+    letter-spacing: -0.045em;
+    line-height: 1.15;
+  }
+  p {
+    margin: 0 0 24px;
+    color: #68706c;
+    font-size: 14px;
+  }
+  form { display: grid; gap: 12px; }
+  input {
+    width: 100%;
+    min-height: 44px;
+    padding: 0 13px;
+    border: 1px solid #dfe3e1;
+    border-radius: 6px;
+    color: #111412;
+    background: #fff;
+    font: inherit;
+  }
+  input:focus {
+    border-color: #00a981;
+    outline: 0;
+    box-shadow: 0 0 0 3px rgba(0, 185, 141, 0.12);
+  }
+  button {
+    min-height: 42px;
+    padding: 0 18px;
+    border: 1px solid #111412;
+    border-radius: 999px;
+    color: #fff;
+    background: #111412;
+    font: inherit;
+    font-weight: 550;
+    cursor: pointer;
+    transition: background-color 160ms ease, border-color 160ms ease;
+  }
+  button:hover { border-color: #333936; background: #333936; }
+  button:focus-visible { outline: 2px solid #00a981; outline-offset: 3px; }
+  @media (max-width: 480px) { body { padding: 16px; } }
+`;
+
 // Sum calculation handler
 const handleSum = (req, res) => {
   const n1 = req.params.number1 ?? req.query.number1 ?? req.query.num1 ?? req.query.n1 ?? req.query.a;
@@ -215,10 +285,11 @@ const handleSum = (req, res) => {
       transform: scale(0.98);
     }
   </style>
+  <style>${utilityPageStyles}</style>
 </head>
 <body>
   <div class="card">
-    <h1>➕ Toplama (Sum)</h1>
+    <h1>Toplama (Sum)</h1>
     <p>Toplamak için iki sayı girin:</p>
     <form action="/sum" method="GET">
       <input type="number" step="any" name="number1" placeholder="Birinci sayı (number1)" required autofocus />
@@ -230,61 +301,54 @@ const handleSum = (req, res) => {
 </html>`);
 };
 
-// GET /homepage: Bağımsız, basit "homepage" ve "about" sayfası
-const handleHomepage = (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>Homepage</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 1rem;
+const { HomepageView } = require('./views');
+
+// GET /homepage: AlumniSphere homepage using the shared Mintlify-inspired design system.
+const handleHomepage = async (req, res) => {
+  let stats = {
+    totalAlumni: mockAlumni.length,
+    mentorsAvailable: mockAlumni.filter((a) => a.isMentor).length,
+    activeJobs: mockJobs.length,
+    totalAnnouncements: 0
+  };
+  let recentAlumni = mockAlumni;
+  let recentJobs = mockJobs;
+  let recentAnnouncements = [];
+
+  try {
+    const { AlumniModel, AnnouncementModel, JobPostingModel } = require('./models');
+    const [alumniList, announcementsList, jobsList] = await Promise.all([
+      AlumniModel.findAll().catch(() => mockAlumni),
+      AnnouncementModel.findAll().catch(() => []),
+      JobPostingModel.findAll().catch(() => mockJobs)
+    ]);
+
+    if (Array.isArray(alumniList) && alumniList.length > 0) {
+      recentAlumni = alumniList;
+      stats.totalAlumni = alumniList.length;
+      stats.mentorsAvailable = alumniList.filter((a) => a.isMentor).length;
     }
-    .card {
-      background: #1e293b;
-      padding: 2.5rem;
-      border-radius: 14px;
-      border: 1px solid #334155;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    if (Array.isArray(announcementsList)) {
+      recentAnnouncements = announcementsList;
+      stats.totalAnnouncements = announcementsList.length;
     }
-    h1 {
-      color: #38bdf8;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
+    if (Array.isArray(jobsList) && jobsList.length > 0) {
+      recentJobs = jobsList;
+      stats.activeJobs = jobsList.length;
     }
-    h2 {
-      color: #94a3b8;
-      font-size: 1.25rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      line-height: 1.6;
-      color: #e2e8f0;
-      font-size: 1.05rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Homepage</h1>
-    <h2>About</h2>
-    <p>Alumni Tracking System: Üniversiteler ve mezunlar arasındaki bağı güçlendiren, mezunların kariyer gelişimlerini takip eden, mentorluk ve iş olanakları sağlayan bir platformdur.</p>
-  </div>
-</body>
-</html>`);
+  } catch (err) {
+    // Fallback to in-memory seed arrays
+  }
+
+  const featuredMentor = recentAlumni.find((a) => a.isMentor) || recentAlumni[0] || null;
+
+  res.send(HomepageView.renderHomepage({
+    stats,
+    featuredMentor,
+    recentAlumni,
+    recentJobs,
+    recentAnnouncements
+  }));
 };
 
 // Homepage route
@@ -384,10 +448,11 @@ app.get('/', (req, res) => {
       transform: scale(0.98);
     }
   </style>
+  <style>${utilityPageStyles}</style>
 </head>
 <body>
   <div class="card">
-    <h1>👋 Hoş Geldiniz</h1>
+    <h1>Hoş Geldiniz</h1>
     <p>Lütfen isminizi girin:</p>
     <form action="/" method="GET">
       <input type="text" name="name" placeholder="İsminiz..." required autofocus autocomplete="off" />
@@ -2055,54 +2120,58 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
   <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-32x32.png" sizes="32x32" />
   <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-16x16.png" sizes="16x16" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
-      background: #0f172a;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #fff;
+      color: #111412;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     .custom-header {
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      padding: 1rem 2rem;
+      background: #fff;
+      border-bottom: 1px solid #e6e8e7;
+      padding: 14px clamp(16px, 4vw, 48px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      color: #f8fafc;
+      color: #111412;
       flex-wrap: wrap;
       gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
     .custom-brand {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #38bdf8;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111412;
+      letter-spacing: -0.02em;
     }
     .custom-links {
       display: flex;
-      gap: 0.75rem;
+      gap: 4px;
       flex-wrap: wrap;
     }
     .custom-links a {
-      color: #94a3b8;
+      color: #59615c;
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 12px;
       font-weight: 500;
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #0f172a;
-      transition: all 0.2s;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: color 160ms ease, background-color 160ms ease;
     }
     .custom-links a:hover {
-      color: white;
-      border-color: #38bdf8;
+      color: #007b62;
+      background: #f1faf6;
     }
     #swagger-ui {
       max-width: 1200px;
@@ -2110,23 +2179,30 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
       padding: 1.5rem 1rem;
     }
     .swagger-ui {
-      filter: invert(88%) hue-rotate(180deg);
+      color: #111412;
     }
     .swagger-ui .topbar { display: none !important; }
-    .swagger-ui img { filter: invert(100%) hue-rotate(180deg); }
+    .swagger-ui .scheme-container { background: #fff; box-shadow: none; }
+    .swagger-ui .btn.authorize { border-color: #00a981; color: #007b62; }
+    .swagger-ui .btn.authorize svg { fill: #007b62; }
+    @media (max-width: 640px) {
+      .custom-header { align-items: flex-start; }
+      .custom-links { overflow-x: auto; flex-wrap: nowrap; max-width: 100%; }
+      .custom-links a { flex: 0 0 auto; white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
   <div class="custom-header">
     <div class="custom-brand">
-      <span>📖 AlumniSphere API (OpenAPI / Swagger)</span>
+      <span>AlumniSphere API</span>
     </div>
     <div class="custom-links">
       <a href="/api/swagger?format=json" target="_blank">{ } OpenAPI JSON</a>
-      <a href="/users">👥 User Dashboard (/users)</a>
-      <a href="/announcements">📢 Announcements (/announcements)</a>
-      <a href="/api/health" target="_blank">🩺 Health Check</a>
-      <a href="/">🏠 Home</a>
+      <a href="/users">Users</a>
+      <a href="/announcements">Announcements</a>
+      <a href="/api/health" target="_blank">Health</a>
+      <a href="/">Home</a>
     </div>
   </div>
 

@@ -9,6 +9,7 @@
  * - EDIT FORM:         renderEditForm() (GET /announcements/:id/edit)
  */
 const db = require('../db');
+const mintlifyStyles = require('./mintlify.styles');
 
 class AnnouncementView {
   /**
@@ -31,24 +32,24 @@ class AnnouncementView {
     return `
     <nav class="top-nav">
       <a href="/announcements" class="nav-brand">
-        <span style="font-size: 1.4rem;">📢</span>
-        <span>AlumniSphere <span style="color: var(--accent); font-weight: 400;">CRUD Hub</span></span>
+        <span class="brand-mark" aria-hidden="true">AS</span>
+        <span>AlumniSphere <span class="brand-subtitle">NETWORK</span></span>
       </a>
       <div class="nav-links">
         <a href="/users" class="nav-link ${activeSection === 'users' ? 'active' : ''}">
-          <span>👥</span> Users
+          Users
         </a>
         <a href="/announcements" class="nav-link ${activeSection === 'announcements' ? 'active' : ''}">
-          <span>📢</span> Announcements
+          Announcements
         </a>
         <a href="/alumni" class="nav-link ${activeSection === 'alumni' ? 'active' : ''}">
-          <span>🎓</span> Alumni Directory
+          Alumni
         </a>
         <a href="/api/swagger" class="nav-link" target="_blank">
-          <span>⚡</span> Swagger Docs
+          API Docs
         </a>
         <a href="http://localhost:3000" class="nav-link" target="_blank">
-          <span>🏠</span> Client App (:3000)
+          Directory
         </a>
       </div>
       <div>
@@ -682,7 +683,7 @@ class AnnouncementView {
       color: white;
       border-color: var(--accent);
     }
-    `;
+    ` + mintlifyStyles;
   }
 
   /**
@@ -710,7 +711,7 @@ class AnnouncementView {
           <td><span style="font-family:monospace; color:var(--text-muted);">#${escape(a.id)}</span></td>
           <td>
             <div class="announcement-title">
-              ${a.isPinned ? '<span class="pin-badge" title="Pinned Announcement">📌</span>' : ''}
+              ${a.isPinned ? '<span class="pin-badge" title="Pinned Announcement">Pinned</span>' : ''}
               <a href="/announcements/${escape(a.id)}" title="Read Announcement">${escape(a.title)}</a>
             </div>
             <div class="announcement-meta">By ${escape(a.author)} • ${dateStr}</div>
@@ -744,7 +745,7 @@ class AnnouncementView {
   <title>Announcement Management Interface | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -833,7 +834,7 @@ class AnnouncementView {
           <div class="form-group">
             <label class="checkbox-label">
               <input type="checkbox" id="isPinned" name="isPinned" value="true" />
-              <span>📌 Pin this announcement to top of list</span>
+              <span>Pin this announcement to the top of the list</span>
             </label>
           </div>
 
@@ -893,19 +894,19 @@ class AnnouncementView {
 
         <div class="links-bar">
           <a href="/announcements/new" class="btn-link">
-            <span>➕ Dedicated Form</span>
+            <span>Create announcement</span>
           </a>
           <a href="/users" class="btn-link">
-            <span>👥 User Dashboard</span>
+            <span>User Dashboard</span>
           </a>
           <a href="/api/swagger" class="btn-link" target="_blank">
-            <span>📖 Swagger Docs</span>
+            <span>API Docs</span>
           </a>
           <a href="/api/announcements" class="btn-link" target="_blank">
             <span>{ } REST API JSON</span>
           </a>
           <a href="/" class="btn-link">
-            <span>🏠 Home</span>
+            <span>Home</span>
           </a>
         </div>
       </section>
@@ -967,7 +968,7 @@ class AnnouncementView {
   <title>${escape(announcement.title)} | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -985,7 +986,7 @@ class AnnouncementView {
     <div class="card">
       <div class="card-header">
         <div style="display:flex; align-items:center; gap:0.5rem;">
-          ${announcement.isPinned ? '<span class="pin-badge">📌 Pinned</span>' : ''}
+          ${announcement.isPinned ? '<span class="pin-badge">Pinned</span>' : ''}
           <span class="badge ${catClass}">${escape(announcement.category)}</span>
           <span class="badge ${prioClass}">${escape(announcement.priority)}</span>
         </div>
@@ -1010,13 +1011,13 @@ class AnnouncementView {
         </a>
         <form action="/announcements/${escape(announcement.id)}/delete" method="POST" style="flex:1;" onsubmit="return confirm('Are you sure you want to delete this announcement?');">
           <button type="submit" class="btn-secondary" style="width:100%; border-color:rgba(239,68,68,0.4); color:var(--danger);">
-            <span>🗑️ Delete</span>
+            <span>Delete</span>
           </button>
         </form>
       </div>
 
       <div class="links-bar" style="justify-content:center; margin-top:1.5rem;">
-        <a href="/announcements" class="btn-link"><span>📢 All Announcements</span></a>
+        <a href="/announcements" class="btn-link"><span>All Announcements</span></a>
         <a href="/api/announcement/${escape(announcement.id)}" class="btn-link" target="_blank"><span>{ } REST API JSON</span></a>
       </div>
     </div>
@@ -1039,7 +1040,7 @@ class AnnouncementView {
   <title>New Announcement | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -1102,7 +1103,7 @@ class AnnouncementView {
         <div class="form-group">
           <label class="checkbox-label">
             <input type="checkbox" id="isPinned" name="isPinned" value="true" ${formData.isPinned ? 'checked' : ''} />
-            <span>📌 Pin this announcement to top of list</span>
+            <span>Pin this announcement to the top of the list</span>
           </label>
         </div>
 
@@ -1135,7 +1136,7 @@ class AnnouncementView {
   <title>Edit Bulletin #${escape(announcement.id)} | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -1200,7 +1201,7 @@ class AnnouncementView {
         <div class="form-group">
           <label class="checkbox-label">
             <input type="checkbox" id="isPinned" name="isPinned" value="true" ${announcement.isPinned ? 'checked' : ''} />
-            <span>📌 Pin this announcement to top of list</span>
+            <span>Pin this announcement to the top of the list</span>
           </label>
         </div>
 

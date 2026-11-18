@@ -3,7 +3,7 @@
  *
  * View Layer for Alumni Profile Presentation.
  * Decoupled from Controllers to maintain clean MVC separation.
- * Generates server-side rendered (SSR) HTML views with glassmorphism design:
+ * Generates server-side rendered (SSR) HTML views:
  * - READ ALL:  renderAlumniList()    (GET /alumni)
  * - READ ONE:  renderAlumniDetails() (GET /alumni/:id)
  * - CREATE:    renderCreateForm()    (GET /alumni/new)
@@ -11,6 +11,7 @@
  */
 
 const db = require('../db');
+const mintlifyStyles = require('./mintlify.styles');
 
 class AlumniView {
   static escapeHtml(str) {
@@ -390,7 +391,7 @@ class AlumniView {
       height: 18px;
       accent-color: var(--accent);
     }
-    `;
+    ` + mintlifyStyles;
   }
 
   static renderTopNav(activeSection = 'alumni') {
@@ -398,24 +399,24 @@ class AlumniView {
     return `
     <nav class="top-nav">
       <a href="/alumni" class="nav-brand">
-        <span style="font-size: 1.4rem;">🎓</span>
-        <span>AlumniSphere <span style="color: var(--accent); font-weight: 400;">CRUD Hub</span></span>
+        <span class="brand-mark" aria-hidden="true">AS</span>
+        <span>AlumniSphere <span class="brand-subtitle">NETWORK</span></span>
       </a>
       <div class="nav-links">
         <a href="/users" class="nav-link ${activeSection === 'users' ? 'active' : ''}">
-          <span>👥</span> Users
+          Users
         </a>
         <a href="/announcements" class="nav-link ${activeSection === 'announcements' ? 'active' : ''}">
-          <span>📢</span> Announcements
+          Announcements
         </a>
         <a href="/alumni" class="nav-link ${activeSection === 'alumni' ? 'active' : ''}">
-          <span>🎓</span> Alumni Directory
+          Alumni
         </a>
         <a href="/api/swagger" class="nav-link" target="_blank">
-          <span>⚡</span> Swagger Docs
+          API Docs
         </a>
         <a href="http://localhost:3000" class="nav-link" target="_blank">
-          <span>🏠</span> Client App (:3000)
+          Directory
         </a>
       </div>
       <div>
@@ -451,7 +452,7 @@ class AlumniView {
   <title>Alumni Profiles CRUD Dashboard | AlumniSphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -583,7 +584,7 @@ class AlumniView {
   <title>${this.escapeHtml(alumni.name)} | Alumni Profile</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -662,7 +663,7 @@ class AlumniView {
   <title>Add New Alumni Profile | AlumniSphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -767,7 +768,7 @@ class AlumniView {
   <title>Edit Profile: ${this.escapeHtml(alumni.name)} | AlumniSphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>

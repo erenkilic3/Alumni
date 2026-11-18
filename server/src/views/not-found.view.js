@@ -2,7 +2,7 @@
  * NotFoundView
  *
  * Server-side rendered (SSR) presentation layer for the Generic 404 Page.
- * Conforms to the project MVC architecture and visual design system.
+ * Uses AlumniSphere's Mintlify-inspired design system.
  */
 
 class NotFoundView {
@@ -36,209 +36,299 @@ class NotFoundView {
     const safeReason = this.escapeHtml(reason || defaultReason);
 
     return `<!DOCTYPE html>
-<html lang="tr">
+<html lang="tr" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>404 - Sayfa Bulunamadı | AlumniSphere</title>
+  <title>404 — Sayfa Bulunamadı | AlumniSphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
+    :root {
+      color-scheme: light;
+      --paper: #ffffff;
+      --surface: #ffffff;
+      --surface-raised: #ffffff;
+      --surface-tint: #f4f6f5;
+      --ink: #111412;
+      --ink-soft: #4b544f;
+      --muted: #69716c;
+      --line: #e6e8e7;
+      --line-strong: #cfd5d2;
+      --green: #007b62;
+      --green-hover: #00634f;
+      --clay: #65746d;
+      --clay-wash: #f1f5f3;
+      --font-display: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'Geist Mono', ui-monospace, SFMono-Regular, monospace;
+      --ease: 180ms ease;
+    }
+
+    :root[data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #0e0f0f;
+      --surface: #141615;
+      --surface-raised: #191c1a;
+      --surface-tint: #202421;
+      --ink: #f4f6f5;
+      --ink-soft: #d0d5d2;
+      --muted: #9ba39e;
+      --line: #2a2e2c;
+      --line-strong: #414845;
+      --green: #00d4a4;
+      --green-hover: #4adfbd;
+      --clay: #9ba8a2;
+      --clay-wash: #242a27;
+    }
+
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: radial-gradient(circle at 50% 20%, #1e293b 0%, #0f172a 45%, #090d16 100%);
-      color: #f8fafc;
+      font-family: var(--font-body);
+      background: var(--paper);
+      color: var(--ink);
       min-height: 100vh;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 1.5rem;
-      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--ease), color var(--ease);
     }
-    .background-glow {
-      position: absolute;
-      width: 600px;
-      height: 600px;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.12) 0%, rgba(2, 132, 199, 0) 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 0;
-      pointer-events: none;
-    }
+
+    a { color: inherit; text-decoration: none; }
+
     .container {
-      position: relative;
-      z-index: 1;
-      width: 100%;
-      max-width: 620px;
-      text-align: center;
+      width: min(1200px, calc(100% - 64px));
+      margin-inline: auto;
     }
-    .card {
-      background: rgba(30, 41, 59, 0.7);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 24px;
-      padding: 3.5rem 2.5rem;
-      box-shadow: 0 30px 70px -15px rgba(0, 0, 0, 0.7);
-      transition: transform 0.3s ease;
+
+    .navbar {
+      border-bottom: 1px solid var(--line);
+      background: var(--paper);
     }
-    .badge {
+
+    .nav-container {
+      width: min(1200px, calc(100% - 64px));
+      margin-inline: auto;
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
       display: inline-flex;
       align-items: center;
-      gap: 0.4rem;
-      padding: 0.4rem 1rem;
-      border-radius: 9999px;
-      background: rgba(239, 68, 68, 0.15);
-      border: 1px solid rgba(239, 68, 68, 0.35);
-      color: #f87171;
-      font-size: 0.82rem;
-      font-weight: 700;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      margin-bottom: 1.5rem;
+      gap: 11px;
     }
-    .badge-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ef4444;
-      animation: pulse 2s infinite;
+
+    .brand-logo {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      background: var(--green);
+      color: var(--surface);
     }
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.85); }
-    }
-    .error-code {
-      font-family: 'Outfit', sans-serif;
-      font-size: 7.5rem;
-      font-weight: 800;
-      line-height: 1;
-      background: linear-gradient(135deg, #38bdf8 0%, #818cf8 50%, #c084fc 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 0.5rem;
+
+    .brand-title {
+      display: block;
+      font-size: 17px;
+      font-weight: 650;
       letter-spacing: -0.04em;
+      line-height: 1.2;
     }
+
+    .brand-title .highlight { color: var(--green); }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+    }
+
+    main {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      padding: 48px 0;
+    }
+
+    .error-frame {
+      width: min(720px, 100%);
+      margin-inline: auto;
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 48px 40px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--clay);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 18px;
+    }
+
+    .kicker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--clay);
+    }
+
+    .error-code {
+      font: 400 clamp(64px, 10vw, 96px)/0.95 var(--font-display);
+      letter-spacing: -0.04em;
+      color: var(--green);
+      margin-bottom: 12px;
+    }
+
     .error-title {
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.75rem;
-      font-weight: 700;
-      color: #f8fafc;
-      margin-bottom: 1rem;
+      font: 400 clamp(26px, 4vw, 36px)/1.12 var(--font-display);
+      letter-spacing: -0.025em;
+      color: var(--ink);
+      margin-bottom: 20px;
     }
+
     .route-chip {
       display: inline-block;
-      background: #090d16;
-      border: 1px solid #334155;
-      padding: 0.5rem 1rem;
-      border-radius: 10px;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-      font-size: 0.9rem;
-      color: #94a3b8;
-      margin-bottom: 1.5rem;
+      padding: 8px 12px;
+      background: var(--surface-tint);
+      border: 1px solid var(--line);
+      font: 500 12px/1.4 var(--font-mono);
+      color: var(--ink-soft);
+      margin-bottom: 20px;
       word-break: break-all;
     }
+
     .route-chip strong {
-      color: #38bdf8;
-      margin-right: 0.35rem;
+      color: var(--green);
+      margin-right: 8px;
     }
+
     .reason-box {
-      background: rgba(15, 23, 42, 0.75);
-      border-left: 4px solid #38bdf8;
-      border-radius: 0 12px 12px 0;
-      padding: 1.1rem 1.35rem;
-      text-align: left;
-      margin-bottom: 2.25rem;
+      padding: 16px 20px;
+      background: var(--surface-raised);
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--clay);
+      margin-bottom: 28px;
     }
+
     .reason-label {
-      font-size: 0.72rem;
-      font-weight: 700;
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
-      color: #38bdf8;
-      margin-bottom: 0.35rem;
+      color: var(--clay);
+      margin-bottom: 6px;
     }
+
     .reason-text {
-      font-size: 0.95rem;
-      color: #cbd5e1;
-      line-height: 1.6;
+      font-size: 14px;
+      color: var(--ink-soft);
+      line-height: 1.65;
     }
-    .actions-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-      gap: 0.75rem;
-      margin-bottom: 1.5rem;
+
+    .actions-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      padding-top: 8px;
     }
+
     .btn {
+      min-height: 40px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      gap: 0.45rem;
-      padding: 0.75rem 1.1rem;
-      border-radius: 12px;
-      font-size: 0.92rem;
+      padding: 0 16px;
+      border: 1px solid transparent;
+      border-radius: 999px;
+      font-size: 12px;
       font-weight: 600;
-      text-decoration: none;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       cursor: pointer;
-      border: none;
+      transition: background-color var(--ease), border-color var(--ease), color var(--ease);
     }
+
     .btn-primary {
-      background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%);
-      color: #ffffff;
-      box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--surface-raised);
     }
+
     .btn-primary:hover {
-      background: linear-gradient(135deg, #0369a1 0%, #075985 100%);
-      transform: translateY(-2px);
-      box-shadow: 0 6px 20px 0 rgba(2, 132, 199, 0.45);
+      background: var(--green-hover);
+      border-color: var(--green-hover);
     }
-    .btn-secondary {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid #334155;
-      color: #cbd5e1;
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--line-strong);
+      color: var(--ink);
     }
-    .btn-secondary:hover {
-      background: #1e293b;
-      border-color: #38bdf8;
-      color: #ffffff;
-      transform: translateY(-2px);
+
+    .btn-outline:hover {
+      border-color: var(--green);
+      color: var(--green);
     }
+
     .footer-note {
-      font-size: 0.8rem;
-      color: #64748b;
-      margin-top: 1rem;
+      margin-top: 28px;
+      padding-top: 18px;
+      border-top: 1px solid var(--line);
+      font-size: 12px;
+      color: var(--muted);
     }
+
     .footer-note a {
-      color: #38bdf8;
-      text-decoration: none;
-    }
-    .footer-note a:hover {
+      color: var(--green);
       text-decoration: underline;
     }
+
     @media (max-width: 640px) {
-      .card { padding: 2.25rem 1.5rem; }
-      .error-code { font-size: 5.5rem; }
-      .error-title { font-size: 1.4rem; }
-      .actions-grid { grid-template-columns: 1fr; }
+      .container, .nav-container { width: calc(100% - 36px); }
+      .error-frame { padding: 32px 22px; }
+      .actions-row { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <div class="background-glow"></div>
-  <div class="container">
-    <div class="card">
-      <div class="badge">
-        <span class="badge-dot"></span>
+  <header class="navbar">
+    <div class="nav-container">
+      <a class="brand" href="/homepage" aria-label="AlumniSphere Homepage">
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">Alumni<span class="highlight">Sphere</span></span>
+          <span class="brand-subtitle">ALUMNI NETWORK</span>
+        </div>
+      </a>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="error-frame" aria-labelledby="errorHeading">
+      <div class="kicker">
+        <span class="kicker-dot"></span>
         <span>404 Guardian</span>
       </div>
 
       <div class="error-code">404</div>
-      <h1 class="error-title">Sayfa veya Kaynak Bulunamadı</h1>
+      <h1 id="errorHeading" class="error-title">Sayfa veya kaynak bulunamadı.</h1>
 
       ${safeRoute ? `<div class="route-chip"><strong>${safeMethod}</strong>${safeRoute}</div>` : ''}
 
@@ -247,22 +337,29 @@ class NotFoundView {
         <div class="reason-text">${safeReason}</div>
       </div>
 
-      <div class="actions-grid">
-        <a href="/" class="btn btn-primary">🏠 Ana Sayfa</a>
-        <a href="/users" class="btn btn-secondary">👥 Kullanıcılar</a>
-        <a href="/announcements" class="btn btn-secondary">📢 Duyurular</a>
-        <a href="/api/swagger" class="btn btn-secondary">📖 API Docs</a>
+      <div class="actions-row">
+        <a href="/homepage" class="btn btn-primary">Ana Sayfa (Homepage)</a>
+        <a href="/alumni" class="btn btn-outline">Mezunlar</a>
+        <a href="/announcements" class="btn btn-outline">Duyurular</a>
+        <a href="/users" class="btn btn-outline">Kullanıcılar</a>
+        <a href="/api/swagger" class="btn btn-outline">API Docs</a>
       </div>
 
       <div class="footer-note">
-        AlumniSphere platformu &bull; Sorun devam ederse <a href="/api/health">Sistem Sağlık Durumu</a> sayfasını inceleyin.
+        AlumniSphere &middot; Sorun devam ederse <a href="/api/health">Sistem Sağlık Durumu</a> bağlantısını inceleyin.
       </div>
-    </div>
-  </div>
+    </section>
+  </main>
+
+  <script>
+    (function () {
+      const saved = localStorage.getItem('alumni_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+    })();
+  </script>
 </body>
 </html>`;
   }
 }
 
 module.exports = NotFoundView;
-

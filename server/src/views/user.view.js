@@ -10,6 +10,7 @@
  * - UPDATE:    renderEditForm()    (GET /users/:id/edit)
  */
 const db = require('../db');
+const mintlifyStyles = require('./mintlify.styles');
 
 class UserView {
   /**
@@ -32,24 +33,24 @@ class UserView {
     return `
     <nav class="top-nav">
       <a href="/users" class="nav-brand">
-        <span style="font-size: 1.4rem;">👥</span>
-        <span>AlumniSphere <span style="color: var(--accent); font-weight: 400;">CRUD Hub</span></span>
+        <span class="brand-mark" aria-hidden="true">AS</span>
+        <span>AlumniSphere <span class="brand-subtitle">NETWORK</span></span>
       </a>
       <div class="nav-links">
         <a href="/users" class="nav-link ${activeSection === 'users' ? 'active' : ''}">
-          <span>👥</span> Users
+          Users
         </a>
         <a href="/announcements" class="nav-link ${activeSection === 'announcements' ? 'active' : ''}">
-          <span>📢</span> Announcements
+          Announcements
         </a>
         <a href="/alumni" class="nav-link ${activeSection === 'alumni' ? 'active' : ''}">
-          <span>🎓</span> Alumni Directory
+          Alumni
         </a>
         <a href="/api/swagger" class="nav-link" target="_blank">
-          <span>⚡</span> Swagger Docs
+          API Docs
         </a>
         <a href="http://localhost:3000" class="nav-link" target="_blank">
-          <span>🏠</span> Client App (:3000)
+          Directory
         </a>
       </div>
       <div>
@@ -682,7 +683,7 @@ class UserView {
       color: white;
       border-color: var(--accent);
     }
-    `;
+    ` + mintlifyStyles;
   }
 
   /**
@@ -751,7 +752,7 @@ class UserView {
   <title>User Management Dashboard | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -876,19 +877,19 @@ class UserView {
 
         <div class="links-bar">
           <a href="/users/new" class="btn-link">
-            <span>➕ Dedicated Create View</span>
+            <span>Create user</span>
           </a>
           <a href="/api/swagger" class="btn-link" target="_blank">
-            <span>📖 Swagger Docs</span>
+            <span>API Docs</span>
           </a>
           <a href="/api/users" class="btn-link" target="_blank">
             <span>{ } REST API JSON</span>
           </a>
           <a href="/api/health" class="btn-link" target="_blank">
-            <span>🩺 Health Check</span>
+            <span>Health Check</span>
           </a>
           <a href="/" class="btn-link">
-            <span>🏠 Home</span>
+            <span>Home</span>
           </a>
         </div>
       </section>
@@ -944,7 +945,7 @@ class UserView {
   <title>${escape(user.name)} - User Profile | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -998,13 +999,13 @@ class UserView {
         </a>
         <form action="/users/${escape(user.id)}/delete" method="POST" style="flex:1;" onsubmit="return confirm('Are you sure you want to delete ${escape(user.name)}?');">
           <button type="submit" class="btn-secondary" style="width:100%; border-color:rgba(239,68,68,0.4); color:var(--danger);">
-            <span>🗑️ Delete</span>
+            <span>Delete</span>
           </button>
         </form>
       </div>
 
       <div class="links-bar" style="justify-content:center; margin-top:1.5rem;">
-        <a href="/users" class="btn-link"><span>📋 All Users</span></a>
+        <a href="/users" class="btn-link"><span>All Users</span></a>
         <a href="/api/user/${escape(user.id)}" class="btn-link" target="_blank"><span>{ } API JSON</span></a>
       </div>
     </div>
@@ -1027,7 +1028,7 @@ class UserView {
   <title>Add New User | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>
@@ -1105,7 +1106,7 @@ class UserView {
   <title>Edit User #${escape(user.id)} | Alumni Sphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>${this.getCommonStyles()}</style>
 </head>
 <body>

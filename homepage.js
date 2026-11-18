@@ -8,6 +8,7 @@ const express = (() => {
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const mintlifyStyles = require('./server/src/views/mintlify.styles');
 
 let guardian404 = null;
 let handle404Page = null;
@@ -34,43 +35,42 @@ app.get('/homepage', (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Homepage</title>
   <style>
+    * { box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: grid;
+      place-items: center;
+      min-width: 320px;
       min-height: 100vh;
       margin: 0;
-      padding: 1rem;
+      padding: 24px;
+      color: #111412;
+      background: #fff;
+      font: 14px/1.6 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      -webkit-font-smoothing: antialiased;
     }
     .card {
-      background: #1e293b;
-      padding: 2.5rem;
-      border-radius: 14px;
-      border: 1px solid #334155;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+      width: min(100%, 640px);
+      padding: clamp(24px, 5vw, 40px);
+      border: 1px solid #e6e8e7;
+      border-top: 2px solid #00d4a4;
+      border-radius: 8px;
+      background: #fff;
     }
     h1 {
-      color: #38bdf8;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
+      margin: 0 0 8px;
+      color: #111412;
+      font-size: clamp(28px, 5vw, 36px);
+      font-weight: 600;
+      letter-spacing: -0.045em;
     }
     h2 {
-      color: #94a3b8;
-      font-size: 1.25rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
+      margin: 28px 0 8px;
+      color: #111412;
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
     }
-    p {
-      line-height: 1.6;
-      color: #e2e8f0;
-      font-size: 1.05rem;
-    }
+    p { margin: 0; color: #59615c; font-size: 14px; }
   </style>
 </head>
 <body>
@@ -192,7 +192,7 @@ const renderUsersPage = (users, message = null, error = null) => {
       <td>
         <div style="display:flex; gap:0.4rem;">
           <button type="button" class="btn-action" onclick="editUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}', '${escapeHtml(u.email)}', '${escapeHtml(u.role)}', '${escapeHtml(u.department || '')}')" title="PUT/PATCH ile Güncelle">✏️ Düzenle</button>
-          <button type="button" class="btn-action btn-danger" onclick="deleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}')" title="DELETE ile Sil">🗑️ Sil</button>
+          <button type="button" class="btn-action btn-danger" onclick="deleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}')" title="DELETE ile Sil">Sil</button>
         </div>
       </td>
     </tr>
@@ -203,9 +203,9 @@ const renderUsersPage = (users, message = null, error = null) => {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Users Interface | Alumni Sphere</title>
+  <title>Users | AlumniSphere</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-primary: #0f172a;
@@ -502,13 +502,42 @@ const renderUsersPage = (users, message = null, error = null) => {
     .table-container {
       overflow-x: auto;
     }
+    ${mintlifyStyles}
+    .header { text-align: left; }
+    h1 {
+      color: #111412;
+      background: none;
+      font: 600 clamp(26px, 3vw, 34px)/1.15 Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      letter-spacing: -0.045em;
+      -webkit-text-fill-color: currentColor;
+    }
+    .btn-submit {
+      min-height: 40px;
+      padding: 0 16px;
+      border: 1px solid #111412;
+      border-radius: 999px;
+      background: #111412;
+      box-shadow: none;
+      font: 550 12px Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      transition: background-color 160ms ease, border-color 160ms ease;
+    }
+    .btn-submit:hover {
+      transform: none;
+      border-color: #333936;
+      background: #333936;
+    }
+    .badge-count {
+      border: 1px solid #e6e8e7;
+      color: #4b544f;
+      background: #f7f8f7;
+    }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <div class="badge">💾 Database Kullanılmadan • In-Memory RAM Store</div>
-      <h1>👥 Kullanıcı Yönetim Arayüzü</h1>
+      <div class="badge">In-memory data store · User administration</div>
+      <h1>Kullanıcı Yönetim Arayüzü</h1>
       <p class="subtitle"><code>POST /api/users</code> ile ekleyin, <code>PUT/PATCH /api/user/{id}</code> ile güncelleyin.</p>
     </div>
 
@@ -520,7 +549,7 @@ const renderUsersPage = (users, message = null, error = null) => {
       <!-- Form Section -->
       <div class="card">
         <div class="card-title">
-          <span>➕ Yeni Kullanıcı Ekle</span>
+          <span>Yeni Kullanıcı Ekle</span>
           <span style="font-size:0.75rem; color:#38bdf8; font-weight:normal;">POST /api/users</span>
         </div>
         <form id="userForm" action="/api/users" method="POST">
@@ -561,7 +590,7 @@ const renderUsersPage = (users, message = null, error = null) => {
       <!-- Users Table Section -->
       <div class="card">
         <div class="card-title">
-          <span>📋 Kayıtlı Kullanıcılar</span>
+          <span>Kayıtlı Kullanıcılar</span>
           <span class="badge-count" id="userCount">${users.length} Kullanıcı</span>
         </div>
 
@@ -585,16 +614,16 @@ const renderUsersPage = (users, message = null, error = null) => {
 
         <div class="actions-bar">
           <a href="/api/swagger" class="btn-link" target="_blank">
-            <span>📖 Swagger Docs</span>
+            <span>API Docs</span>
           </a>
           <a href="/api/users?format=json" class="btn-link" target="_blank">
             <span>{ } JSON Görüntüle</span>
           </a>
           <a href="/api/health" class="btn-link" target="_blank">
-            <span>🩺 Health Check</span>
+            <span>Health Check</span>
           </a>
           <a href="/homepage" class="btn-link">
-            <span>🏠 Homepage</span>
+            <span>Homepage</span>
           </a>
         </div>
       </div>
@@ -652,7 +681,7 @@ const renderUsersPage = (users, message = null, error = null) => {
         });
         const data = await res.json();
         if (res.ok && data.success) {
-          liveAlert.innerHTML = '<div class="alert alert-success">🗑️ ' + data.message + '</div>';
+          liveAlert.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
           setTimeout(() => location.reload(), 600);
         } else {
           liveAlert.innerHTML = '<div class="alert alert-danger">⚠️ ' + (data.error || 'Silme hatası') + '</div>';
@@ -1270,54 +1299,58 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
   <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist@5.17.14/swagger-ui.css" />
   <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-32x32.png" sizes="32x32" />
   <link rel="icon" type="image/png" href="https://unpkg.com/swagger-ui-dist@5.17.14/favicon-16x16.png" sizes="16x16" />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700&family=Plus+Jakarta+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Geist+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <style>
     * { box-sizing: border-box; }
     body {
       margin: 0;
       padding: 0;
-      background: #0f172a;
-      font-family: 'Plus Jakarta Sans', sans-serif;
+      background: #fff;
+      color: #111412;
+      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
     }
     .custom-header {
-      background: #1e293b;
-      border-bottom: 1px solid #334155;
-      padding: 1rem 2rem;
+      background: #fff;
+      border-bottom: 1px solid #e6e8e7;
+      padding: 14px clamp(16px, 4vw, 48px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      color: #f8fafc;
+      color: #111412;
       flex-wrap: wrap;
       gap: 1rem;
+      position: sticky;
+      top: 0;
+      z-index: 2;
     }
     .custom-brand {
       display: flex;
       align-items: center;
       gap: 0.75rem;
-      font-family: 'Outfit', sans-serif;
-      font-size: 1.25rem;
-      font-weight: 700;
-      color: #38bdf8;
+      font-size: 14px;
+      font-weight: 600;
+      color: #111412;
+      letter-spacing: -0.02em;
     }
     .custom-links {
       display: flex;
-      gap: 0.75rem;
+      gap: 4px;
       flex-wrap: wrap;
     }
     .custom-links a {
-      color: #94a3b8;
+      color: #59615c;
       text-decoration: none;
-      font-size: 0.85rem;
+      font-size: 12px;
       font-weight: 500;
-      padding: 0.4rem 0.8rem;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #0f172a;
-      transition: all 0.2s;
+      padding: 8px 10px;
+      border-radius: 999px;
+      border: 1px solid transparent;
+      background: transparent;
+      transition: color 160ms ease, background-color 160ms ease;
     }
     .custom-links a:hover {
-      color: white;
-      border-color: #38bdf8;
+      color: #007b62;
+      background: #f1faf6;
     }
     #swagger-ui {
       max-width: 1200px;
@@ -1325,22 +1358,29 @@ const renderSwaggerUI = (spec) => `<!DOCTYPE html>
       padding: 1.5rem 1rem;
     }
     .swagger-ui {
-      filter: invert(88%) hue-rotate(180deg);
+      color: #111412;
     }
     .swagger-ui .topbar { display: none !important; }
-    .swagger-ui img { filter: invert(100%) hue-rotate(180deg); }
+    .swagger-ui .scheme-container { background: #fff; box-shadow: none; }
+    .swagger-ui .btn.authorize { border-color: #00a981; color: #007b62; }
+    .swagger-ui .btn.authorize svg { fill: #007b62; }
+    @media (max-width: 640px) {
+      .custom-header { align-items: flex-start; }
+      .custom-links { overflow-x: auto; flex-wrap: nowrap; max-width: 100%; }
+      .custom-links a { flex: 0 0 auto; white-space: nowrap; }
+    }
   </style>
 </head>
 <body>
   <div class="custom-header">
     <div class="custom-brand">
-      <span>📖 AlumniSphere API (OpenAPI / Swagger)</span>
+      <span>AlumniSphere API</span>
     </div>
     <div class="custom-links">
       <a href="/api/swagger?format=json" target="_blank">{ } OpenAPI JSON</a>
-      <a href="/api/users">👥 Users Arayüzü</a>
-      <a href="/api/health" target="_blank">🩺 Health Check</a>
-      <a href="/homepage">🏠 Homepage</a>
+      <a href="/api/users">Users</a>
+      <a href="/api/health" target="_blank">Health</a>
+      <a href="/homepage">Homepage</a>
     </div>
   </div>
 
@@ -1412,5 +1452,5 @@ if (guardian5xx) {
 }
 
 app.listen(PORT, () => {
-  console.log(`🚀 Bağımsız Homepage sunucusu localhost üzerinde çalışıyor: http://localhost:${PORT}/homepage`);
+  console.log(`Bağımsız Homepage sunucusu localhost üzerinde çalışıyor: http://localhost:${PORT}/homepage`);
 });

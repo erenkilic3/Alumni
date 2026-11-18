@@ -44,17 +44,18 @@ A modern, containerized platform designed for universities and educational insti
 <a id="brand-and-design"></a>
 ## 🎨 Brand & Design System
 
-AlumniSphere's visual identity and UI tokens follow the [`VoltAgent/awesome-design-md`](https://github.com/VoltAgent/awesome-design-md) specification (Linear-inspired dark-first obsidian canvas, 1px hairline borders, `Inter` & `JetBrains Mono` typography, and purposeful `#5e6ad2` indigo accents):
+AlumniSphere's visual identity and UI tokens follow [`DESIGN.md`](./DESIGN.md) and [`brand.md`](./brand.md) (inspired by the [`VoltAgent/awesome-design-md`](https://github.com/VoltAgent/awesome-design-md) spec): warm paper surfaces (`#f5f3ed`), forest green actions (`#245442`), clay accents (`#b75e45`), `Newsreader` editorial display headings paired with `Inter` & `JetBrains Mono`, and synchronized light/dark themes.
 
 - **Design System (`DESIGN.md`)**: [DESIGN.md](./DESIGN.md)
-  - [Visual Theme & Atmosphere](./DESIGN.md#1-visual-theme--atmosphere)
-  - [Color Palette & Roles](./DESIGN.md#2-color-palette--roles-colors)
-  - [Typography Rules](./DESIGN.md#3-typography-rules-typography)
-  - [Component Stylings](./DESIGN.md#6-component-stylings-components)
+  - [Visual Direction](./DESIGN.md#1-visual-direction)
+  - [Color Tokens](./DESIGN.md#2-color-tokens)
+  - [Typography](./DESIGN.md#3-typography)
+  - [Layout and Components](./DESIGN.md#4-layout-and-components)
 - **Brand Kit (`brand.md`)**: [brand.md](./brand.md)
   - [Logo ve Ad Kullanımı](./brand.md#logo-ve-ad-kullanımı)
   - [Renk Sistemi](./brand.md#renk-sistemi)
   - [Tipografi](./brand.md#tipografi)
+  - [Yerleşim, Şekil ve Hareket](./brand.md#yerleşim-şekil-ve-hareket)
 - **CSS Implementation**: [`client/public/styles.css`](./client/public/styles.css)
 
 ---
@@ -216,10 +217,11 @@ Alumni/
 │   │   │   └── nested.routes.js             # 🪢 [ROUTER] Nested Relational Routes (/api/users/:userId/..., /api/jobs/:jobId/..., /api/applications/:applicationId/...)
 │   │   ├── views/                           # 🎨 [VIEW] Server-Side Rendered Presentation Layer
 │   │   │   ├── index.js                     # 🎨 [VIEW] Barrel Export for Views
+│   │   │   ├── homepage.view.js             # 🎨 [VIEW] Editorial AlumniSphere Homepage HTML View (DESIGN.md v2.0.0)
 │   │   │   ├── user.view.js                 # 🎨 [VIEW] User Management Dashboard HTML View (Full CRUD)
 │   │   │   ├── announcement.view.js         # 🎨 [VIEW] Announcement Management Interface HTML View (Full CRUD)
 │   │   │   ├── alumni.view.js               # 🎨 [VIEW] Alumni Profiles Directory HTML View (Full CRUD)
-│   │   │   └── not-found.view.js            # 🎨 [VIEW] Generic 404 Not Found Page HTML View (Responsive Glassmorphism UI)
+│   │   │   └── not-found.view.js            # 🎨 [VIEW] Generic 404 Not Found Page HTML View (DESIGN.md v2.0.0)
 │   │   └── index.js                         # 🧠 [ROUTER & CORE SERVER] Primary API Server (Port 5001)
 │   ├── Dockerfile                           # 🐳 [INFRA] Backend API Container Definition
 │   ├── package.json                         # 📦 [CONFIG] Backend Dependencies, Migrations & Seed Scripts
@@ -255,8 +257,9 @@ Alumni/
 | `server/src/views/user.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderUsersList`, `renderUserDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders user management dashboard and forms. |
 | `server/src/views/announcement.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAnnouncementsList`, `renderAnnouncementDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders interactive announcement interface, metrics bar, and publication forms. |
 | `server/src/views/alumni.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderAlumniList`, `renderAlumniDetails`, `renderCreateForm`, `renderEditForm`, `escapeHtml`); renders alumni profiles directory and profile registration/update views. |
-| `server/src/views/not-found.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderNotFoundPage`, `escapeHtml`); renders responsive generic 404 error page with route context, explanatory failure reason, and quick navigation links. |
-| `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views (`UserView`, `AnnouncementView`, `AlumniView`, `NotFoundView`). |
+| `server/src/views/homepage.view.js` | **View (V)** | Backend | Editorial SSR homepage (`renderHomepage`) aligned with `DESIGN.md` & `brand.md`; renders spotlight mentor, ruled network metrics, people index, and dispatches. |
+| `server/src/views/not-found.view.js` | **View (V)** | Backend | Dedicated server-side HTML view layer (`renderNotFoundPage`, `escapeHtml`); renders editorial generic 404 error page aligned with `DESIGN.md` with route context, reason, and quick navigation links. |
+| `server/src/views/index.js` | **View (V)** | Backend | Barrel export for backend presentation views (`UserView`, `AnnouncementView`, `AlumniView`, `NotFoundView`, `HomepageView`). |
 | `server/src/middlewares/logger.middleware.js` | **Middleware / Controller (C)** | Backend | Request lifecycle logging middleware; writes `<time> <method> <route> <restype> <duration>` to stdout and appends client/server errors (`status >= 400`) to `logs/error.logs`. |
 | `server/src/middlewares/guardian404.middleware.js` | **Middleware / Controller (C)** | Backend | 404 Guardian; catches unhandled routes, diagnoses cause (missing ID, unsupported HTTP verb, unrecognized path), redirects browsers to `/404`, and returns JSON for API clients. |
 | `server/src/middlewares/guardian5xx.middleware.js` | **Middleware / Controller (C)** | Backend | 5xx Guardian; centralized Express error handler classifying 503 (DB down), 504 (timeout), 502 (bad gateway), 400 (malformed JSON), generating incident tracking IDs (`inc-xxxx`), and persisting stack traces. |

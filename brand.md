@@ -5,16 +5,16 @@ AlumniSphere, mezunların üniversiteleriyle ve birbirleriyle bağını kariyer,
 > **Marka vaadi:** Mezuniyet biter; bağlantılar devam eder.  
 > **Tagline:** Connections that outlast graduation.
 
-Marka dili, kampüs yayınlarının editoryal karakterini ürün arayüzünün açıklığıyla birleştirir. Amaç yeni bir SaaS şablonu üretmek değil; gerçek insanları ve aralarındaki bağı öne çıkarmaktır.
+Bu kit, VoltAgent/awesome-design-md içindeki Mintlify tasarım analizinden yararlanır; AlumniSphere adı, logosu, metinleri ve ürün deneyimi bağımsızdır. İlgili tasarım belgesi [`DESIGN.md`](./DESIGN.md), uygulama tokenları [`client/public/styles.css`](./client/public/styles.css) içindedir. Kaynak ve lisans bildirimi [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md) dosyasında yer alır.
 
 ## Marka karakteri
 
 | İlke | Deneyimde karşılığı |
 | --- | --- |
-| **Bağlılık** | Mezunlar, öğrenciler ve üniversite aynı ağın eşit parçalarıdır. |
+| **Bağlılık** | Mezunlar, öğrenciler ve üniversite aynı ağın parçalarıdır. |
 | **İlerleme** | Mentorluk ve kariyer fırsatları somut sonraki adımlarla sunulur. |
 | **Güven** | Profil, istatistik ve sistem durumu abartısız ve anlaşılırdır. |
-| **Sıcak profesyonellik** | Dergi benzeri tipografi, doğal portreler ve ölçülü arayüz detayları kullanılır. |
+| **Netlik** | Bilgi kolay taranır; eylemler sonucu açıkça anlatır. |
 
 ### Kime konuşuyoruz?
 
@@ -25,9 +25,9 @@ Marka dili, kampüs yayınlarının editoryal karakterini ürün arayüzünün a
 ## Logo ve ad kullanımı
 
 - Ürün adı her zaman **AlumniSphere** yazılır; `Alumni` ve `Sphere` arasına boşluk konmaz.
-- Wordmark, Inter yazı tipinde ve koyu mürekkep renginde kullanılır; `Sphere` forest green ile vurgulanır.
-- Kep çizgisi mevcut ürün ikonudur. Kare, forest green zemin üzerinde açık renkte ve gölgesiz kullanılır.
-- Logoyu fotoğraf üzerine, gradyan içinde veya düşük kontrastlı zeminde kullanma.
+- Wordmark Inter ile yazılır; `Sphere` mint tonuyla ayrıştırılır.
+- Kep çizgisi mevcut ürün ikonudur. İkon kare mint zeminde koyu çizgiyle kullanılır; gölge ve gradyan eklenmez.
+- AlumniSphere markasını Mintlify logosu, adı veya ayırt edici marka varlıklarıyla karıştıracak biçimde kullanma.
 
 ## Renk sistemi
 
@@ -37,18 +37,20 @@ Renklerin uygulamadaki kaynağı [`client/public/styles.css`](./client/public/st
 
 | Rol | Token | Değer | Kullanım |
 | --- | --- | --- | --- |
-| Kâğıt zemin | `--paper` | `#f5f3ed` | Sayfanın ana tuvali |
-| Yükseltilmiş yüzey | `--surface-raised` | `#fffefa` | Formlar ve modal yüzeyleri |
-| Mürekkep | `--ink` | `#1d2b24` | Başlıklar ve önemli metin |
-| İkincil metin | `--ink-soft` | `#415149` | Açıklamalar ve içerik |
-| Yardımcı metin | `--muted` | `#6b756e` | Metadata ve ipuçları |
-| Orman yeşili | `--green` | `#245442` | Ana eylem, bağlantı ve seçili durum |
-| Kil | `--clay` | `#b75e45` | Küçük vurgu ve işaretler |
-| Ayırıcı | `--line` | `#d8d8cf` | Bölüm ve satır sınırları |
+| Tuval | `--paper` | `#ffffff` | Sayfanın ana zemini |
+| Yükseltilmiş yüzey | `--surface-raised` | `#ffffff` | Formlar ve modal yüzeyleri |
+| Birincil metin | `--ink` | `#0a0a0a` | Başlıklar ve önemli değerler |
+| İkincil metin | `--ink-soft` | `#3a3a3c` | Açıklamalar ve içerik |
+| Yardımcı metin | `--muted` | `#5a5a5c` | Metadata ve etiketler |
+| Mint vurgu | `--green-bright` | `#00d4a4` | Logo ve kısa marka vurguları |
+| Okunabilir mint | `--green` | `#007b62` | Metin bağlantıları ve aktif durumlar |
+| Ayırıcı | `--line` | `#e5e5e5` | Bölüm ve satır sınırları |
+
+Birincil CTA siyah zemin ve beyaz metin kullanır. Mint zeminli öğelerde koyu metin kullan; açık minti beyaz üzerinde küçük metin rengi olarak kullanma.
 
 ### Koyu tema
 
-Koyu tema aynı hiyerarşiyi korur; zemin `#19221d`, yüzey `#202b25`, metin `#f0eee6`, orman yeşili vurgu `#a1c6a9` ve kil vurgu `#e3a18a` olarak uyarlanır. Tema `data-theme="dark"` ile etkinleşir.
+Koyu tema `data-theme="dark"` ile etkinleşir. Zemin `#0a0a0a`, yüzeyler `#141414` / `#1c1c1e`, metin beyaz ve ikincil metinler gri tonlarıdır. Mint vurgular metin ve aktif durumlarda açık `#7cebcb` olur; siyah birincil CTA beyaz zeminli ters eyleme dönüşür.
 
 Başarı, uyarı ve hata durumlarında sırasıyla `--success`, `--warning` ve `--danger` kullanılır. Durumlar yalnızca renkle anlatılmaz; metin etiketi de görünür kalır.
 
@@ -56,29 +58,24 @@ Başarı, uyarı ve hata durumlarında sırasıyla `--success`, `--warning` ve `
 
 | Rol | Yazı tipi | Kullanım |
 | --- | --- | --- |
-| Editoryal başlık | **Newsreader** | Hero, bölüm başlıkları, metrikler ve alıntılar |
-| Arayüz ve gövde | **Inter** | Navigasyon, açıklama, form ve eylemler |
-| Teknik metadata | **JetBrains Mono** | Kısa sayaçlar ve sistem etiketleri |
+| Arayüz ve başlık | **Inter** | Hero, gövde metni, navigasyon, form ve eylemler |
+| Teknik metadata | **Geist Mono** | Sayaçlar, API durumu ve teknik örnekler |
 
-Newsreader karakter ve sıcaklık katar; Inter küçük ölçekte okunabilirliği sağlar. Mono yalnızca kısa teknik etiketlerde kullanılır.
+Başlıklar `600` ağırlıkla net hiyerarşi kurar. Gövde metni `14–16px` ve yaklaşık `1.5` satır yüksekliğinde olmalıdır. Mono yazı tipini yalnızca kısa teknik içeriklerde kullan.
 
 ## Yerleşim, şekil ve hareket
 
-- Ana içerik en fazla `1200px` genişliğinde; mobil yatay boşluk en az `18px` olmalıdır.
-- Hiyerarşi boşluk, çizgisel ayırıcılar ve tipografiyle kurulur; her içerik parçasını karta dönüştürme.
-- Düğme ve alanlarda `0–2px` köşe yarıçapı tercih edilir. Portreler dairesel olabilir.
-- Gölge, blur ve gradyan varsayılan araçlar değildir.
-- Hover ve sekme geçişleri kısa ve ölçülüdür; `prefers-reduced-motion` tercihi korunur.
-- Koyu ve açık tema aynı yerleşimi ve kontrast hedefini sürdürür.
+- İçerik en fazla `1200–1280px` genişliğinde; mobil yatay boşluk en az `18px` olmalıdır.
+- Hiyerarşiyi tipografi, boşluk ve ayırıcılarla kur; mezun profil ve fırsatlarını tekrar eden kart yığınlarına dönüştürme.
+- Birincil ve ikincil düğmeler pill biçiminde; kartlar `8–12px`, giriş alanları `8px` köşe yarıçapında olabilir.
+- Gölge yalnızca mockup veya belirgin yükseltilmiş yüzey gerektiğinde kullanılmalıdır.
+- Koyu ve açık tema aynı içerik hiyerarşisini ve kontrast hedefini korur.
+- Hareket kısa ve ölçülüdür; `prefers-reduced-motion` tercihi korunur.
 
 ## Ses ve mesajlaşma
 
-Ton profesyonel, sıcak, kapsayıcı ve doğrudandır. Kısa eylem cümleleri kullan; başarıyı veya kariyer sonucunu abartma. Bir eylem metni, tıklanınca ne olacağını açıkça anlatmalıdır.
-
-## Görsel dil
-
-Gerçek kişiler, doğal portreler ve kariyer bağlamı dekoratif illüstrasyonlardan önce gelir. Terracotta küçük vurgular içindir; ana eylem rengi değildir. Rastgele şekiller, parlak gradyanlar ve tekrar eden kart ızgaralarından kaçınılır.
+Ton profesyonel, sıcak ve doğrudandır. Kısa eylem cümleleri kullan; başarıyı veya kariyer sonucunu abartma. Bir eylem metni tıklanınca ne olacağını açıkça anlatmalıdır.
 
 ### Tasarım üretim özeti
 
-> AlumniSphere'i editoryal, insani ve güvenilir bir mezun ağı olarak tasarla. Newsreader ve Inter kullan; kâğıt zemin, koyu mürekkep, orman yeşili ve ölçülü kil vurgusuyla net bir hiyerarşi kur. Profil ve fırsatları tekrar eden kart yığınları yerine içeriklerine uygun düzenlerde sun. [`DESIGN.md`](./DESIGN.md) ve [`client/public/styles.css`](./client/public/styles.css) kurallarını izle.
+> AlumniSphere'i net, güvenilir ve teknoloji odaklı bir mezun ağı olarak tasarla. Inter ve Geist Mono, beyaz/siyah yüzeyler, mint vurgular, pill CTA'lar ve ölçülü `8–12px` köşeler kullan. Mintlify'nin ayırt edici marka varlıklarını veya illüstrasyonlarını kopyalama; kişilere, mentorluğa ve kariyer fırsatlarına özgü içerik hiyerarşisini koru. [`DESIGN.md`](./DESIGN.md) ve [`client/public/styles.css`](./client/public/styles.css) kurallarını izle.
