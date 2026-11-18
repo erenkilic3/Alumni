@@ -2,7 +2,7 @@
 
 A modern, containerized platform designed for universities and educational institutions to maintain lifelong connections with their graduates. The system enables career tracking, mentorship opportunities, networking, job postings, and institutional analytics.
 
-> **Documentation**: [Brand Guidelines (`brand.md`)](./brand.md) • [Data Definition Document (`ddd.md`)](./ddd.md)
+> **Documentation**: [Design System (`DESIGN.md`)](./DESIGN.md) • [Brand Guidelines (`brand.md`)](./brand.md) • [Data Definition Document (`ddd.md`)](./ddd.md)
 
 ---
 
@@ -213,6 +213,7 @@ Alumni/
 ├── postman/                                 # 🧪 [TEST & DOCS] API Testing Collections & Environments
 │   ├── collections/                         # API Request Blueprints (CRUD test scenarios)
 │   └── globals/                             # Postman Global Workspace Variables
+├── DESIGN.md                                # 📐 [DOCS & DESIGN] AlumniSphere Design System (awesome-design-md spec)
 ├── brand.md                                 # 🎨 [DOCS & BRAND] AlumniSphere Brand Identity, Color Palette & Design Tokens
 ├── ddd.md                                   # 🗄️ [DOCS & SCHEMA] Data Definition Document (Veritabanı Tablo ve Şema Tanımları)
 ├── homepage.js                              # 📄 [CONTROLLER & SSR VIEW] Standalone Lightweight Server Script (Port 3000)
