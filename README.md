@@ -2,6 +2,8 @@
 
 A modern, containerized platform designed for universities and educational institutions to maintain lifelong connections with their graduates. The system enables career tracking, mentorship opportunities, networking, job postings, and institutional analytics.
 
+> **Documentation**: [Brand Guidelines (`brand.md`)](./brand.md) • [Data Definition Document (`ddd.md`)](./ddd.md)
+
 ---
 
 ## 🚀 Key Features & Modules
@@ -211,6 +213,7 @@ Alumni/
 ├── postman/                                 # 🧪 [TEST & DOCS] API Testing Collections & Environments
 │   ├── collections/                         # API Request Blueprints (CRUD test scenarios)
 │   └── globals/                             # Postman Global Workspace Variables
+├── brand.md                                 # 🎨 [DOCS & BRAND] AlumniSphere Brand Identity, Color Palette & Design Tokens
 ├── ddd.md                                   # 🗄️ [DOCS & SCHEMA] Data Definition Document (Veritabanı Tablo ve Şema Tanımları)
 ├── homepage.js                              # 📄 [CONTROLLER & SSR VIEW] Standalone Lightweight Server Script (Port 3000)
 ├── docker-compose.yml                       # 🐳 [INFRA] Multi-Container Orchestration (db, server, client)
