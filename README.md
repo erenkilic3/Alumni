@@ -2,7 +2,7 @@
 
 A modern, containerized platform designed for universities and educational institutions to maintain lifelong connections with their graduates. The system enables career tracking, mentorship opportunities, networking, job postings, and institutional analytics.
 
-> **Documentation**: [Design System (`DESIGN.md`)](./DESIGN.md) • [Brand Guidelines (`brand.md`)](./brand.md) • [Data Definition Document (`ddd.md`)](./ddd.md)
+> **Documentation**: [Design System (`DESIGN.md`)](./DESIGN.md) • [Brand Kit (`brand.md`)](./brand.md) • [Brand & Design Overview](#brand-and-design) • [Data Definition Document (`ddd.md`)](./ddd.md)
 
 ---
 
@@ -38,6 +38,24 @@ A modern, containerized platform designed for universities and educational insti
 | **Frontend** | **Next.js / React (TypeScript)** | Responsive, modern web interface with server-side rendering and Dark Mode support. |
 | **Cache & Sessions** | **Redis** *(Optional / Recommended)* | High-speed caching for search results, session store, and rate limiting. |
 | **Containerization** | **Docker & Docker Compose** | Reproducible multi-container development and production environments. |
+
+---
+
+<a id="brand-and-design"></a>
+## 🎨 Brand & Design System
+
+AlumniSphere's visual identity and UI tokens follow the [`VoltAgent/awesome-design-md`](https://github.com/VoltAgent/awesome-design-md) specification (Linear-inspired dark-first obsidian canvas, 1px hairline borders, `Inter` & `JetBrains Mono` typography, and purposeful `#5e6ad2` indigo accents):
+
+- **Design System (`DESIGN.md`)**: [DESIGN.md](./DESIGN.md)
+  - [Visual Theme & Atmosphere](./DESIGN.md#1-visual-theme--atmosphere)
+  - [Color Palette & Roles](./DESIGN.md#2-color-palette--roles-colors)
+  - [Typography Rules](./DESIGN.md#3-typography-rules-typography)
+  - [Component Stylings](./DESIGN.md#6-component-stylings-components)
+- **Brand Kit (`brand.md`)**: [brand.md](./brand.md)
+  - [Logo ve Ad Kullanımı](./brand.md#logo-ve-ad-kullanımı)
+  - [Renk Sistemi](./brand.md#renk-sistemi)
+  - [Tipografi](./brand.md#tipografi)
+- **CSS Implementation**: [`client/public/styles.css`](./client/public/styles.css)
 
 ---
 
