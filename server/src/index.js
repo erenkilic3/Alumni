@@ -230,61 +230,36 @@ const handleSum = (req, res) => {
 </html>`);
 };
 
-// GET /homepage: Bağımsız, basit "homepage" ve "about" sayfası
-const handleHomepage = (req, res) => {
-  res.send(`<!DOCTYPE html>
-<html lang="tr">
-<head>
-  <meta charset="UTF-8">
-  <title>Homepage</title>
-  <style>
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      background: #0f172a;
-      color: #f8fafc;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      min-height: 100vh;
-      margin: 0;
-      padding: 1rem;
+const { HomepageView } = require('./views');
+
+// GET /homepage: AlumniSphere ana sayfası (SSR)
+const handleHomepage = async (req, res) => {
+  let stats = {
+    totalAlumni: mockAlumni.length,
+    mentorsAvailable: mockAlumni.filter((a) => a.isMentor).length,
+    activeJobs: mockJobs.length,
+    totalAnnouncements: 0
+  };
+
+  try {
+    const { AlumniModel, AnnouncementModel, JobPostingModel } = require('./models');
+    const [alumniList, announcementsCount, jobsCount] = await Promise.all([
+      AlumniModel.findAll().catch(() => mockAlumni),
+      AnnouncementModel.count().catch(() => 0),
+      JobPostingModel.count().catch(() => mockJobs.length)
+    ]);
+
+    if (Array.isArray(alumniList)) {
+      stats.totalAlumni = alumniList.length;
+      stats.mentorsAvailable = alumniList.filter((a) => a.isMentor).length;
     }
-    .card {
-      background: #1e293b;
-      padding: 2.5rem;
-      border-radius: 14px;
-      border: 1px solid #334155;
-      max-width: 600px;
-      width: 100%;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-    }
-    h1 {
-      color: #38bdf8;
-      margin-top: 0;
-      margin-bottom: 0.5rem;
-      font-size: 2rem;
-    }
-    h2 {
-      color: #94a3b8;
-      font-size: 1.25rem;
-      margin-top: 1.5rem;
-      margin-bottom: 0.5rem;
-    }
-    p {
-      line-height: 1.6;
-      color: #e2e8f0;
-      font-size: 1.05rem;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <h1>Homepage</h1>
-    <h2>About</h2>
-    <p>Alumni Tracking System: Üniversiteler ve mezunlar arasındaki bağı güçlendiren, mezunların kariyer gelişimlerini takip eden, mentorluk ve iş olanakları sağlayan bir platformdur.</p>
-  </div>
-</body>
-</html>`);
+    stats.totalAnnouncements = Number(announcementsCount) || 0;
+    stats.activeJobs = Number(jobsCount) || mockJobs.length;
+  } catch (err) {
+    // Fallback to in-memory seed counts
+  }
+
+  res.send(HomepageView.renderHomepage({ stats }));
 };
 
 // Homepage route
