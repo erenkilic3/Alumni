@@ -143,7 +143,7 @@ let activeTab = 'directory';
 // Theme Management (Dark / Light Mode)
 // ==========================================================================
 function initTheme() {
-  const savedTheme = localStorage.getItem('alumni_theme') || 'dark';
+  const savedTheme = localStorage.getItem('alumni_theme') || 'light';
   applyTheme(savedTheme);
 
   const themeBtn = document.getElementById('themeToggleBtn');
@@ -229,7 +229,9 @@ async function loadStats() {
       document.getElementById('metricMentors').textContent = stats.activeMentors;
       document.getElementById('metricPartners').textContent = stats.partnerCompanies;
     }
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Backend API did not return network statistics.');
+  }
 }
 
 // ==========================================================================
@@ -300,10 +302,9 @@ function renderJobs() {
 
   if (filtered.length === 0) {
     jobsList.innerHTML = `
-      <div style="text-align: center; padding: 50px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
-        <div style="font-size: 2.2rem; margin-bottom: 8px;">💼</div>
-        <h3 style="font-family: var(--font-heading); margin-bottom: 4px;">No job postings found</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Try adjusting your keyword search or employment type filter.</p>
+      <div class="empty-state">
+        <h3>No opportunities found</h3>
+        <p>Try adjusting your search or filters.</p>
       </div>
     `;
     return;
@@ -314,12 +315,12 @@ function renderJobs() {
     const statusClass = (job.status || 'ACTIVE').toUpperCase() === 'ACTIVE' ? 'status-active' : 'status-closed';
 
     return `
-      <div class="job-card" data-job-id="${job.id}">
+      <article class="job-card" data-job-id="${job.id}">
         <div class="job-card-header">
           <div class="job-title-group">
             <h3>${job.title}</h3>
             <div class="job-company-badge">
-              <span>🏢</span> ${job.company}
+              ${job.company}
             </div>
           </div>
           <div class="job-badges">
@@ -329,10 +330,10 @@ function renderJobs() {
         </div>
 
         <div class="job-meta-grid">
-          <span class="job-meta-item">📍 ${job.location || 'Remote'}</span>
-          ${job.salaryRange ? `<span class="job-meta-item">💰 ${job.salaryRange}</span>` : ''}
-          ${job.deadline ? `<span class="job-meta-item">📅 Deadline: ${job.deadline}</span>` : ''}
-          ${job.contactEmail ? `<span class="job-meta-item">✉️ ${job.contactEmail}</span>` : ''}
+          <span class="job-meta-item"><b>LOCATION</b> ${job.location || 'Remote'}</span>
+          ${job.salaryRange ? `<span class="job-meta-item"><b>COMPENSATION</b> ${job.salaryRange}</span>` : ''}
+          ${job.deadline ? `<span class="job-meta-item"><b>APPLY BY</b> ${job.deadline}</span>` : ''}
+          ${job.contactEmail ? `<span class="job-meta-item"><b>CONTACT</b> ${job.contactEmail}</span>` : ''}
         </div>
 
         <p class="job-description">${job.description || 'Join our engineering network team.'}</p>
@@ -345,18 +346,14 @@ function renderJobs() {
 
         <div class="job-card-footer">
           <div class="job-poster-info">
-            👤 Posted by: <strong>${job.postedBy || 'Alumni Career Network'}</strong>
+            Shared by <strong>${job.postedBy || 'Alumni Career Network'}</strong>
           </div>
           <div class="job-card-actions">
-            <button class="btn btn-outline btn-sm" onclick="window.openJobAppsModal('${job.id}')">
-              <span>👥 View Applicants</span>
-            </button>
-            <button class="btn btn-primary btn-sm" onclick="window.openApplyModal('${job.id}')">
-              <span>✍️ Apply Now</span>
-            </button>
+            <button class="btn btn-outline btn-sm" onclick="window.openJobAppsModal('${job.id}')">View applicants</button>
+            <button class="btn btn-primary btn-sm" onclick="window.openApplyModal('${job.id}')">Apply for role</button>
           </div>
         </div>
-      </div>
+      </article>
     `;
   }).join('');
 }
@@ -409,10 +406,9 @@ function renderApplications() {
 
   if (filtered.length === 0) {
     list.innerHTML = `
-      <div style="text-align: center; padding: 50px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
-        <div style="font-size: 2.2rem; margin-bottom: 8px;">📄</div>
-        <h3 style="font-family: var(--font-heading); margin-bottom: 4px;">No applications found</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">No candidate submissions match your current filters.</p>
+      <div class="empty-state">
+        <h3>No applications found</h3>
+        <p>No candidate submissions match your current filters.</p>
       </div>
     `;
     return;
@@ -424,16 +420,16 @@ function renderApplications() {
     const statusKey = (app.status || 'PENDING').toLowerCase();
 
     return `
-      <div class="application-card" data-app-id="${app.id}">
+      <article class="application-card" data-app-id="${app.id}">
         <div class="app-card-header">
           <div class="applicant-info">
             <h4>${app.applicantName}</h4>
             <div class="applicant-email">
-              <span>✉️</span> ${app.applicantEmail} • <span style="color: var(--text-muted);">Candidate #${app.userId}</span>
+              ${app.applicantEmail} <span class="candidate-id">· Candidate #${app.userId}</span>
             </div>
           </div>
-          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-            <span class="app-target-job">💼 ${jobTitle}</span>
+          <div class="application-meta">
+            <span class="app-target-job">${jobTitle}</span>
             <span class="app-status-badge status-badge-${statusKey}">
               ● ${app.status}
             </span>
@@ -450,23 +446,22 @@ function renderApplications() {
           <div class="app-links">
             ${app.resumeUrl ? `
               <a href="${app.resumeUrl}" target="_blank" rel="noopener noreferrer" class="resume-btn-link">
-                <span>📄 View Candidate Resume</span> ↗
+                View candidate resume ↗
               </a>
-            ` : '<span style="color: var(--text-muted);">No resume link attached</span>'}
-            <span style="color: var(--border-color);">|</span>
-            <span style="font-size: 0.8rem; color: var(--text-muted);">Submitted: ${new Date(app.createdAt).toLocaleDateString()}</span>
+            ` : '<span class="no-resume">No resume link attached</span>'}
+            <span class="app-submitted">Submitted ${new Date(app.createdAt).toLocaleDateString()}</span>
           </div>
 
           <div class="app-action-buttons">
-            <span style="font-size: 0.78rem; color: var(--text-muted); margin-right: 4px;">Set Status:</span>
+            <span class="set-status-label">Update status</span>
             <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REVIEWING')" title="Mark as Reviewing">Reviewing</button>
             <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'SHORTLISTED')" title="Shortlist Candidate">Shortlist</button>
-            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')" title="Accept Candidate" style="color: var(--success);">Accept</button>
-            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REJECTED')" title="Reject Candidate" style="color: #ef4444;">Reject</button>
-            <button class="btn-tag btn-tag-danger" onclick="window.deleteApp('${app.id}')" title="Delete Application">🗑️</button>
+            <button class="btn-tag btn-tag-accept" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')" title="Accept Candidate">Accept</button>
+            <button class="btn-tag btn-tag-reject" onclick="window.updateAppStatus('${app.id}', 'REJECTED')" title="Reject Candidate">Reject</button>
+            <button class="btn-tag btn-tag-danger" onclick="window.deleteApp('${app.id}')" title="Delete application">Delete</button>
           </div>
         </div>
-      </div>
+      </article>
     `;
   }).join('');
 }
@@ -511,7 +506,7 @@ window.openJobAppsModal = async function(jobId) {
   const jobName = job ? `${job.title} (${job.company})` : `Job #${jobId}`;
   title.textContent = `Applicants for: ${jobName}`;
 
-  container.innerHTML = '<div style="text-align: center; padding: 24px;">Loading candidate applications...</div>';
+  container.innerHTML = '<div class="loading-state" role="status">Loading candidate applications…</div>';
   modal.classList.add('open');
 
   try {
@@ -528,10 +523,9 @@ window.openJobAppsModal = async function(jobId) {
 
     if (jobApps.length === 0) {
       container.innerHTML = `
-        <div style="text-align: center; padding: 40px 16px;">
-          <div style="font-size: 2rem; margin-bottom: 8px;">📭</div>
+        <div class="empty-state" role="status">
           <h4>No applications received yet</h4>
-          <p style="color: var(--text-muted); font-size: 0.9rem;">Be the first candidate to apply for this career opening!</p>
+          <p>There are no submissions for this opportunity yet.</p>
         </div>
       `;
       return;
@@ -539,10 +533,10 @@ window.openJobAppsModal = async function(jobId) {
 
     container.innerHTML = jobApps.map(app => `
       <div class="candidate-item-card">
-        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;">
+        <div class="candidate-header">
           <div>
-            <h4 style="font-size: 1.05rem; font-weight: 700;">${app.applicantName}</h4>
-            <div style="font-size: 0.85rem; color: var(--text-muted);">✉️ ${app.applicantEmail} • User #${app.userId}</div>
+            <h4>${app.applicantName}</h4>
+            <div class="candidate-email">${app.applicantEmail} · User #${app.userId}</div>
           </div>
           <span class="app-status-badge status-badge-${(app.status || 'PENDING').toLowerCase()}">
             ● ${app.status}
@@ -550,24 +544,24 @@ window.openJobAppsModal = async function(jobId) {
         </div>
 
         ${app.coverLetter ? `
-          <div style="font-size: 0.88rem; color: var(--text-secondary); background: var(--bg-card); padding: 8px 12px; border-radius: 8px; border-left: 3px solid var(--accent-primary);">
+          <div class="app-cover-letter">
             "${app.coverLetter}"
           </div>
         ` : ''}
 
-        <div style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px;">
-          ${app.resumeUrl ? `<a href="${app.resumeUrl}" target="_blank" class="resume-btn-link" style="font-size: 0.84rem;">📄 View Resume ↗</a>` : '<span style="font-size: 0.8rem; color: var(--text-muted);">No CV link</span>'}
+        <div class="candidate-footer">
+          ${app.resumeUrl ? `<a href="${app.resumeUrl}" target="_blank" rel="noopener noreferrer" class="resume-btn-link">View resume ↗</a>` : '<span class="no-resume">No CV link</span>'}
           <div class="app-action-buttons">
             <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REVIEWING')">Review</button>
             <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'SHORTLISTED')">Shortlist</button>
-            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')" style="color: var(--success);">Accept</button>
-            <button class="btn-tag" onclick="window.updateAppStatus('${app.id}', 'REJECTED')" style="color: #ef4444;">Reject</button>
+            <button class="btn-tag btn-tag-accept" onclick="window.updateAppStatus('${app.id}', 'ACCEPTED')">Accept</button>
+            <button class="btn-tag btn-tag-reject" onclick="window.updateAppStatus('${app.id}', 'REJECTED')">Reject</button>
           </div>
         </div>
       </div>
     `).join('');
   } catch (err) {
-    container.innerHTML = `<div style="color: #ef4444; padding: 20px;">Failed to load job applications: ${err.message}</div>`;
+    container.innerHTML = `<div class="request-error" role="alert">Failed to load job applications: ${err.message}</div>`;
   }
 };
 
@@ -634,55 +628,111 @@ function renderAlumni() {
   const counter = document.getElementById('resultsCount');
   const filtered = getFilteredAlumni();
 
+  renderMentorSpotlight();
   counter.textContent = `Showing ${filtered.length} of ${alumniData.length} alumni profiles`;
 
   if (filtered.length === 0) {
     grid.innerHTML = `
-      <div style="grid-column: 1/-1; text-align: center; padding: 60px 20px; background: var(--bg-card); border-radius: 16px; border: 1px dashed var(--border-color);">
-        <div style="font-size: 2.5rem; margin-bottom: 12px;">🔍</div>
-        <h3 style="font-family: var(--font-heading); margin-bottom: 8px;">No alumni found</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Try adjusting your search terms or filter criteria.</p>
+      <div class="empty-state" role="status">
+        <h3>No alumni found</h3>
+        <p>Try adjusting your search or filters.</p>
       </div>
     `;
     return;
   }
 
   grid.innerHTML = filtered.map(item => `
-    <div class="alumni-card">
+    <article class="alumni-card" role="listitem">
       <div class="card-top">
-        <div class="avatar-wrapper">
-          <img class="alumni-avatar" src="${item.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}" alt="${item.name}">
-          ${item.isMentor ? '<span class="mentor-badge-mini" title="Verified Student Mentor">★</span>' : ''}
+        <div class="avatar-wrapper" data-initials="${getInitials(item.name)}">
+          <img class="alumni-avatar" src="${item.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=150&auto=format&fit=crop&q=80'}" alt="${item.name}" loading="lazy">
         </div>
         <div class="card-info">
           <div class="name-row">
             <h3 class="alumni-name">${item.name}</h3>
-            <span class="grad-pill">Class of '${item.graduationYear.toString().slice(-2)}</span>
           </div>
-          <div class="alumni-role">${item.role}</div>
-          <div class="alumni-company">
-            <span>🏢</span> ${item.company} • <span style="color: var(--text-muted);">${item.department}</span>
-          </div>
+          <span class="grad-pill">Class of ${item.graduationYear}</span>
         </div>
       </div>
 
-      <p class="alumni-bio">${item.bio || 'Alumni network member.'}</p>
+      <div class="alumni-career">
+          <div class="alumni-role">${item.role}</div>
+          <div class="alumni-company">
+            ${item.company} <span class="alumni-department">· ${item.department}</span>
+          </div>
+      </div>
+
+      <div class="alumni-details">
+        <div class="location-tag">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+          <span>${item.location || 'Remote'}</span>
+        </div>
+        <p class="alumni-bio">${item.bio || 'Alumni network member.'}</p>
+      </div>
 
       <div class="skills-list">
         ${(item.skills || []).map(skill => `<span class="skill-tag">${skill}</span>`).join('')}
       </div>
 
       <div class="card-footer">
-        <div class="location-tag">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-          <span>${item.location || 'Remote'}</span>
-        </div>
-        <button class="btn-connect" onclick="connectWithAlumni('${item.name}')">
-          ${item.isMentor ? 'Request Mentorship' : 'Connect'}
-        </button>
+        ${item.isMentor ? '<span class="mentor-status">Open to mentoring</span>' : '<span class="mentor-status mentor-status-muted">Alumni</span>'}
+        <button class="btn-connect" onclick="connectWithAlumni('${item.name}')">${item.isMentor ? 'Ask for guidance' : 'Connect'} <span aria-hidden="true">↗</span></button>
       </div>
-    </div>
+    </article>
   `).join('');
+
+  grid.querySelectorAll('.alumni-avatar').forEach(image => {
+    image.addEventListener('error', () => image.remove(), { once: true });
+  });
+}
+
+function getInitials(name = '') {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map(part => part[0].toUpperCase())
+    .join('') || 'A';
+}
+
+function renderMentorSpotlight() {
+  const mentor = alumniData.find(item => item.isMentor);
+  const avatar = document.getElementById('spotlightAvatar');
+  const name = document.getElementById('spotlightName');
+  const role = document.getElementById('spotlightRole');
+  const meta = document.getElementById('spotlightMeta');
+  if (!avatar || !name || !role || !meta) return;
+
+  if (!mentor) {
+    avatar.removeAttribute('src');
+    avatar.alt = '';
+    avatar.classList.add('image-unavailable');
+    avatar.parentElement.dataset.initials = 'AS';
+    name.textContent = 'Good things travel both ways.';
+    role.textContent = 'Meet alumni ready to share what they have learned.';
+    meta.textContent = 'Peer mentorship · Alumni community';
+    return;
+  }
+
+  avatar.classList.remove('image-unavailable');
+  avatar.parentElement.dataset.initials = getInitials(mentor.name);
+  avatar.onerror = () => avatar.classList.add('image-unavailable');
+  avatar.src = mentor.avatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=320&auto=format&fit=crop&q=85';
+  avatar.alt = `${mentor.name}, ${mentor.role}`;
+  name.textContent = mentor.name;
+  role.textContent = `${mentor.role} at ${mentor.company}`;
+  meta.textContent = `Class of ${mentor.graduationYear} · ${mentor.department}`;
+}
+
+function exploreMentors() {
+  const directoryTab = document.querySelector('.tab-btn[data-tab="directory"]');
+  if (directoryTab && !directoryTab.classList.contains('active')) directoryTab.click();
+  const mentorFilter = document.getElementById('mentorFilter');
+  if (mentorFilter) {
+    mentorFilter.checked = true;
+    renderAlumni();
+  }
+  document.getElementById('tab-directory')?.scrollIntoView({ block: 'start' });
 }
 
 window.connectWithAlumni = function(name) {
@@ -693,6 +743,9 @@ window.connectWithAlumni = function(name) {
 // Event Listeners & UI Binding
 // ==========================================================================
 function setupEventListeners() {
+  document.getElementById('exploreMentorsBtn')?.addEventListener('click', exploreMentors);
+  document.getElementById('spotlightExploreBtn')?.addEventListener('click', exploreMentors);
+
   // Search input & clear
   const searchInput = document.getElementById('searchInput');
   const clearSearchBtn = document.getElementById('clearSearchBtn');
@@ -756,11 +809,17 @@ function setupEventListeners() {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
       document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.tab-btn').forEach(b => b.removeAttribute('aria-current'));
 
       btn.classList.add('active');
+      btn.setAttribute('aria-current', 'page');
       const targetId = `tab-${btn.dataset.tab}`;
       const targetContent = document.getElementById(targetId);
-      if (targetContent) targetContent.classList.add('active');
+      document.querySelectorAll('.tab-content').forEach(content => content.setAttribute('aria-hidden', 'true'));
+      if (targetContent) {
+        targetContent.classList.add('active');
+        targetContent.setAttribute('aria-hidden', 'false');
+      }
 
       if (btn.dataset.tab === 'jobs') loadJobs();
       if (btn.dataset.tab === 'applications') loadApplications();
@@ -859,7 +918,7 @@ function setupEventListeners() {
     form.reset();
     closeModal();
     renderAlumni();
-    alert(`🎉 Successfully registered ${newProfile.name} in the Alumni Network!`);
+    alert(`${newProfile.name} was added to the alumni network.`);
   });
 
   // Job Form Submission
@@ -900,7 +959,7 @@ function setupEventListeners() {
     closeJobModal();
     updateJobDropdowns();
     renderJobs();
-    alert(`🎉 Job opportunity "${newJob.title}" published successfully!`);
+    alert(`"${newJob.title}" was published successfully.`);
   });
 
   // Application Form Submission
@@ -941,7 +1000,7 @@ function setupEventListeners() {
     document.getElementById('appTargetJobId').value = '';
     applyModal?.classList.remove('open');
     renderApplications();
-    alert(`🎉 Application successfully submitted for ${newApp.applicantName}!`);
+    alert(`Application submitted for ${newApp.applicantName}.`);
   });
 }
 

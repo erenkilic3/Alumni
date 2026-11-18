@@ -1,129 +1,69 @@
 ---
-version: "1.0.0"
+version: "2.0.0"
 name: "AlumniSphere Design System"
-description: "Linear-inspired, dark-first alumni network design system with precise obsidian surfaces, restrained indigo-violet accents, and dual-mode (Dark/Light) CSS custom properties."
+description: "Editorial alumni network interface with warm paper surfaces, forest-green actions, clay accents, and responsive light/dark themes."
 source: "client/public/styles.css"
-spec: "awesome-design-md (VoltAgent/awesome-design-md)"
 ---
 
-# DESIGN.md — AlumniSphere Design System
+# AlumniSphere Design System
 
-> Referenced by [`client/public/styles.css`](./client/public/styles.css) and [`brand.md`](./brand.md).
+> The implementation source of truth is [`client/public/styles.css`](./client/public/styles.css); brand guidance is in [`brand.md`](./brand.md).
 
----
+## 1. Visual direction
 
-## 1. Visual Theme & Atmosphere
+AlumniSphere should feel like a thoughtful university publication made useful: personal, calm, and credible. Newsreader adds an editorial voice while Inter keeps navigation and controls practical. The interface favors open space, thin dividers, and content-led layouts over a stack of identical cards.
 
-- **Aesthetic Direction**: Linear-inspired, ultra-minimal dark-first developer & academic network aesthetic (`VoltAgent/awesome-design-md`). Deep obsidian canvas (`#08090a`) paired with elevated panels (`#0f1011`, `#141516`), 1px hairline borders (`rgba(255, 255, 255, 0.08)`), and purposeful Linear Indigo (`#5e6ad2`) accents.
-- **Density & Rhythm**: Airy, structured dashboard layout (`1280px` max container width) with crisp inner hairline highlights, measured negative display tracking (`-0.04em`), and smooth micro-interactions (`0.18s–0.28s cubic-bezier(0.4, 0, 0.2, 1)`).
-- **Dual-Theme Support**: Dark mode is the default `:root` token set; Light mode is activated cleanly via `[data-theme="light"]` without altering layout geometry.
+## 2. Color tokens
 
----
-
-## 2. Color Palette & Roles (`colors`)
-
-### Dark Theme (`:root` — Default)
-
-| Role | Token | Value | Usage |
-| :--- | :--- | :--- | :--- |
-| **Canvas** | `--bg-primary` | `#08090a` | Deep obsidian page background |
-| **Surface 1** | `--bg-secondary` | `#0f1011` | Secondary panels & modal base |
-| **Surface 2 (Glass)** | `--bg-card` | `rgba(20, 21, 22, 0.85)` | Navbar, cards & translucent containers |
-| **Surface Hover** | `--bg-card-hover` | `#18191b` | Interactive card hover state |
-| **Input Surface** | `--bg-input` | `#141516` | Form inputs, secondary buttons & tags |
-| **Hairline** | `--border-color` | `rgba(255, 255, 255, 0.08)` | 1px card, navbar & divider borders |
-| **Hairline Highlight** | `--border-highlight` | `rgba(94, 106, 210, 0.45)` | Focused/active interactive borders |
-| **Ink (Primary)** | `--text-primary` | `#f7f8f8` | Headings, primary labels & values |
-| **Ink (Secondary)** | `--text-secondary` | `#d0d6e0` | Subtitles, descriptions & nav links |
-| **Ink (Muted)** | `--text-muted` | `#8a8f98` | Placeholders & tertiary metadata |
-| **Primary Accent** | `--accent-primary` | `#5e6ad2` | Brand marks, focus rings & explicit CTAs |
-| **Primary Hover** | `--accent-primary-hover` | `#6e7be2` | Accent hover state |
-| **Signature Gradient** | `--accent-gradient` | `linear-gradient(135deg, #5e6ad2 0%, #8b5cf6 100%)` | Primary CTAs & hero highlights |
-| **Accent Glow** | `--accent-glow` | `rgba(94, 106, 210, 0.28)` | Subtle elevation glow on primary actions |
-
-### Light Theme (`[data-theme="light"]`)
+### Light theme
 
 | Role | Token | Value |
-| :--- | :--- | :--- |
-| **Canvas** | `--bg-primary` | `#fafafa` |
-| **Surface 1** | `--bg-secondary` | `#ffffff` |
-| **Surface 2 (Glass)** | `--bg-card` | `rgba(255, 255, 255, 0.92)` |
-| **Input Surface** | `--bg-input` | `#f4f4f5` |
-| **Hairline** | `--border-color` | `rgba(0, 0, 0, 0.08)` |
-| **Ink (Primary)** | `--text-primary` | `#09090b` |
-| **Ink (Secondary)** | `--text-secondary` | `#3f3f46` |
-| **Ink (Muted)** | `--text-muted` | `#71717a` |
-| **Primary Accent** | `--accent-primary` | `#5e6ad2` |
-| **Signature Gradient** | `--accent-gradient` | `linear-gradient(135deg, #5e6ad2 0%, #7c3aed 100%)` |
+| --- | --- | --- |
+| Canvas | `--paper` | `#f5f3ed` |
+| Surface | `--surface` | `#fbfaf6` |
+| Raised surface | `--surface-raised` | `#fffefa` |
+| Tinted surface | `--surface-tint` | `#eeece4` |
+| Primary ink | `--ink` | `#1d2b24` |
+| Secondary ink | `--ink-soft` | `#415149` |
+| Muted ink | `--muted` | `#6b756e` |
+| Forest green | `--green` | `#245442` |
+| Clay accent | `--clay` | `#b75e45` |
+| Divider | `--line` | `#d8d8cf` |
 
-### Semantic Indicators
+### Dark theme
 
-| Role | Token | Value | Subtle Surface |
-| :--- | :--- | :--- | :--- |
-| **Success** | `--success` | `#10b981` | `rgba(16, 185, 129, 0.14)` |
-| **Warning** | `--warning` | `#f59e0b` | `rgba(245, 158, 11, 0.14)` |
-| **Info** | `--info` | `#3b82f6` | `rgba(59, 130, 246, 0.14)` |
+`[data-theme="dark"]` reassigns the same semantic tokens to a deep green-gray canvas (`#19221d`), raised green-gray surfaces, soft ivory text, lighter green actions, and muted clay highlights. Components reference semantic tokens rather than hard-coded theme colors.
 
----
+`--success`, `--warning`, and `--danger` identify semantic states. Pair status colors with readable labels or icons.
 
-## 3. Typography Rules (`typography`)
+## 3. Typography
 
-- **Heading Font (`--font-heading`)**: `'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif` — Crisp technical sans-serif with tight negative tracking (`-0.04em`) on display headings.
-- **Body Font (`--font-body`)**: `'Inter', -apple-system, BlinkMacSystemFont, sans-serif` with `font-feature-settings: "cv02", "cv03", "cv04", "cv11"`.
-- **Mono Font (`--font-mono`)**: `'JetBrains Mono', ui-monospace, SFMono-Regular, monospace` — Used for status badges, API pills, and technical metadata.
+- **Display:** Newsreader, regular weight; use for the hero, section headings, large metrics, and selected quotations.
+- **Interface:** Inter; use for body copy, navigation, controls, and buttons.
+- **Technical labels:** JetBrains Mono; reserve for compact counts and system metadata.
+- Keep paragraphs readable at `1.55–1.8` line height. Use tight tracking only for large headings.
 
-| Style | Font | Weight | Typical Size | Notes |
-| :--- | :--- | :--- | :--- | :--- |
-| **Hero Display** | `Inter` | `600` | `clamp(2.25rem, 4.5vw, 3.25rem)` | Tight negative tracking (`-0.04em`), line-height `1.1` |
-| **Section Heading** | `Inter` | `600 / 700` | `1.35rem – 1.75rem` | Clear hierarchy over muted subtitles |
-| **Stat Value** | `Inter` | `700` | `1.75rem` | High-contrast numeric emphasis |
-| **Body Copy** | `Inter` | `400 / 500` | `0.95rem – 1.05rem` | Line-height `1.6` |
-| **Status Pill / Badge** | `JetBrains Mono` | `500` | `0.75rem` | Crisp `0.02em` tracking |
+## 4. Layout and components
 
----
+- Content width: `1200px`; horizontal gutters adapt from `18px` on small screens to `32px` on desktop.
+- The navigation is a restrained, sticky bar with an underline for the active section.
+- The hero pairs a large editorial statement with a single human profile feature; network metrics form a ruled strip below it.
+- Directory profiles are information-rich rows, not repeated raised cards. On narrower screens they reorganize into two columns and then a single-column stack.
+- Opportunity listings use a clear title, company, metadata, requirements, and action hierarchy.
+- Forms and modals use square-cornered controls and thin borders. Preserve visible focus states.
+- Avoid decorative gradients, excessive shadows, glass effects, and pill-shaped UI. Rounded crops are reserved for portraits.
 
-## 4. Spacing & Layout Tokens
+## 5. Interaction and responsive behavior
 
-- **Container Max Width**: `1280px` (`.nav-container`, `.container`)
-- **Horizontal Gutter**: `24px` (`padding: 0 24px`)
-- **Navbar Height / Padding**: `padding: 14px 0`, `gap: 20px`
-- **Button Padding**: `9px 18px` with `gap: 8px`
-- **Elevation Shadows**:
-  - `--shadow-sm`: `0 1px 2px rgba(0, 0, 0, 0.45)` plus a subtle inset highlight
-  - `--shadow-md`: `0 8px 24px rgba(0, 0, 0, 0.5)` plus a subtle inset highlight
-  - `--shadow-lg`: `0 20px 44px rgba(0, 0, 0, 0.7)` plus a subtle inset highlight
-  - `--shadow-glow`: `0 0 24px rgba(94, 106, 210, 0.3)`
+- Use short color and position transitions for hover and tab changes.
+- Preserve keyboard focus visibility and native form affordances.
+- Honor `prefers-reduced-motion`.
+- At tablet widths, stack secondary navigation and reorganize directory rows. On mobile, keep navigation usable, reduce hero scale, stack form fields, and allow modal content to scroll.
+- Theme preference is persisted by the client and should not change layout geometry.
 
----
+## 6. Content principles
 
-## 5. Border Radii & Shapes (`rounded`)
-
-| Category | Radius | Elements |
-| :--- | :--- | :--- |
-| **Controls (`sm`)** | `8px – 10px` | `.btn`, form inputs, compact links |
-| **Cards & Modals (`lg`)** | `16px – 20px` | Alumni cards, job cards, `.modal-card` |
-| **Status & Tags (`pill`)** | `9999px` | `.status-pill`, skill tags, mentor badges |
-
----
-
-## 6. Component Stylings (`components`)
-
-### Navigation Bar (`.navbar`)
-- Sticky top bar (`z-index: 100`), translucent surface (`--bg-card`) with `backdrop-filter: blur(16px)` and `1px solid var(--border-color)` bottom border.
-
-### Buttons & CTAs (`.btn`)
-- **Primary (`.btn-primary`)**: `--accent-gradient` background, `#ffffff` text, `0 4px 14px var(--accent-glow)` shadow, lifts `-2px` on hover.
-- **Secondary (`.btn-secondary`)**: `--bg-input` surface, `--text-secondary` ink, `1px solid var(--border-color)`.
-- **Outline (`.btn-outline`)**: Transparent fill with `1px solid var(--border-color)` and `--border-highlight` on hover.
-
-### Cards & Modals
-- Glassmorphic panels using `--bg-card`, `1px solid var(--border-color)`, and `--shadow-md` / `--shadow-lg`.
-- Modal overlay (`.modal-overlay`) uses centered flex positioning with smooth opacity/scale transition (`--transition-normal`).
-
----
-
-## 7. Signature Patterns
-
-1. **Live Architecture Status Pills**: Compact pill badges in the navbar showing real-time connectivity (`API`, `PostgreSQL`, `Docker`) with animated pulsing dots.
-2. **Gradient Text Highlights**: Hero headlines highlight key domain phrases using `background: var(--accent-gradient)` clipped to text.
-3. **Zero-Friction Theme Switching**: Single toggle button updates `data-theme` on `<html>` and persists preference in `localStorage`.
+- Describe the human value of the network before its infrastructure.
+- Use action labels that explain the outcome.
+- Do not fabricate network metrics when the API has not supplied them.
+- Keep system health visible but visually secondary to people and opportunities.

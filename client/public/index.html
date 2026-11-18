@@ -1,52 +1,62 @@
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Alumni Tracking System | Modern Graduate Network</title>
-  <meta name="description" content="Next-generation Alumni Tracking Platform built with Node.js, PostgreSQL, and Docker. Track alumni career trajectories, connect mentors, and discover opportunities.">
+  <title>AlumniSphere — Alumni Network</title>
+  <meta name="description" content="A lasting connection between graduates, students, and the opportunities that move them forward.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <!-- Top Navigation Bar -->
   <header class="navbar">
     <div class="nav-container">
-      <div class="brand">
+      <a class="brand" href="#" aria-label="AlumniSphere home">
         <div class="brand-logo">
-          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
             <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
             <path d="M6 12v5c3 3 9 3 12 0v-5"/>
           </svg>
         </div>
         <div class="brand-text">
           <span class="brand-title">Alumni<span class="highlight">Sphere</span></span>
-          <span class="brand-subtitle">Tracking & Network System</span>
+          <span class="brand-subtitle">ALUMNI NETWORK</span>
         </div>
-      </div>
+      </a>
 
-      <!-- Live Architecture Status Pills -->
-      <div class="sys-status-container">
-        <div class="status-pill" id="backendStatusPill" title="Node.js API Server">
-          <span class="status-dot pulsing"></span>
-          <span class="status-text">API: Connecting...</span>
-        </div>
-        <div class="status-pill" id="dbStatusPill" title="PostgreSQL Container">
-          <span class="status-dot"></span>
-          <span class="status-text">PostgreSQL: Ready</span>
-        </div>
-        <div class="status-pill docker-pill" title="Docker Containerization">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M13.983 11.078h2.119a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186h-2.119a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m-2.954-5.43h2.118a.186.186 0 00.186-.186V3.574a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.888c0 .102.082.186.185.186zm0 2.716h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185h-2.118a.185.185 0 00-.185.185v1.887c0 .103.082.186.185.186zm-2.93 2.714h2.118a.186.186 0 00.186-.185V9.006a.186.186 0 00-.186-.186H8.099a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185H8.099a.185.185 0 00-.185.185v1.887c0 .103.082.186.185.186zm-2.955 5.428h2.118a.186.186 0 00.186-.185V11.72a.186.186 0 00-.186-.186H5.144a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V9.006a.186.186 0 00-.186-.186H5.144a.185.185 0 00-.185.185v1.888c0 .102.083.185.185.185m0-2.714h2.118a.187.187 0 00.186-.186V6.29a.186.186 0 00-.186-.185H5.144a.185.185 0 00-.185.185v1.887c0 .103.083.186.185.186m-2.93 5.428h2.118a.186.186 0 00.186-.185V11.72a.186.186 0 00-.186-.186H2.214a.185.185 0 00-.185.185v1.888c0 .102.082.185.185.185"/>
-          </svg>
-          <span>Dockerized</span>
-        </div>
-      </div>
+      <nav class="primary-nav" aria-label="Main navigation">
+        <button id="nav-directory" class="tab-btn active" data-tab="directory" aria-controls="tab-directory" aria-current="page">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1.5a6 6 0 0 1 12 0V20M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14a5 5 0 0 1 3 4.5V20"/></svg>
+          <span>Directory</span>
+        </button>
+        <button id="nav-jobs" class="tab-btn" data-tab="jobs" aria-controls="tab-jobs">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/></svg>
+          <span>Opportunities</span>
+        </button>
+        <button id="nav-applications" class="tab-btn" data-tab="applications" aria-controls="tab-applications">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
+          <span>Applications</span>
+        </button>
+        <button id="nav-architecture" class="tab-btn" data-tab="architecture" aria-controls="tab-architecture">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>
+          <span>Platform</span>
+        </button>
+      </nav>
 
-      <!-- Actions: Theme Toggle & Add Profile -->
-      <div class="nav-actions">
+      <div class="nav-right">
+        <div class="sys-status-container" role="group" aria-label="Platform connection status">
+          <div class="status-pill" id="backendStatusPill" title="Node.js API Server" role="status">
+            <span class="status-dot pulsing"></span>
+            <span class="status-text">API connecting</span>
+          </div>
+          <div class="status-pill" id="dbStatusPill" title="PostgreSQL Container" role="status">
+            <span class="status-dot"></span>
+            <span class="status-text">Database ready</span>
+          </div>
+        </div>
+
         <button id="themeToggleBtn" class="theme-toggle-btn" aria-label="Toggle Dark / Light Mode" title="Toggle Theme">
           <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="12" cy="12" r="5"></circle>
@@ -64,105 +74,86 @@
           </svg>
           <span class="theme-label" id="themeLabel">Dark</span>
         </button>
-
-        <div class="crud-links-group" style="display: flex; gap: 0.4rem; align-items: center;">
-          <a href="http://localhost:5001/users" target="_blank" class="btn-users-link" title="Users Management CRUD (PostgreSQL)">
-            <span>👥 Users</span>
-          </a>
-          <a href="http://localhost:5001/announcements" target="_blank" class="btn-users-link" title="Announcements CRUD (PostgreSQL)">
-            <span>📢 Bulletins</span>
-          </a>
-          <a href="http://localhost:5001/alumni" target="_blank" class="btn-users-link" title="Alumni Management CRUD (PostgreSQL)">
-            <span>🎓 Alumni CRUD</span>
-          </a>
-        </div>
-
-        <button id="openModalBtn" class="btn btn-primary">
+        <button id="openModalBtn" class="btn btn-primary" aria-label="Add alumni profile" title="Add alumni profile">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
           </svg>
-          <span>Register Alumni</span>
+          <span>Add profile</span>
         </button>
       </div>
     </div>
   </header>
 
-  <!-- Hero Section -->
   <section class="hero-section">
-    <div class="hero-glow"></div>
-    <div class="container hero-content">
-      <div class="hero-badge">
-        <span class="badge-dot"></span>
-        <span>Node.js • PostgreSQL • Docker Powered Architecture</span>
+    <div class="container hero-layout">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="hero-badge-mark"></span>
+          <span>THE ALUMNI NETWORK</span>
+          <span class="hero-badge-year">BEYOND CAMPUS</span>
+        </div>
+        <h1 class="hero-title">Beyond commencement,<br><em>the story carries on.</em></h1>
+        <p class="hero-subtitle">
+          A place for the people, perspective, and opportunities that stay with you long after campus.
+        </p>
+        <button class="hero-link" id="exploreMentorsBtn">
+          Find your people
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
       </div>
-      <h1 class="hero-title">
-        Empowering Global <span class="gradient-text">Alumni Connections</span> & Career Trajectories
-      </h1>
-      <p class="hero-subtitle">
-        Real-time graduate tracking, industry intelligence, mentorship matching, and job opportunities in a high-performance containerized platform.
-      </p>
 
-      <!-- Key Metrics Row -->
-      <div class="metrics-grid">
-        <div class="metric-card">
-          <div class="metric-icon">👥</div>
-          <div class="metric-number" id="metricTotalAlumni">1,245+</div>
-          <div class="metric-label">Registered Alumni</div>
+      <aside class="mentor-feature" aria-labelledby="spotlightName">
+        <div class="mentor-feature-image">
+          <img id="spotlightAvatar" alt="" loading="lazy">
         </div>
-        <div class="metric-card">
-          <div class="metric-icon">💼</div>
-          <div class="metric-number" id="metricEmploymentRate">94.8%</div>
-          <div class="metric-label">Employment Rate</div>
+        <div class="mentor-feature-content">
+          <span class="section-kicker">A NOTE FROM THE NETWORK</span>
+          <h2 id="spotlightName">Good things travel both ways.</h2>
+          <p id="spotlightRole">Meet alumni ready to share what they have learned.</p>
+          <div class="mentor-feature-meta" id="spotlightMeta">Peer mentorship · Alumni community</div>
+          <button class="text-link" id="spotlightExploreBtn">Meet a mentor <span aria-hidden="true">↗</span></button>
         </div>
-        <div class="metric-card">
-          <div class="metric-icon">🌱</div>
-          <div class="metric-number" id="metricMentors">183</div>
-          <div class="metric-label">Active Mentors</div>
-        </div>
-        <div class="metric-card">
-          <div class="metric-icon">🏢</div>
-          <div class="metric-number" id="metricPartners">145</div>
-          <div class="metric-label">Partner Employers</div>
-        </div>
+      </aside>
+    </div>
+
+    <div class="container metrics-grid" aria-label="Network at a glance">
+      <div class="metric-card">
+        <span class="metric-label">In the network</span>
+        <strong class="metric-number" id="metricTotalAlumni">—</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Employment rate</span>
+        <strong class="metric-number" id="metricEmploymentRate">—</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Open to mentoring</span>
+        <strong class="metric-number" id="metricMentors">—</strong>
+      </div>
+      <div class="metric-card">
+        <span class="metric-label">Partner organizations</span>
+        <strong class="metric-number" id="metricPartners">—</strong>
       </div>
     </div>
   </section>
 
-  <!-- Main Workspace Area -->
   <main class="container main-content">
-    <!-- Tab Navigation -->
-    <div class="tabs-header">
-      <div class="tabs-list">
-        <button class="tab-btn active" data-tab="directory">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-          Alumni Directory
-        </button>
-        <button class="tab-btn" data-tab="jobs">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path></svg>
-          Job & Internship Board
-        </button>
-        <button class="tab-btn" data-tab="applications">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
-          Applications Hub
-        </button>
-        <button class="tab-btn" data-tab="architecture">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
-          Docker & System Specs
-        </button>
+    <section id="tab-directory" class="tab-content active" role="tabpanel" aria-labelledby="nav-directory" aria-hidden="false">
+      <div class="section-header-row directory-header">
+        <div class="section-intro">
+          <span class="section-kicker">THE PEOPLE INDEX</span>
+          <h2>Find your next connection.</h2>
+          <p>Look up classmates, explore new fields, or ask someone how they got there.</p>
+        </div>
       </div>
-    </div>
 
-    <!-- Tab 1: Alumni Directory -->
-    <section id="tab-directory" class="tab-content active">
-      <!-- Search & Filters Toolbar -->
       <div class="filter-card">
         <div class="search-input-wrapper">
           <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line>
           </svg>
-          <input type="text" id="searchInput" placeholder="Search by name, role, company, or skills (e.g., Google, Go, AI)...">
-          <button id="clearSearchBtn" class="clear-btn" style="display: none;">&times;</button>
+          <input type="text" id="searchInput" placeholder="Name, company, role, or skill">
+          <button id="clearSearchBtn" class="clear-btn" aria-label="Clear search" style="display: none;">&times;</button>
         </div>
 
         <div class="filter-controls">
@@ -179,7 +170,7 @@
           </div>
 
           <div class="select-group">
-            <label for="yearFilter">Grad Year</label>
+            <label for="yearFilter">Class</label>
             <select id="yearFilter">
               <option value="All">All Years</option>
               <option value="2024">2024</option>
@@ -195,31 +186,28 @@
           <label class="toggle-switch-label" title="Show only mentors available for students">
             <input type="checkbox" id="mentorFilter">
             <span class="custom-toggle"></span>
-            <span class="toggle-text">Mentors Only</span>
+            <span class="toggle-text">Open to mentoring</span>
           </label>
         </div>
       </div>
 
       <!-- Result Counter & Loading -->
-      <div class="results-header">
+      <div class="results-header" aria-live="polite">
         <span id="resultsCount">Showing alumni profiles...</span>
-        <div class="sort-indicator">
-          <span>Sort: Recent Graduates</span>
-        </div>
       </div>
 
       <!-- Alumni Cards Grid -->
-      <div class="alumni-grid" id="alumniGrid">
+      <div class="alumni-grid" id="alumniGrid" role="list" aria-live="polite">
         <!-- Injected via JavaScript -->
       </div>
     </section>
 
-    <!-- Tab 2: Job Board -->
-    <section id="tab-jobs" class="tab-content">
+    <section id="tab-jobs" class="tab-content" role="tabpanel" aria-labelledby="nav-jobs" aria-hidden="true">
       <div class="section-header-row">
         <div class="section-intro">
-          <h2>Career & Internship Opportunities</h2>
-          <p>Curated roles posted directly by alumni network members and verified enterprise partners.</p>
+          <span class="section-kicker">OPPORTUNITIES, SHARED</span>
+          <h2>Work worth passing along.</h2>
+          <p>Roles and internships brought to the network by people who know the work.</p>
         </div>
         <button class="btn btn-primary" id="openAddJobModalBtn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -259,21 +247,21 @@
       </div>
 
       <!-- Results Header -->
-      <div class="results-header">
+      <div class="results-header" aria-live="polite">
         <span id="jobsCount">Loading career opportunities...</span>
       </div>
 
-      <div class="jobs-list" id="jobsList">
+      <div class="jobs-list" id="jobsList" aria-live="polite">
         <!-- Injected via JS -->
       </div>
     </section>
 
-    <!-- Tab 3: Applications Hub -->
-    <section id="tab-applications" class="tab-content">
+    <section id="tab-applications" class="tab-content" role="tabpanel" aria-labelledby="nav-applications" aria-hidden="true">
       <div class="section-header-row">
         <div class="section-intro">
-          <h2>Candidate Applications Hub</h2>
-          <p>Track, evaluate, and manage candidate submissions and resume reviews.</p>
+          <span class="section-kicker">HIRING, WITH CONTEXT</span>
+          <h2>Meet the person behind the application.</h2>
+          <p>Review candidate submissions and keep every next step in one place.</p>
         </div>
         <button class="btn btn-primary" id="openDirectApplyModalBtn">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -312,20 +300,20 @@
       </div>
 
       <!-- Results Header -->
-      <div class="results-header">
+      <div class="results-header" aria-live="polite">
         <span id="applicationsCount">Loading applications...</span>
       </div>
 
-      <div class="applications-container" id="applicationsList">
+      <div class="applications-container" id="applicationsList" aria-live="polite">
         <!-- Injected via JS -->
       </div>
     </section>
 
-    <!-- Tab 3: Docker & Architecture Specs -->
-    <section id="tab-architecture" class="tab-content">
+    <section id="tab-architecture" class="tab-content" role="tabpanel" aria-labelledby="nav-architecture" aria-hidden="true">
       <div class="arch-container">
         <div class="arch-card">
-          <h3>🐳 Container Topology (docker-compose.yml)</h3>
+          <span class="section-kicker">INFRASTRUCTURE</span>
+          <h3>Platform services</h3>
           <p>The system is isolated into distinct lightweight containers orchestrated via Docker Compose:</p>
           <div class="docker-services-list">
             <div class="service-box">
@@ -350,7 +338,8 @@
         </div>
 
         <div class="arch-card">
-          <h3>⚡ Quick Terminal Commands</h3>
+          <span class="section-kicker">DEVELOPMENT</span>
+          <h3>Quick commands</h3>
           <div class="command-block">
             <div class="cmd-title">Start all containers:</div>
             <pre><code>docker compose up --build</code></pre>
@@ -362,6 +351,15 @@
 npm run server
 # In terminal 2:
 npm run client</code></pre>
+          </div>
+        </div>
+        <div class="arch-card admin-routes">
+          <span class="section-kicker">ADMINISTRATION</span>
+          <h3>Management routes</h3>
+          <div class="admin-route-links">
+            <a href="http://localhost:5001/users" target="_blank" rel="noopener noreferrer">Users <span aria-hidden="true">↗</span></a>
+            <a href="http://localhost:5001/announcements" target="_blank" rel="noopener noreferrer">Announcements <span aria-hidden="true">↗</span></a>
+            <a href="http://localhost:5001/alumni" target="_blank" rel="noopener noreferrer">Alumni records <span aria-hidden="true">↗</span></a>
           </div>
         </div>
       </div>
@@ -607,10 +605,10 @@ npm run client</code></pre>
   <footer class="footer">
     <div class="container footer-content">
       <div class="footer-left">
-        <strong>Alumni Tracking System</strong> • Architected with Node.js, PostgreSQL & Docker
+        <strong>AlumniSphere</strong><span>Connections that outlast graduation.</span>
       </div>
       <div class="footer-right">
-        <span>Active Theme: <span class="theme-indicator">Dark Mode</span></span>
+        <span><span class="theme-indicator">Dark Mode</span></span>
       </div>
     </div>
   </footer>
