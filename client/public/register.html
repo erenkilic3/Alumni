@@ -1,0 +1,1049 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Register — AlumniSphere</title>
+  <meta name="description" content="Create an AlumniSphere account as a student, alumni mentor, or university administrator.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f3ed;
+      --surface: #fbfaf6;
+      --surface-raised: #fffefa;
+      --surface-tint: #eeece4;
+      --ink: #1d2b24;
+      --ink-soft: #415149;
+      --muted: #6b756e;
+      --line: #d8d8cf;
+      --line-strong: #bfc6bc;
+      --green: #245442;
+      --green-hover: #183e31;
+      --green-wash: #e4ebe4;
+      --clay: #b75e45;
+      --clay-wash: #f2e5df;
+      --danger: #a63e36;
+      --success: #356849;
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --ease: 180ms ease;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #19221d;
+      --surface: #202b25;
+      --surface-raised: #26332c;
+      --surface-tint: #2b3830;
+      --ink: #f0eee6;
+      --ink-soft: #d2d7cd;
+      --muted: #a1aaa0;
+      --line: #3b4840;
+      --line-strong: #55645a;
+      --green: #a1c6a9;
+      --green-hover: #bdd9c2;
+      --green-wash: #2b4034;
+      --clay: #e3a18a;
+      --clay-wash: #45342d;
+      --danger: #f08e83;
+      --success: #a1c6a9;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font: 400 15px/1.6 var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--ease), color var(--ease);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+    }
+
+    .container,
+    .nav-container {
+      width: min(1200px, calc(100% - 64px));
+      margin-inline: auto;
+    }
+
+    /* Sticky restrained navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 20;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-container {
+      min-height: 78px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      flex: 0 0 auto;
+    }
+
+    .brand-logo {
+      width: 39px;
+      height: 39px;
+      display: grid;
+      place-items: center;
+      background: var(--green);
+      color: var(--surface);
+    }
+
+    .brand-title {
+      display: block;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.04em;
+      line-height: 1.2;
+    }
+
+    .brand-title .highlight { color: var(--green); }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+    }
+
+    .primary-nav {
+      display: flex;
+      align-items: stretch;
+      align-self: stretch;
+      gap: 6px;
+    }
+
+    .nav-link {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 12px 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 550;
+      transition: color var(--ease);
+    }
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: -1px;
+      height: 2px;
+      background: transparent;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--green);
+    }
+
+    .nav-link.active::after {
+      background: var(--green);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .theme-toggle-btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 0 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      font-size: 12px;
+      transition: border-color var(--ease), color var(--ease);
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--line);
+      color: var(--green);
+    }
+
+    [data-theme="light"] .moon-icon,
+    [data-theme="dark"] .sun-icon {
+      display: none;
+    }
+
+    .btn {
+      min-height: 42px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 0 18px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color var(--ease), border-color var(--ease), color var(--ease), transform var(--ease);
+    }
+
+    .btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .btn:disabled { opacity: 0.65; cursor: not-allowed; }
+
+    .btn-primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--surface-raised);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: var(--green-hover);
+      border-color: var(--green-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--line-strong);
+      color: var(--ink);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    /* Editorial Page Header */
+    .page-header {
+      padding: 52px 0 36px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--clay);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .kicker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--clay);
+    }
+
+    .page-header h1 {
+      margin: 0;
+      max-width: 760px;
+      font: 400 clamp(38px, 4.8vw, 58px)/1.04 var(--font-display);
+      letter-spacing: -0.035em;
+    }
+
+    .page-header h1 em {
+      color: var(--green);
+      font-style: italic;
+    }
+
+    .page-header p {
+      max-width: 600px;
+      margin: 16px 0 0;
+      color: var(--ink-soft);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+
+    /* Main Two-Column Layout */
+    .main-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.85fr);
+      gap: clamp(32px, 5vw, 64px);
+      padding: 48px 0 80px;
+      align-items: start;
+    }
+
+    .form-surface {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 36px 34px;
+    }
+
+    .form-section-title {
+      margin: 0 0 6px;
+      font: 400 24px/1.15 var(--font-display);
+      letter-spacing: -0.02em;
+    }
+
+    .form-section-sub {
+      margin: 0 0 24px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    /* Role Selector */
+    .role-selector {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 24px;
+    }
+
+    .role-option {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      padding: 14px 13px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      background: var(--surface-raised);
+      cursor: pointer;
+      transition: border-color var(--ease), background-color var(--ease);
+    }
+
+    .role-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .role-option:hover {
+      border-color: var(--green);
+    }
+
+    .role-option.selected {
+      border-color: var(--green);
+      background: var(--green-wash);
+    }
+
+    .role-tag {
+      font: 600 10px/1.2 var(--font-mono);
+      letter-spacing: 0.08em;
+      color: var(--clay);
+    }
+
+    .role-option.selected .role-tag {
+      color: var(--green);
+    }
+
+    .role-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .role-desc {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.4;
+    }
+
+    /* Form Controls */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 18px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      margin-bottom: 18px;
+    }
+
+    .form-row .form-group {
+      margin-bottom: 0;
+    }
+
+    .form-group label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+
+    .form-group input,
+    .form-group select,
+    .form-group textarea {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      background: var(--surface-raised);
+      color: var(--ink);
+      font-size: 14px;
+      transition: border-color var(--ease), background-color var(--ease);
+    }
+
+    .form-group input:focus,
+    .form-group select:focus,
+    .form-group textarea:focus {
+      outline: none;
+      border-color: var(--green);
+    }
+
+    .form-group textarea {
+      resize: vertical;
+      min-height: 82px;
+    }
+
+    .hint-text {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    /* Alumni Conditional Section */
+    .alumni-fields {
+      display: none;
+      margin-top: 24px;
+      padding-top: 24px;
+      border-top: 1px solid var(--line);
+    }
+
+    .alumni-fields.visible {
+      display: block;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      background: var(--surface-tint);
+      margin-bottom: 22px;
+      cursor: pointer;
+      font-size: 13px;
+      color: var(--ink);
+    }
+
+    .checkbox-row input {
+      width: 16px;
+      height: 16px;
+      accent-color: var(--green);
+      cursor: pointer;
+    }
+
+    .form-actions {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    /* Status Alert Banner */
+    .alert-box {
+      display: none;
+      padding: 14px 16px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--green);
+      background: var(--surface-raised);
+      margin-bottom: 22px;
+      font-size: 13px;
+    }
+
+    .alert-box.visible { display: block; }
+
+    .alert-box.error {
+      border-left-color: var(--danger);
+      background: var(--clay-wash);
+    }
+
+    .alert-box.success {
+      border-left-color: var(--green);
+      background: var(--green-wash);
+    }
+
+    .alert-title {
+      font-weight: 650;
+      margin-bottom: 4px;
+      color: var(--ink);
+    }
+
+    .alert-meta {
+      margin-top: 8px;
+      font: 500 12px/1.5 var(--font-mono);
+      color: var(--ink-soft);
+    }
+
+    .alert-links {
+      margin-top: 10px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--green);
+    }
+
+    .alert-links a:hover { text-decoration: underline; }
+
+    /* Right Sidebar: Permissions & Recent Members */
+    .sidebar-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+    }
+
+    .sidebar-panel {
+      border-top: 1px solid var(--line-strong);
+      padding-top: 20px;
+    }
+
+    .sidebar-panel h2 {
+      margin: 0 0 14px;
+      font: 400 22px/1.15 var(--font-display);
+      letter-spacing: -0.02em;
+    }
+
+    .rule-list {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      border-top: 1px solid var(--line);
+    }
+
+    .rule-item {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .rule-item strong {
+      display: inline-block;
+      font: 600 11px/1.3 var(--font-mono);
+      color: var(--green);
+      margin-bottom: 3px;
+    }
+
+    .rule-item p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--ink-soft);
+      line-height: 1.5;
+    }
+
+    .member-item {
+      padding: 13px 0;
+      border-bottom: 1px solid var(--line);
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .member-main strong {
+      display: block;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--ink);
+    }
+
+    .member-main span {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .role-badge {
+      flex: 0 0 auto;
+      padding: 2px 7px;
+      border: 1px solid var(--line-strong);
+      font: 500 10px/1.3 var(--font-mono);
+      color: var(--ink-soft);
+    }
+
+    .role-badge.role-ADMIN { border-color: var(--clay); color: var(--clay); }
+    .role-badge.role-ALUMNI { border-color: var(--green); color: var(--green); }
+
+    .footer {
+      border-top: 1px solid var(--line);
+      padding: 26px 0;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .footer-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .footer-links {
+      display: flex;
+      gap: 16px;
+      font-family: var(--font-mono);
+      font-size: 11px;
+    }
+
+    .footer-links a:hover { color: var(--green); }
+
+    @media (max-width: 960px) {
+      .main-grid { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 680px) {
+      .container, .nav-container { width: calc(100% - 36px); }
+      .primary-nav { display: none; }
+      .form-surface { padding: 24px 18px; }
+      .role-selector, .form-row { grid-template-columns: 1fr; }
+      .form-actions { flex-direction: column; align-items: stretch; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { transition: none !important; scroll-behavior: auto !important; }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-container">
+      <a class="brand" href="/" aria-label="AlumniSphere Home">
+        <div class="brand-logo">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">Alumni<span class="highlight">Sphere</span></span>
+          <span class="brand-subtitle">ALUMNI NETWORK</span>
+        </div>
+      </a>
+
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Directory</a>
+        <a href="/register" class="nav-link active" aria-current="page">Register</a>
+        <a href="http://localhost:5001/users" class="nav-link" target="_blank" rel="noopener noreferrer">Users</a>
+        <a href="http://localhost:5001/api/swagger" class="nav-link" target="_blank" rel="noopener noreferrer">API Docs</a>
+      </nav>
+
+      <div class="nav-right">
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle Dark / Light Mode">
+          <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeLabel">Dark</span>
+        </button>
+        <a href="/" class="btn btn-outline">Back to Directory</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="kicker">
+        <span class="kicker-dot"></span>
+        <span>MEMBER REGISTRATION</span>
+      </div>
+      <h1>Join the campus network,<br><em>built to outlast graduation.</em></h1>
+      <p>
+        Create your AlumniSphere account as a student, graduate mentor, or career office administrator.
+        Alumni registrations automatically create a linked graduate directory profile.
+      </p>
+    </div>
+  </section>
+
+  <main class="container main-grid">
+    <section class="form-surface" aria-labelledby="formHeading">
+      <h2 id="formHeading" class="form-section-title">Account details</h2>
+      <p class="form-section-sub">Choose your role in the system and fill in your academic and contact information.</p>
+
+      <div id="registerAlert" class="alert-box" role="alert" aria-live="polite"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="role-selector" role="radiogroup" aria-label="Account Role">
+          <label class="role-option selected" data-role-card="STUDENT">
+            <input type="radio" name="role" value="STUDENT" checked>
+            <span class="role-tag">STUDENT</span>
+            <span class="role-name">Student</span>
+            <span class="role-desc">Browse mentors & apply to opportunities</span>
+          </label>
+
+          <label class="role-option" data-role-card="ALUMNI">
+            <input type="radio" name="role" value="ALUMNI">
+            <span class="role-tag">ALUMNI</span>
+            <span class="role-name">Graduate / Mentor</span>
+            <span class="role-desc">Share career profile, mentor & post roles</span>
+          </label>
+
+          <label class="role-option" data-role-card="ADMIN">
+            <input type="radio" name="role" value="ADMIN">
+            <span class="role-tag">ADMIN</span>
+            <span class="role-name">Staff / Admin</span>
+            <span class="role-desc">Manage bulletins, users & network metrics</span>
+          </label>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regName">Full Name *</label>
+            <input type="text" id="regName" name="name" required placeholder="e.g. Zeynep Demir">
+          </div>
+
+          <div class="form-group">
+            <label for="regEmail">University / Work Email *</label>
+            <input type="email" id="regEmail" name="email" required placeholder="e.g. zeynep@alumni.edu">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label for="regDepartment">Academic Department *</label>
+          <select id="regDepartment" name="department" required>
+            <option value="Computer Engineering">Computer Engineering</option>
+            <option value="Software Engineering">Software Engineering</option>
+            <option value="Industrial Engineering">Industrial Engineering</option>
+            <option value="Electrical & Electronics Engineering">Electrical &amp; Electronics Engineering</option>
+            <option value="Business Administration">Business Administration</option>
+            <option value="Architecture">Architecture</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="regPassword">Password *</label>
+            <input type="password" id="regPassword" name="password" required minlength="6" placeholder="Minimum 6 characters">
+          </div>
+
+          <div class="form-group">
+            <label for="regConfirmPassword">Confirm Password *</label>
+            <input type="password" id="regConfirmPassword" name="confirmPassword" required minlength="6" placeholder="Re-enter password">
+          </div>
+        </div>
+
+        <div id="alumniFieldsSection" class="alumni-fields" aria-hidden="true">
+          <h3 class="form-section-title" style="font-size: 20px;">Graduate profile details</h3>
+          <p class="form-section-sub">Linked directly to your user account so students can discover your trajectory.</p>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regGradYear">Graduation Year *</label>
+              <input type="number" id="regGradYear" name="graduationYear" min="1980" max="2030" value="2023">
+            </div>
+
+            <div class="form-group">
+              <label for="regCompany">Current Company / Organization</label>
+              <input type="text" id="regCompany" name="company" placeholder="e.g. Stripe / Google">
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regJobTitle">Current Role / Title</label>
+              <input type="text" id="regJobTitle" name="jobTitle" placeholder="e.g. Senior Backend Engineer">
+            </div>
+
+            <div class="form-group">
+              <label for="regLocation">Location</label>
+              <input type="text" id="regLocation" name="location" placeholder="e.g. Istanbul / Remote">
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="regSkills">Key Skills (comma-separated)</label>
+            <input type="text" id="regSkills" name="skills" placeholder="Node.js, PostgreSQL, Product Strategy">
+          </div>
+
+          <div class="form-group">
+            <label for="regBio">Short Bio &amp; Mentorship Note</label>
+            <textarea id="regBio" name="bio" placeholder="Share what you work on and how students can reach out..."></textarea>
+          </div>
+
+          <label class="checkbox-row">
+            <input type="checkbox" id="regIsMentor" name="isMentor" checked>
+            <span>Open to mentoring students</span>
+          </label>
+        </div>
+
+        <div class="form-actions">
+          <span class="hint-text">Fields marked with * are required.</span>
+          <button type="submit" id="registerSubmitBtn" class="btn btn-primary">Create Account</button>
+        </div>
+      </form>
+    </section>
+
+    <aside class="sidebar-stack">
+      <div class="sidebar-panel">
+        <div class="kicker" style="margin-bottom: 8px;">
+          <span class="kicker-dot"></span>
+          <span>ROLE AUTHORIZATION</span>
+        </div>
+        <h2>Permissions by role</h2>
+        <ul class="rule-list">
+          <li class="rule-item">
+            <strong>STUDENT (Default)</strong>
+            <p>Browse alumni mentors, read active campus announcements, submit job applications, and manage your own submissions.</p>
+          </li>
+          <li class="rule-item">
+            <strong>ALUMNI</strong>
+            <p>Maintain a linked 1:1 graduate profile, offer mentorship, publish career openings, and review applicants on your postings.</p>
+          </li>
+          <li class="rule-item">
+            <strong>ADMIN</strong>
+            <p>Full directory administration across user accounts, pinned urgent bulletins, alumni verification, and opportunity oversight.</p>
+          </li>
+        </ul>
+      </div>
+
+      <div class="sidebar-panel">
+        <div class="kicker" style="margin-bottom: 8px;">
+          <span class="kicker-dot"></span>
+          <span>LIVE DIRECTORY</span>
+        </div>
+        <h2>Recently registered members</h2>
+        <div id="recentRegisteredList">
+          <div class="member-item">
+            <div class="member-main">
+              <strong>Loading members...</strong>
+              <span>Syncing with backend API</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <div><strong>AlumniSphere</strong> &middot; Connections that outlast graduation.</div>
+      <div class="footer-links">
+        <a href="/">directory</a>
+        <a href="http://localhost:5001/homepage" target="_blank" rel="noopener noreferrer">homepage</a>
+        <a href="http://localhost:5001/users" target="_blank" rel="noopener noreferrer">users</a>
+        <a href="http://localhost:5001/api/swagger" target="_blank" rel="noopener noreferrer">swagger</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    (function () {
+      const API_BASE = window.location.port === '5001' ? '' : 'http://localhost:5001';
+      const root = document.documentElement;
+      const themeToggleBtn = document.getElementById('themeToggleBtn');
+      const themeLabel = document.getElementById('themeLabel');
+      const form = document.getElementById('registerForm');
+      const alertBox = document.getElementById('registerAlert');
+      const submitBtn = document.getElementById('registerSubmitBtn');
+      const alumniSection = document.getElementById('alumniFieldsSection');
+      const roleCards = document.querySelectorAll('.role-option');
+      const roleRadios = document.querySelectorAll('input[name="role"]');
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        localStorage.setItem('alumni_theme', theme);
+        themeLabel.textContent = theme === 'dark' ? 'Light' : 'Dark';
+      }
+
+      applyTheme(localStorage.getItem('alumni_theme') || 'light');
+
+      themeToggleBtn.addEventListener('click', function () {
+        const next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+        applyTheme(next);
+      });
+
+      function escapeHtml(value) {
+        const div = document.createElement('div');
+        div.textContent = value == null ? '' : String(value);
+        return div.innerHTML;
+      }
+
+      function syncRoleState() {
+        const selected = document.querySelector('input[name="role"]:checked');
+        const role = selected ? selected.value : 'STUDENT';
+
+        roleCards.forEach(function (card) {
+          card.classList.toggle('selected', card.getAttribute('data-role-card') === role);
+        });
+
+        const isAlumni = role === 'ALUMNI';
+        alumniSection.classList.toggle('visible', isAlumni);
+        alumniSection.setAttribute('aria-hidden', String(!isAlumni));
+      }
+
+      roleRadios.forEach(function (radio) {
+        radio.addEventListener('change', syncRoleState);
+      });
+      syncRoleState();
+
+      function showAlert(type, title, message, extraHtml) {
+        alertBox.className = 'alert-box visible ' + type;
+        alertBox.innerHTML =
+          '<div class="alert-title">' + escapeHtml(title) + '</div>' +
+          '<div>' + escapeHtml(message) + '</div>' +
+          (extraHtml || '');
+      }
+
+      async function loadRecentMembers() {
+        const listEl = document.getElementById('recentRegisteredList');
+        try {
+          const res = await fetch(API_BASE + '/api/users', {
+            headers: { Accept: 'application/json' }
+          });
+          if (!res.ok) throw new Error('Failed to load users');
+          const data = await res.json();
+          const users = Array.isArray(data.users) ? data.users : [];
+
+          if (!users.length) {
+            listEl.innerHTML = '<div class="member-item"><div class="member-main"><strong>No users yet</strong><span>Be the first to register</span></div></div>';
+            return;
+          }
+
+          listEl.innerHTML = users.slice(0, 6).map(function (user) {
+            const role = (user.role || 'STUDENT').toUpperCase();
+            return (
+              '<div class="member-item">' +
+                '<div class="member-main">' +
+                  '<strong>' + escapeHtml(user.name) + '</strong>' +
+                  '<span>' + escapeHtml(user.department || 'Belirtilmedi') + ' &middot; ' + escapeHtml(user.email) + '</span>' +
+                '</div>' +
+                '<span class="role-badge role-' + escapeHtml(role) + '">' + escapeHtml(role) + '</span>' +
+              '</div>'
+            );
+          }).join('');
+        } catch (err) {
+          listEl.innerHTML = '<div class="member-item"><div class="member-main"><strong>Backend unavailable</strong><span>Start API server on port 5001</span></div></div>';
+        }
+      }
+
+      form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+
+        const selectedRole = document.querySelector('input[name="role"]:checked')?.value || 'STUDENT';
+        const name = document.getElementById('regName').value.trim();
+        const email = document.getElementById('regEmail').value.trim();
+        const department = document.getElementById('regDepartment').value;
+        const password = document.getElementById('regPassword').value;
+        const confirmPassword = document.getElementById('regConfirmPassword').value;
+
+        if (!name || !email) {
+          showAlert('error', 'Missing required fields', 'Please provide both your full name and email address.');
+          return;
+        }
+
+        if (password.length < 6) {
+          showAlert('error', 'Password too short', 'Password must be at least 6 characters long.');
+          return;
+        }
+
+        if (password !== confirmPassword) {
+          showAlert('error', 'Password mismatch', 'Password and confirmation password do not match.');
+          return;
+        }
+
+        const payload = {
+          name,
+          email,
+          password,
+          confirmPassword,
+          role: selectedRole,
+          department
+        };
+
+        if (selectedRole === 'ALUMNI') {
+          payload.graduationYear = Number(document.getElementById('regGradYear').value) || 2024;
+          payload.company = document.getElementById('regCompany').value.trim();
+          payload.jobTitle = document.getElementById('regJobTitle').value.trim();
+          payload.location = document.getElementById('regLocation').value.trim();
+          payload.skills = document.getElementById('regSkills').value.trim();
+          payload.bio = document.getElementById('regBio').value.trim();
+          payload.isMentor = document.getElementById('regIsMentor').checked;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Creating Account...';
+
+        try {
+          const res = await fetch(API_BASE + '/api/register', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Accept: 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+
+          const data = await res.json();
+          if (!res.ok || !data.success) {
+            throw new Error(data.error || 'Registration failed.');
+          }
+
+          const createdUser = data.user || {};
+          const alumniNote = data.alumniProfile
+            ? ' &bull; Linked Alumni Profile #' + escapeHtml(data.alumniProfile.id)
+            : '';
+
+          showAlert(
+            'success',
+            'Account created for ' + (createdUser.name || name),
+            'Welcome to AlumniSphere! Your account is active and stored in the directory.',
+            '<div class="alert-meta">ID #' + escapeHtml(createdUser.id) + ' &bull; ROLE: ' + escapeHtml(createdUser.role) + ' &bull; DEPT: ' + escapeHtml(createdUser.department) + alumniNote + '</div>' +
+            '<div class="alert-links">' +
+              '<a href="/">Open Alumni Directory &rarr;</a>' +
+              '<a href="http://localhost:5001/users/' + encodeURIComponent(createdUser.id) + '" target="_blank" rel="noopener noreferrer">View User Profile &rarr;</a>' +
+            '</div>'
+          );
+
+          form.reset();
+          document.querySelector('input[name="role"][value="STUDENT"]').checked = true;
+          syncRoleState();
+          await loadRecentMembers();
+        } catch (err) {
+          showAlert('error', 'Registration could not be completed', err.message || 'Unexpected error.');
+        } finally {
+          submitBtn.disabled = false;
+          submitBtn.textContent = 'Create Account';
+        }
+      });
+
+      loadRecentMembers();
+    })();
+  </script>
+</body>
+</html>

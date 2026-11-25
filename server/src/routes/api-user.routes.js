@@ -1,4 +1,5 @@
 const express = require('express');
+const path = require('path');
 const router = express.Router();
 const { ApiUserController, UserController } = require('../controllers');
 
@@ -36,6 +37,13 @@ router.get('/api/users', handleGetUsers);
 
 // POST /api/users - Create new user (JSON with browser form fallback)
 router.post('/api/users', handleCreateUser);
+
+// Registration endpoints
+router.get('/register', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/register.html'));
+});
+router.post('/api/register', ApiUserController.register);
+router.post('/register', ApiUserController.register);
 
 // GET /api/users/count - Get total count of registered users
 router.get('/api/users/count', ApiUserController.count);

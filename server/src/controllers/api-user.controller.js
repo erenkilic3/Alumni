@@ -1,4 +1,5 @@
 const UserModel = require('../models/user.model');
+const AlumniModel = require('../models/alumni.model');
 
 /**
  * ApiUserController
@@ -14,6 +15,7 @@ class ApiUserController {
     this.getAll = this.getAll.bind(this);
     this.getById = this.getById.bind(this);
     this.create = this.create.bind(this);
+    this.register = this.register.bind(this);
     this.update = this.update.bind(this);
     this.patch = this.patch.bind(this);
     this.delete = this.delete.bind(this);
@@ -209,6 +211,102 @@ class ApiUserController {
       return res.status(500).json({
         success: false,
         error: 'Failed to count users: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * POST /api/register or POST /register
+   * Register a new user account and optionally create linked 1:1 alumni profile
+   */
+  async register(req, res) {
+    try {
+      const {
+        name,
+        email,
+        password,
+        confirmPassword,
+        role,
+        department,
+        graduationYear,
+        company,
+        jobTitle,
+        location,
+        industry,
+        skills,
+        isMentor,
+        bio
+      } = req.body || {};
+
+      if (!name || !String(name).trim() || !email || !String(email).trim()) {
+        return res.status(400).json({
+          success: false,
+          error: 'Full name and email address are required.'
+        });
+      }
+
+      if (password !== undefined && password !== null && String(password).length > 0) {
+        if (String(password).length < 6) {
+          return res.status(400).json({
+            success: false,
+            error: 'Password must be at least 6 characters long.'
+          });
+        }
+        if (confirmPassword !== undefined && String(password) !== String(confirmPassword)) {
+          return res.status(400).json({
+            success: false,
+            error: 'Passwords do not match.'
+          });
+        }
+      }
+
+      const allowedRoles = ['ADMIN', 'ALUMNI', 'STUDENT'];
+      const requestedRole = role ? String(role).trim().toUpperCase() : 'STUDENT';
+      if (!allowedRoles.includes(requestedRole)) {
+        return res.status(400).json({
+          success: false,
+          error: `Invalid role "${role}". Allowed roles: ${allowedRoles.join(', ')}.`
+        });
+      }
+
+      const newUser = await this.model.create({
+        name: String(name).trim(),
+        email: String(email).trim(),
+        role: requestedRole,
+        department: department && String(department).trim() ? String(department).trim() : 'Belirtilmedi'
+      });
+
+      let alumniProfile = null;
+      const shouldCreateAlumni =
+        newUser.role === 'ALUMNI' &&
+        (graduationYear || company || jobTitle || skills || bio || isMentor !== undefined);
+
+      if (newUser.role === 'ALUMNI' || shouldCreateAlumni) {
+        alumniProfile = await AlumniModel.create({
+          name: newUser.name,
+          graduationYear: Number(graduationYear) || 2024,
+          department: newUser.department,
+          company: company && String(company).trim() ? String(company).trim() : 'Freelance / Independent',
+          role: jobTitle && String(jobTitle).trim() ? String(jobTitle).trim() : 'Alumni Member',
+          location: location && String(location).trim() ? String(location).trim() : 'Remote',
+          industry: industry && String(industry).trim() ? String(industry).trim() : 'Technology',
+          skills: skills || '',
+          isMentor: Boolean(isMentor),
+          bio: bio ? String(bio).trim() : '',
+          userId: newUser.id
+        });
+      }
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration completed successfully.',
+        user: newUser,
+        alumniProfile
+      });
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        error: err.message
       });
     }
   }
