@@ -2,7 +2,7 @@
 
 A modern, containerized platform designed for universities and educational institutions to maintain lifelong connections with their graduates. The system enables career tracking, mentorship opportunities, networking, job postings, and institutional analytics.
 
-> **Documentation**: [Design System (`DESIGN.md`)](./DESIGN.md) • [Brand Kit (`brand.md`)](./brand.md) • [Brand & Design Overview](#brand-and-design) • [Data Definition Document (`ddd.md`)](./ddd.md)
+> **Documentation**: [Design System (`DESIGN.md`)](./DESIGN.md) • [Brand Kit (`brand.md`)](./brand.md) • [Auth & RBAC](#authentication--authorization) • [Data Definition Document (`ddd.md`)](./ddd.md)
 
 ---
 
@@ -145,8 +145,15 @@ Alumni/
 ├── client/                                  # 🖥️ [VIEW & CLIENT CONTROLLER] Frontend Client Service
 │   ├── public/                              # 🎨 [VIEW] Client Presentation & Static Assets
 │   │   ├── index.html                       # 📄 [VIEW] Main Single Page Application (SPA) HTML Layout
-│   │   ├── styles.css                       # 🎨 [VIEW] Glassmorphism Design System, Dark/Light Themes
-│   │   └── app.js                           # ⚙️ [CONTROLLER & VIEW RENDERER] Client Logic & DOM Renderer
+│   │   ├── register.html                    # 📝 [VIEW] Member Registration Page (54 Academic Departments & Role Selector)
+│   │   ├── login.html                       # 🔑 [VIEW] Member Sign-In, Active Session Card & Demo Account Switcher
+│   │   ├── admin.html                       # 🛠️ [VIEW] Admin Panel Console (5-Entity CRUD & Audit Log)
+│   │   ├── profile.html                     # 👤 [VIEW] Personal Profile & Account Settings Page
+│   │   ├── student.html                     # 🎓 [VIEW] Student Portal (My Applications, Quick Apply, Mentors)
+│   │   ├── alumni-portal.html               # 💼 [VIEW] Alumni Portal (1:1 Graduate Profile, Mentorship & Job Postings)
+│   │   ├── nav-role.js                      # 🧭 [CONTROLLER] Dynamic Role-Based Navigation Helper (GUEST, STUDENT, ALUMNI, ADMIN)
+│   │   ├── styles.css                       # 🎨 [VIEW] Design System Tokens, Dark/Light Themes
+│   │   └── app.js                           # ⚙️ [CONTROLLER & VIEW RENDERER] Client Logic, Auth Session & DOM Renderer
 │   ├── server.js                            # ⚙️ [CONTROLLER] Frontend Web Server & Reverse Router (Port 3000)
 │   ├── Dockerfile                           # 🐳 [INFRA] Frontend Container Definition (Node.js 18-alpine)
 │   ├── package.json                         # 📦 [CONFIG] Frontend Dependencies (express) & Scripts
@@ -194,6 +201,7 @@ Alumni/
 │   │   │   └── nested.controller.js         # 🪢 [CONTROLLER] Nested Relational Controller (Users, Alumni, Jobs, Applications)
 │   │   ├── middlewares/                     # 🛡️ [MIDDLEWARE] Express Request Middlewares & Error Guardians
 │   │   │   ├── index.js                     # 🛡️ Barrel Export for Middlewares
+│   │   │   ├── auth.middleware.js           # 🔐 Auth Middleware, Token Issuance/Revocation, RBAC & Ownership Guards
 │   │   │   ├── logger.middleware.js         # ⏱️ Terminal Request Logger (<time> <method> <route> <restype> <duration>) & Error Log Writer
 │   │   │   ├── guardian404.middleware.js    # 🧭 404 Guardian Middleware (Descriptive Reason Reporting, JSON API & /404 Redirect)
 │   │   │   └── guardian5xx.middleware.js    # 🚨 5xx Guardian Middleware (Exception Classification, Incident IDs & Diagnostics)
@@ -666,6 +674,50 @@ A centralized 4-parameter Express error handler `(err, req, res, next)` designed
 ### 4. 📋 Persistent Error Logging (`logs/error.logs`)
 - Real-time logging of all HTTP errors (status codes ≥ 400).
 - Handled safely via `writeErrorLog()`: automatically checks for directory existence, creates `logs/` recursively if missing, and appends without blocking request execution.
+
+---
+
+<a id="authentication--authorization"></a>
+## 🔐 Authentication, Authorization & User-Specific Portals
+
+AlumniSphere provides a complete token-based authentication flow, role-based access control (**RBAC**) across `ADMIN`, `ALUMNI`, and `STUDENT` roles (see full permission matrix in [`ddd.md`](./ddd.md)), dynamic role-driven navigation, and dedicated user portals.
+
+### 1. Auth Middleware & Guards (`server/src/middlewares/auth.middleware.js`)
+- **`authMiddleware`**: Mounted globally in `server/src/index.js`; extracts Bearer tokens (`Authorization: Bearer <token>`, `x-auth-token`, query, or body), validates against the revocation set, resolves `req.user` via `UserModel`, and attaches `req.auth` without blocking public routes.
+- **`requireAuth`**: Protects authenticated endpoints (returns `401 Unauthorized` JSON for API clients or redirects browser HTML requests to `/login` when missing/revoked).
+- **`requireRole(...roles)`**: Enforces role checks (`ADMIN`, `ALUMNI`, `STUDENT`), returning `403 Forbidden` with `requiredRoles` and `currentRole` if unauthorized.
+- **`requireOwnershipOrAdmin(paramKey)`**: Allows access only to `ADMIN` users or the owner matching `req.params[paramKey] === req.user.id`.
+- **Token Revocation**: `POST /api/logout` revokes the active token via `revokeToken()`, immediately rejecting subsequent protected requests with `401`.
+
+### 2. Auth & Admin API Endpoints
+
+| Method | Endpoint | Guard | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/register` | Public | Register a new `STUDENT`, `ALUMNI`, or `ADMIN` account (auto-links 1:1 `alumni` profile for `ALUMNI` role) and issue Bearer token |
+| `POST` | `/api/login` | Public | Authenticate by email & password, returning `{ token, user, alumniProfile }` |
+| `POST` | `/api/logout` | Public | End active session and revoke the presented Bearer token |
+| `GET` | `/api/me` / `/api/auth/me` | `requireAuth` | Return currently authenticated user profile and linked `alumniProfile` |
+| `POST` | `/api/admin/assign-me` | Public (Dev) | Assign `ADMIN` role to the current account (default: `Eren Kılıç`) and issue an `ADMIN` Bearer token |
+| `GET` | `/api/admin/overview` | `requireRole('ADMIN')` | Aggregated counts and live records across `users`, `alumni`, `announcements`, `jobs`, and `applications` |
+
+### 3. Dynamic Role-Based Navigation (`client/public/nav-role.js`)
+Navigation menu items and action buttons adapt automatically based on the signed-in user's role stored in `localStorage` (`alumni_auth_user`):
+
+| Role | Visible Navigation & Portals | Role-Gated Actions |
+| :--- | :--- | :--- |
+| **`GUEST`** | `Directory`, `Opportunities`, `Login`, `Register` | Read-only browsing |
+| **`STUDENT`** | `Directory`, `Opportunities`, `Applications`, `Student Portal` (`/student`), `My Profile` (`/profile`), `Announcements` | Submit & withdraw own applications |
+| **`ALUMNI`** | `Directory`, `Opportunities`, `Applications`, `Alumni Portal` (`/alumni-portal`), `My Profile` (`/profile`), `Announcements` | Manage 1:1 graduate profile, toggle mentorship, publish jobs |
+| **`ADMIN`** | `Directory`, `Opportunities`, `Applications`, `Platform`, `Admin` (`/admin`), `My Profile` (`/profile`), `Users`, `Announcements`, `API Docs` | Full CRUD across all 5 entities & role assignment |
+
+### 4. Dedicated Auth & User-Specific Pages
+Accessible on both the Frontend (`http://localhost:3000`) and Backend (`http://localhost:5001`):
+- **`/register`** ([`client/public/register.html`](./client/public/register.html)): Role selector, 54 academic departments grouped by faculty, password validation, and conditional graduate profile fields.
+- **`/login`** ([`client/public/login.html`](./client/public/login.html)): Email/password sign-in, active session card with `Logout`, and one-click demo account switcher.
+- **`/profile`** ([`client/public/profile.html`](./client/public/profile.html)): Personal account settings (`PATCH /api/users/:id`), activity counts, and role portal shortcut.
+- **`/student`** ([`client/public/student.html`](./client/public/student.html)): Student Portal for tracking/withdrawing applications, quick-applying to open roles, and discovering mentors.
+- **`/alumni-portal`** ([`client/public/alumni-portal.html`](./client/public/alumni-portal.html)): Alumni Portal for managing the linked 1:1 graduate profile, mentorship status, and posted jobs.
+- **`/admin`** ([`client/public/admin.html`](./client/public/admin.html)): Multi-entity Admin Panel (`Users & Roles`, `Alumni & Mentors`, `Announcements`, `Job Postings`, `Applications`) with live audit log.
 
 ---
 
