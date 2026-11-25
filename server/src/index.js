@@ -3,7 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 
 const { Pool } = require('pg');
-const { loggerMiddleware, guardian404Middleware, handle404Page, guardian5xxMiddleware } = require('./middlewares');
+const { loggerMiddleware, guardian404Middleware, handle404Page, guardian5xxMiddleware, authMiddleware } = require('./middlewares');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -12,6 +12,7 @@ app.use(loggerMiddleware);
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(authMiddleware);
 
 // Centralized PostgreSQL Database Module
 const db = require('./db');

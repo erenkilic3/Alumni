@@ -1,5 +1,6 @@
 const UserModel = require('../models/user.model');
 const AlumniModel = require('../models/alumni.model');
+const { issueToken, extractToken, revokeToken } = require('../middlewares/auth.middleware');
 
 /**
  * ApiUserController
@@ -19,6 +20,7 @@ class ApiUserController {
     this.register = this.register.bind(this);
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
+    this.me = this.me.bind(this);
     this.update = this.update.bind(this);
     this.patch = this.patch.bind(this);
     this.delete = this.delete.bind(this);
@@ -307,7 +309,7 @@ class ApiUserController {
       return res.status(201).json({
         success: true,
         message: 'Registration completed successfully.',
-        token: 'as_tok_' + Buffer.from(newUser.id + ':' + newUser.email).toString('base64'),
+        token: issueToken(newUser),
         user: newUser,
         alumniProfile
       });
@@ -350,7 +352,7 @@ class ApiUserController {
       }
 
       const alumniProfile = await AlumniModel.findByUserId(user.id).catch(() => null);
-      const token = 'as_tok_' + Buffer.from(user.id + ':' + user.email).toString('base64');
+      const token = issueToken(user);
 
       return res.status(200).json({
         success: true,
@@ -369,12 +371,32 @@ class ApiUserController {
 
   /**
    * POST /api/logout or POST /logout
-   * End current user session
+   * End current user session and revoke active token
    */
   async logout(req, res) {
+    const token = extractToken(req);
+    const revoked = revokeToken(token);
     return res.status(200).json({
       success: true,
-      message: 'Signed out successfully.'
+      message: 'Signed out successfully.',
+      tokenRevoked: revoked
+    });
+  }
+
+  /**
+   * GET /api/me or GET /api/auth/me
+   * Return the currently authenticated user profile
+   */
+  async me(req, res) {
+    const alumniProfile = req.user && req.user.id
+      ? await AlumniModel.findByUserId(req.user.id).catch(() => null)
+      : null;
+
+    return res.status(200).json({
+      success: true,
+      authenticated: true,
+      user: req.user,
+      alumniProfile
     });
   }
 }

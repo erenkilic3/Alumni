@@ -2,6 +2,7 @@ const express = require('express');
 const path = require('path');
 const router = express.Router();
 const { ApiUserController, UserController } = require('../controllers');
+const { requireAuth } = require('../middlewares');
 
 /**
  * ApiUser REST API Routes (JSON CRUD Endpoints)
@@ -53,6 +54,7 @@ router.post('/api/login', ApiUserController.login);
 router.post('/login', ApiUserController.login);
 router.post('/api/logout', ApiUserController.logout);
 router.post('/logout', ApiUserController.logout);
+router.get(['/api/me', '/api/auth/me'], requireAuth, ApiUserController.me);
 
 // GET /api/users/count - Get total count of registered users
 router.get('/api/users/count', ApiUserController.count);

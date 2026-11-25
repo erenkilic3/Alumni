@@ -1040,8 +1040,10 @@ function initAuthSession() {
   if (!logoutBtn) return;
 
   logoutBtn.addEventListener('click', async () => {
+    const token = localStorage.getItem('alumni_auth_token');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
     try {
-      await fetch(`${API_BASE_URL}/logout`, { method: 'POST' });
+      await fetch(`${API_BASE_URL}/logout`, { method: 'POST', headers });
     } catch (e) {
       // Ignore network errors when clearing client session
     }

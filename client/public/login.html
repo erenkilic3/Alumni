@@ -740,8 +740,10 @@
       }
 
       async function handleLogout() {
+        const token = localStorage.getItem('alumni_auth_token');
+        const headers = token ? { Authorization: 'Bearer ' + token } : {};
         try {
-          await fetch(API_BASE + '/api/logout', { method: 'POST' });
+          await fetch(API_BASE + '/api/logout', { method: 'POST', headers });
         } catch (e) {
           // Proceed with client session clear
         }
