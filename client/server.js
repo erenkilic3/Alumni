@@ -39,6 +39,18 @@ app.get(['/admin', '/admin.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'admin.html'));
 });
 
+app.get(['/profile', '/profile.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'profile.html'));
+});
+
+app.get(['/student', '/student.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'student.html'));
+});
+
+app.get(['/alumni-portal', '/alumni-portal.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'alumni-portal.html'));
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });

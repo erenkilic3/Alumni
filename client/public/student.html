@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Portal — AlumniSphere</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f3ed;
+      --surface: #fbfaf6;
+      --surface-raised: #fffefa;
+      --surface-tint: #eeece4;
+      --ink: #1d2b24;
+      --ink-soft: #415149;
+      --muted: #6b756e;
+      --line: #d8d8cf;
+      --line-strong: #bfc6bc;
+      --green: #245442;
+      --green-hover: #183e31;
+      --green-wash: #e4ebe4;
+      --clay: #b75e45;
+      --clay-wash: #f2e5df;
+      --danger: #a63e36;
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --ease: 180ms ease;
+    }
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #19221d;
+      --surface: #202b25;
+      --surface-raised: #26332c;
+      --surface-tint: #2b3830;
+      --ink: #f0eee6;
+      --ink-soft: #d2d7cd;
+      --muted: #a1aaa0;
+      --line: #3b4840;
+      --line-strong: #55645a;
+      --green: #a1c6a9;
+      --green-hover: #bdd9c2;
+      --green-wash: #2b4034;
+      --clay: #e3a18a;
+      --clay-wash: #45342d;
+      --danger: #f08e83;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font: 400 14px/1.6 var(--font-body); -webkit-font-smoothing: antialiased; }
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+    .container, .nav-container { width: min(1200px, calc(100% - 64px)); margin-inline: auto; }
+    .navbar { position: sticky; top: 0; z-index: 20; background: var(--paper); border-bottom: 1px solid var(--line); }
+    .nav-container { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+    .brand { display: inline-flex; align-items: center; gap: 11px; }
+    .brand-logo { width: 38px; height: 38px; display: grid; place-items: center; background: var(--green); color: var(--surface); }
+    .brand-title { display: block; font-size: 17px; font-weight: 650; letter-spacing: -0.04em; line-height: 1.2; }
+    .brand-title .highlight { color: var(--green); }
+    .brand-subtitle { display: block; margin-top: 2px; color: var(--muted); font-size: 9px; font-weight: 600; letter-spacing: 0.13em; }
+    .primary-nav { display: flex; align-items: stretch; align-self: stretch; gap: 6px; }
+    .nav-link { position: relative; display: inline-flex; align-items: center; padding: 3px 12px 0; color: var(--muted); font-size: 13px; font-weight: 550; }
+    .nav-link::after { content: ""; position: absolute; left: 12px; right: 12px; bottom: -1px; height: 2px; background: transparent; }
+    .nav-link:hover, .nav-link.active { color: var(--green); }
+    .nav-link.active::after { background: var(--green); }
+    .nav-right { display: flex; align-items: center; gap: 10px; }
+    .theme-toggle-btn { min-height: 36px; display: inline-flex; align-items: center; gap: 6px; padding: 0 9px; border: 1px solid transparent; background: transparent; color: var(--ink-soft); cursor: pointer; font-size: 12px; }
+    [data-theme="light"] .moon-icon, [data-theme="dark"] .sun-icon { display: none; }
+    .btn { min-height: 36px; display: inline-flex; align-items: center; justify-content: center; padding: 0 14px; border: 1px solid transparent; border-radius: 2px; font-size: 12px; font-weight: 600; cursor: pointer; }
+    .btn-primary { background: var(--green); border-color: var(--green); color: var(--surface-raised); }
+    .btn-outline { background: transparent; border-color: var(--line-strong); color: var(--ink); }
+    .btn-danger { background: transparent; border-color: var(--danger); color: var(--danger); }
+    .btn-sm { min-height: 30px; padding: 0 10px; font-size: 11px; }
+    .page-header { padding: 44px 0 28px; border-bottom: 1px solid var(--line); }
+    .kicker { display: inline-flex; align-items: center; gap: 8px; color: var(--clay); font-size: 10px; font-weight: 650; letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 10px; }
+    .kicker-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--clay); }
+    .page-header h1 { margin: 0; font: 400 clamp(32px, 4.2vw, 48px)/1.06 var(--font-display); letter-spacing: -0.03em; }
+    .page-header h1 em { color: var(--green); font-style: italic; }
+    .layout { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 36px; padding: 36px 0 72px; align-items: start; }
+    .panel { background: var(--surface); border: 1px solid var(--line); padding: 26px; margin-bottom: 24px; }
+    .panel h2 { margin: 0 0 14px; font: 400 22px/1.15 var(--font-display); }
+    .row { padding: 14px 0; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 14px; }
+    .row:last-child { border-bottom: 0; }
+    .mono { font: 500 11px/1.3 var(--font-mono); color: var(--green); }
+    .muted { color: var(--muted); font-size: 12px; }
+    .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 14px; }
+    .form-group label { font-size: 12px; font-weight: 600; color: var(--ink-soft); }
+    .form-group input, .form-group select, .form-group textarea { padding: 9px 11px; border: 1px solid var(--line-strong); border-radius: 2px; background: var(--surface-raised); font-size: 13px; }
+    .alert { display: none; padding: 11px 14px; margin-bottom: 16px; border: 1px solid var(--line); border-left: 3px solid var(--green); background: var(--green-wash); font-size: 13px; }
+    .alert.visible { display: block; }
+    .alert.error { border-left-color: var(--danger); background: var(--clay-wash); }
+    @media (max-width: 900px) { .layout { grid-template-columns: 1fr; } .container, .nav-container { width: calc(100% - 36px); } .primary-nav { display: none; } }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-container">
+      <a class="brand" href="/">
+        <div class="brand-logo"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg></div>
+        <div><span class="brand-title">Alumni<span class="highlight">Sphere</span></span><span class="brand-subtitle">STUDENT PORTAL</span></div>
+      </a>
+      <nav class="primary-nav" data-dynamic-nav="true" aria-label="Primary navigation"></nav>
+      <div class="nav-right">
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button">
+          <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+          <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <span id="themeLabel">Dark</span>
+        </button>
+        <a href="/profile" class="btn btn-outline">My Profile</a>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="kicker"><span class="kicker-dot"></span><span>ROLE: STUDENT</span></div>
+      <h1 id="studentTitle">Student career &amp; <em>mentorship workspace.</em></h1>
+    </div>
+  </section>
+
+  <main class="container">
+    <div id="studentGuestGate" class="panel" style="display:none;margin-top:36px;max-width:600px;">
+      <h2>Sign in with a Student account</h2>
+      <p class="muted" style="margin-bottom:18px;">Log in as a student (e.g. Burak Demir or Fatma Kaya) to track your applications and connect with alumni mentors.</p>
+      <a href="/login" class="btn btn-primary">Go to Login &rarr;</a>
+    </div>
+
+    <div id="studentContent" class="layout" style="display:none;">
+      <div>
+        <section class="panel">
+          <h2>My Submitted Applications</h2>
+          <div id="studentAlert" class="alert" role="alert"></div>
+          <div id="myApplicationsList"><div class="muted">Loading your applications...</div></div>
+        </section>
+
+        <section class="panel">
+          <h2>Quick Apply to an Open Role</h2>
+          <form id="studentApplyForm">
+            <div class="form-group">
+              <label for="stJobSelect">Select Opportunity *</label>
+              <select id="stJobSelect" required></select>
+            </div>
+            <div class="form-group">
+              <label for="stResume">Resume / Portfolio URL</label>
+              <input id="stResume" type="url" placeholder="https://storage.alumni.edu/resumes/cv.pdf">
+            </div>
+            <div class="form-group">
+              <label for="stCover">Cover Note</label>
+              <textarea id="stCover" rows="3" placeholder="Briefly share why you are interested in this role..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit Application</button>
+          </form>
+        </section>
+      </div>
+
+      <aside>
+        <section class="panel">
+          <h2>Available Alumni Mentors</h2>
+          <div id="mentorsList"><div class="muted">Loading mentors...</div></div>
+        </section>
+        <section class="panel">
+          <h2>Campus Bulletins</h2>
+          <div id="studentAnnList"><div class="muted">Loading bulletins...</div></div>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <script src="/nav-role.js"></script>
+  <script>
+    (function () {
+      const API_BASE = window.location.port === '5001' ? '' : 'http://localhost:5001';
+      const root = document.documentElement;
+      const themeLabel = document.getElementById('themeLabel');
+      function applyTheme(t) { root.setAttribute('data-theme', t); localStorage.setItem('alumni_theme', t); themeLabel.textContent = t === 'dark' ? 'Light' : 'Dark'; }
+      applyTheme(localStorage.getItem('alumni_theme') || 'light');
+      document.getElementById('themeToggleBtn').addEventListener('click', () => applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
+
+      const user = window.AlumniNav ? window.AlumniNav.getCurrentUser() : null;
+      const token = localStorage.getItem('alumni_auth_token');
+      const alertEl = document.getElementById('studentAlert');
+      function esc(v) { const d = document.createElement('div'); d.textContent = v == null ? '' : String(v); return d.innerHTML; }
+
+      if (!user || !user.id) {
+        document.getElementById('studentGuestGate').style.display = 'block';
+        return;
+      }
+
+      document.getElementById('studentContent').style.display = 'grid';
+      document.getElementById('studentTitle').innerHTML = esc(user.name) + ' &mdash; <em>Student Portal</em>';
+
+      async function loadData() {
+        const headers = token ? { Authorization: 'Bearer ' + token } : {};
+        const [appsData, jobsData, mentorsData, annData] = await Promise.all([
+          fetch(API_BASE + '/api/users/' + encodeURIComponent(user.id) + '/applications', { headers }).then(r => r.json()).catch(() => ({ applications: [] })),
+          fetch(API_BASE + '/api/jobs', { headers }).then(r => r.json()).catch(() => ({ jobs: [] })),
+          fetch(API_BASE + '/api/alumni?mentorOnly=true', { headers }).then(r => r.json()).catch(() => ({ alumni: [] })),
+          fetch(API_BASE + '/api/announcements', { headers }).then(r => r.json()).catch(() => ({ announcements: [] }))
+        ]);
+
+        const apps = appsData.applications || [];
+        const appsEl = document.getElementById('myApplicationsList');
+        appsEl.innerHTML = apps.length
+          ? apps.map(a => `
+            <div class="row">
+              <div><strong>Job: ${esc(a.jobId)}</strong><div class="muted">${esc(a.coverLetter || 'No cover note')}</div></div>
+              <div style="display:flex;align-items:center;gap:10px;">
+                <span class="mono">${esc(a.status)}</span>
+                <button type="button" class="btn btn-danger btn-sm" onclick="window.__withdrawApp('${esc(a.id)}')">Withdraw</button>
+              </div>
+            </div>`).join('')
+          : '<div class="muted">You have not submitted any applications yet.</div>';
+
+        const jobs = (jobsData.jobs || []).filter(j => (j.status || 'ACTIVE') === 'ACTIVE');
+        const jobSelect = document.getElementById('stJobSelect');
+        jobSelect.innerHTML = jobs.length
+          ? jobs.map(j => `<option value="${esc(j.id)}">${esc(j.title)} — ${esc(j.company)}</option>`).join('')
+          : '<option value="">No active jobs available</option>';
+
+        const mentors = mentorsData.alumni || [];
+        document.getElementById('mentorsList').innerHTML = mentors.length
+          ? mentors.slice(0, 5).map(m => `<div class="row"><div><strong>${esc(m.name)}</strong><div class="muted">${esc(m.role)} at ${esc(m.company)}</div></div><span class="mono">Class ${esc(m.graduationYear)}</span></div>`).join('')
+          : '<div class="muted">No mentors available right now.</div>';
+
+        const anns = annData.announcements || [];
+        document.getElementById('studentAnnList').innerHTML = anns.length
+          ? anns.slice(0, 4).map(n => `<div class="row"><div><strong>${esc(n.title)}</strong><div class="muted">${esc(n.author || 'Alumni Office')}</div></div><span class="mono">${esc(n.category || 'GENERAL')}</span></div>`).join('')
+          : '<div class="muted">No active announcements.</div>';
+      }
+
+      window.__withdrawApp = async (appId) => {
+        try {
+          const res = await fetch(API_BASE + '/api/applications/' + encodeURIComponent(appId), {
+            method: 'DELETE',
+            headers: token ? { Authorization: 'Bearer ' + token } : {}
+          });
+          if (!res.ok) throw new Error('Could not withdraw application.');
+          alertEl.className = 'alert visible';
+          alertEl.textContent = 'Application ' + appId + ' withdrawn.';
+          await loadData();
+        } catch (err) {
+          alertEl.className = 'alert visible error';
+          alertEl.textContent = err.message;
+        }
+      };
+
+      document.getElementById('studentApplyForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const jobId = document.getElementById('stJobSelect').value;
+        const resumeUrl = document.getElementById('stResume').value.trim();
+        const coverLetter = document.getElementById('stCover').value.trim();
+        if (!jobId) return;
+        try {
+          const res = await fetch(API_BASE + '/api/users/' + encodeURIComponent(user.id) + '/applications', {
+            method: 'POST',
+            headers: Object.assign({ 'Content-Type': 'application/json' }, token ? { Authorization: 'Bearer ' + token } : {}),
+            body: JSON.stringify({ jobId, applicantName: user.name, applicantEmail: user.email, resumeUrl, coverLetter })
+          });
+          const data = await res.json();
+          if (!res.ok || !data.success) throw new Error(data.error || 'Application failed.');
+          alertEl.className = 'alert visible';
+          alertEl.textContent = 'Application submitted for ' + jobId + '.';
+          e.target.reset();
+          await loadData();
+        } catch (err) {
+          alertEl.className = 'alert visible error';
+          alertEl.textContent = err.message;
+        }
+      });
+
+      loadData();
+    })();
+  </script>
+</body>
+</html>

@@ -63,6 +63,15 @@ router.get('/nav-role.js', (req, res) => {
 router.get('/admin', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../../../client/public/admin.html'));
 });
+router.get('/profile', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/profile.html'));
+});
+router.get('/student', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/student.html'));
+});
+router.get('/alumni-portal', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/alumni-portal.html'));
+});
 router.post('/api/admin/assign-me', ApiUserController.assignAdminToMe);
 router.get('/api/admin/overview', requireRole('ADMIN'), ApiUserController.adminOverview);
 

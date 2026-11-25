@@ -21,18 +21,20 @@
     ],
     STUDENT: [
       { label: 'Directory', href: '/' },
-      { label: 'Announcements', href: BACKEND_ORIGIN + '/announcements', external: true },
-      { label: 'Account', href: '/login' }
+      { label: 'Student Portal', href: '/student' },
+      { label: 'My Profile', href: '/profile' },
+      { label: 'Announcements', href: BACKEND_ORIGIN + '/announcements', external: true }
     ],
     ALUMNI: [
       { label: 'Directory', href: '/' },
-      { label: 'Alumni', href: BACKEND_ORIGIN + '/alumni', external: true },
-      { label: 'Announcements', href: BACKEND_ORIGIN + '/announcements', external: true },
-      { label: 'Account', href: '/login' }
+      { label: 'Alumni Portal', href: '/alumni-portal' },
+      { label: 'My Profile', href: '/profile' },
+      { label: 'Announcements', href: BACKEND_ORIGIN + '/announcements', external: true }
     ],
     ADMIN: [
       { label: 'Directory', href: '/' },
       { label: 'Admin', href: '/admin' },
+      { label: 'My Profile', href: '/profile' },
       { label: 'Users', href: BACKEND_ORIGIN + '/users', external: true },
       { label: 'Announcements', href: BACKEND_ORIGIN + '/announcements', external: true },
       { label: 'API Docs', href: BACKEND_ORIGIN + '/api/swagger', external: true }
