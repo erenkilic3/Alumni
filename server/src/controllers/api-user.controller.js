@@ -1,5 +1,8 @@
 const UserModel = require('../models/user.model');
 const AlumniModel = require('../models/alumni.model');
+const AnnouncementModel = require('../models/announcement.model');
+const JobPostingModel = require('../models/job-posting.model');
+const ApplicationModel = require('../models/application.model');
 const { issueToken, extractToken, revokeToken } = require('../middlewares/auth.middleware');
 
 /**
@@ -21,6 +24,8 @@ class ApiUserController {
     this.login = this.login.bind(this);
     this.logout = this.logout.bind(this);
     this.me = this.me.bind(this);
+    this.assignAdminToMe = this.assignAdminToMe.bind(this);
+    this.adminOverview = this.adminOverview.bind(this);
     this.update = this.update.bind(this);
     this.patch = this.patch.bind(this);
     this.delete = this.delete.bind(this);
@@ -398,6 +403,94 @@ class ApiUserController {
       user: req.user,
       alumniProfile
     });
+  }
+
+  /**
+   * POST /api/admin/assign-me
+   * Ensure the current user (defaulting to Eren Kılıç) holds the ADMIN role and issue an ADMIN token
+   */
+  async assignAdminToMe(req, res) {
+    try {
+      const { userId, email, name, department } = req.body || {};
+      let target = null;
+
+      if (userId) {
+        target = await this.model.findById(userId);
+      }
+      if (!target && email) {
+        target = await this.model.findByEmail(String(email).trim());
+      }
+      if (!target && req.user && req.user.id) {
+        target = await this.model.findById(req.user.id);
+      }
+      if (!target) {
+        target = (await this.model.findByEmail('eren@alumni.edu')) || (await this.model.findById('1'));
+      }
+
+      if (!target) {
+        target = await this.model.create({
+          name: name && String(name).trim() ? String(name).trim() : 'Eren Kılıç',
+          email: email && String(email).trim() ? String(email).trim() : 'eren@alumni.edu',
+          role: 'ADMIN',
+          department: department && String(department).trim() ? String(department).trim() : 'Software Engineering'
+        });
+      } else if (String(target.role).toUpperCase() !== 'ADMIN') {
+        target = await this.model.update(target.id, { role: 'ADMIN' }, true);
+      }
+
+      const token = issueToken(target);
+      return res.status(200).json({
+        success: true,
+        message: `ADMIN role assigned to ${target.name}`,
+        token,
+        user: target
+      });
+    } catch (err) {
+      return res.status(400).json({
+        success: false,
+        error: 'Failed to assign ADMIN role: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * GET /api/admin/overview
+   * Aggregated overview across all 5 system entities for ADMIN users
+   */
+  async adminOverview(req, res) {
+    try {
+      const [users, alumni, announcements, jobs, applications] = await Promise.all([
+        this.model.findAll(),
+        AlumniModel.findAll(),
+        AnnouncementModel.findAll(),
+        JobPostingModel.findAll(),
+        ApplicationModel.findAll()
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        admin: req.user,
+        counts: {
+          users: users.length,
+          alumni: alumni.length,
+          announcements: announcements.length,
+          jobs: jobs.length,
+          applications: applications.length
+        },
+        data: {
+          users,
+          alumni,
+          announcements,
+          jobs,
+          applications
+        }
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Failed to load admin overview: ' + err.message
+      });
+    }
   }
 }
 

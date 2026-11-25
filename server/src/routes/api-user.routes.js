@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const router = express.Router();
 const { ApiUserController, UserController } = require('../controllers');
-const { requireAuth } = require('../middlewares');
+const { requireAuth, requireRole } = require('../middlewares');
 
 /**
  * ApiUser REST API Routes (JSON CRUD Endpoints)
@@ -55,6 +55,13 @@ router.post('/login', ApiUserController.login);
 router.post('/api/logout', ApiUserController.logout);
 router.post('/logout', ApiUserController.logout);
 router.get(['/api/me', '/api/auth/me'], requireAuth, ApiUserController.me);
+
+// Admin Panel & RBAC endpoints
+router.get('/admin', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/admin.html'));
+});
+router.post('/api/admin/assign-me', ApiUserController.assignAdminToMe);
+router.get('/api/admin/overview', requireRole('ADMIN'), ApiUserController.adminOverview);
 
 // GET /api/users/count - Get total count of registered users
 router.get('/api/users/count', ApiUserController.count);

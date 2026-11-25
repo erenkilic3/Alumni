@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel — AlumniSphere</title>
+  <meta name="description" content="AlumniSphere Administration Console for managing users, roles, alumni mentors, announcements, job postings, and applications.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;1,400&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      color-scheme: light;
+      --paper: #f5f3ed;
+      --surface: #fbfaf6;
+      --surface-raised: #fffefa;
+      --surface-tint: #eeece4;
+      --ink: #1d2b24;
+      --ink-soft: #415149;
+      --muted: #6b756e;
+      --line: #d8d8cf;
+      --line-strong: #bfc6bc;
+      --green: #245442;
+      --green-hover: #183e31;
+      --green-wash: #e4ebe4;
+      --clay: #b75e45;
+      --clay-wash: #f2e5df;
+      --danger: #a63e36;
+      --success: #356849;
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+      --ease: 180ms ease;
+    }
+
+    [data-theme="dark"] {
+      color-scheme: dark;
+      --paper: #19221d;
+      --surface: #202b25;
+      --surface-raised: #26332c;
+      --surface-tint: #2b3830;
+      --ink: #f0eee6;
+      --ink-soft: #d2d7cd;
+      --muted: #a1aaa0;
+      --line: #3b4840;
+      --line-strong: #55645a;
+      --green: #a1c6a9;
+      --green-hover: #bdd9c2;
+      --green-wash: #2b4034;
+      --clay: #e3a18a;
+      --clay-wash: #45342d;
+      --danger: #f08e83;
+      --success: #a1c6a9;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background: var(--paper);
+      color: var(--ink);
+      font: 400 14px/1.6 var(--font-body);
+      -webkit-font-smoothing: antialiased;
+      transition: background-color var(--ease), color var(--ease);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button, input, select, textarea { font: inherit; color: inherit; }
+
+    button:focus-visible,
+    a:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible {
+      outline: 2px solid var(--green);
+      outline-offset: 2px;
+    }
+
+    .container,
+    .nav-container {
+      width: min(1240px, calc(100% - 48px));
+      margin-inline: auto;
+    }
+
+    /* Sticky Navbar */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 30;
+      background: var(--paper);
+      border-bottom: 1px solid var(--line);
+    }
+
+    .nav-container {
+      min-height: 76px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 11px;
+      flex: 0 0 auto;
+    }
+
+    .brand-logo {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      background: var(--green);
+      color: var(--surface);
+    }
+
+    .brand-title {
+      display: block;
+      font-size: 17px;
+      font-weight: 650;
+      letter-spacing: -0.04em;
+      line-height: 1.2;
+    }
+
+    .brand-title .highlight { color: var(--green); }
+
+    .brand-subtitle {
+      display: block;
+      margin-top: 2px;
+      color: var(--muted);
+      font-size: 9px;
+      font-weight: 600;
+      letter-spacing: 0.13em;
+    }
+
+    .primary-nav {
+      display: flex;
+      align-items: stretch;
+      align-self: stretch;
+      gap: 4px;
+    }
+
+    .nav-link {
+      position: relative;
+      display: inline-flex;
+      align-items: center;
+      padding: 3px 12px 0;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 550;
+      transition: color var(--ease);
+    }
+
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 12px;
+      right: 12px;
+      bottom: -1px;
+      height: 2px;
+      background: transparent;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      color: var(--green);
+    }
+
+    .nav-link.active::after {
+      background: var(--green);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .admin-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 10px;
+      border: 1px solid var(--clay);
+      background: var(--clay-wash);
+      color: var(--clay);
+      font: 600 11px/1.2 var(--font-mono);
+    }
+
+    .theme-toggle-btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 0 9px;
+      border: 1px solid transparent;
+      background: transparent;
+      color: var(--ink-soft);
+      cursor: pointer;
+      font-size: 12px;
+    }
+
+    .theme-toggle-btn:hover {
+      border-color: var(--line);
+      color: var(--green);
+    }
+
+    [data-theme="light"] .moon-icon,
+    [data-theme="dark"] .sun-icon {
+      display: none;
+    }
+
+    .btn {
+      min-height: 36px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 0 14px;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background-color var(--ease), border-color var(--ease), color var(--ease);
+    }
+
+    .btn-primary {
+      background: var(--green);
+      border-color: var(--green);
+      color: var(--surface-raised);
+    }
+
+    .btn-primary:hover {
+      background: var(--green-hover);
+      border-color: var(--green-hover);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border-color: var(--line-strong);
+      color: var(--ink);
+    }
+
+    .btn-outline:hover {
+      border-color: var(--green);
+      color: var(--green);
+    }
+
+    .btn-danger {
+      background: transparent;
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+
+    .btn-danger:hover {
+      background: var(--clay-wash);
+    }
+
+    .btn-sm {
+      min-height: 30px;
+      padding: 0 10px;
+      font-size: 11px;
+    }
+
+    /* Header & Metrics Strip */
+    .page-header {
+      padding: 40px 0 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      flex-wrap: wrap;
+      padding-bottom: 28px;
+    }
+
+    .kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: var(--clay);
+      font-size: 10px;
+      font-weight: 650;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .kicker-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--clay);
+    }
+
+    .page-header h1 {
+      margin: 0;
+      font: 400 clamp(32px, 4vw, 48px)/1.06 var(--font-display);
+      letter-spacing: -0.03em;
+    }
+
+    .page-header h1 em {
+      color: var(--green);
+      font-style: italic;
+    }
+
+    .metrics-strip {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      border-top: 1px solid var(--line);
+    }
+
+    .metric-cell {
+      padding: 16px 20px;
+      border-right: 1px solid var(--line);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .metric-cell:first-child { padding-left: 0; }
+    .metric-cell:last-child { border-right: 0; }
+
+    .metric-label {
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .metric-value {
+      font: 500 26px/1.15 var(--font-display);
+      color: var(--ink);
+    }
+
+    /* Tabs */
+    .tabs-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      border-bottom: 1px solid var(--line-strong);
+      margin-top: 28px;
+      overflow-x: auto;
+    }
+
+    .panel-tab {
+      position: relative;
+      padding: 12px 16px;
+      border: 0;
+      background: transparent;
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .panel-tab.active {
+      color: var(--green);
+    }
+
+    .panel-tab.active::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -1px;
+      height: 2px;
+      background: var(--green);
+    }
+
+    /* Workspace Grid */
+    .workspace {
+      display: grid;
+      grid-template-columns: minmax(0, 1.6fr) minmax(270px, 0.7fr);
+      gap: 32px;
+      padding: 28px 0 64px;
+      align-items: start;
+    }
+
+    .alert-banner {
+      display: none;
+      padding: 12px 16px;
+      margin-top: 20px;
+      border: 1px solid var(--line);
+      border-left: 3px solid var(--green);
+      background: var(--green-wash);
+      font-size: 13px;
+    }
+
+    .alert-banner.visible { display: block; }
+    .alert-banner.error {
+      border-left-color: var(--danger);
+      background: var(--clay-wash);
+    }
+
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Create Forms */
+    .create-box {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      padding: 20px;
+      margin-bottom: 22px;
+    }
+
+    .create-box h3 {
+      margin: 0 0 14px;
+      font: 400 20px/1.15 var(--font-display);
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+      gap: 12px;
+      align-items: end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+
+    .field input,
+    .field select {
+      padding: 8px 10px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      background: var(--surface-raised);
+      font-size: 13px;
+    }
+
+    /* Data Table */
+    .ledger-table-wrap {
+      border: 1px solid var(--line);
+      background: var(--surface);
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 13px;
+    }
+
+    th {
+      padding: 11px 14px;
+      border-bottom: 1px solid var(--line-strong);
+      background: var(--surface-tint);
+      font: 600 10px/1.3 var(--font-mono);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    td {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: 0; }
+    tr:hover td { background: var(--surface-raised); }
+
+    .inline-select,
+    .inline-input {
+      padding: 5px 8px;
+      border: 1px solid var(--line-strong);
+      border-radius: 2px;
+      background: var(--surface-raised);
+      font-size: 12px;
+    }
+
+    .mono-id {
+      font: 500 11px/1.2 var(--font-mono);
+      color: var(--muted);
+    }
+
+    .row-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+
+    /* Audit Sidebar */
+    .audit-panel {
+      border-top: 1px solid var(--line-strong);
+      padding-top: 18px;
+    }
+
+    .audit-panel h3 {
+      margin: 0 0 12px;
+      font: 400 20px/1.15 var(--font-display);
+    }
+
+    .audit-list {
+      border-top: 1px solid var(--line);
+      max-height: 520px;
+      overflow-y: auto;
+    }
+
+    .audit-item {
+      padding: 11px 0;
+      border-bottom: 1px solid var(--line);
+      font-size: 12px;
+    }
+
+    .audit-time {
+      font: 500 10px/1.2 var(--font-mono);
+      color: var(--clay);
+    }
+
+    .audit-msg {
+      margin-top: 3px;
+      color: var(--ink-soft);
+    }
+
+    @media (max-width: 1024px) {
+      .workspace { grid-template-columns: 1fr; }
+      .metrics-strip { grid-template-columns: repeat(3, 1fr); }
+    }
+
+    @media (max-width: 680px) {
+      .container, .nav-container { width: calc(100% - 32px); }
+      .primary-nav { display: none; }
+      .metrics-strip { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+  <header class="navbar">
+    <div class="nav-container">
+      <a class="brand" href="/" aria-label="AlumniSphere Home">
+        <div class="brand-logo">
+          <svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div>
+          <span class="brand-title">Alumni<span class="highlight">Sphere</span></span>
+          <span class="brand-subtitle">ADMINISTRATION</span>
+        </div>
+      </a>
+
+      <nav class="primary-nav" aria-label="Primary navigation">
+        <a href="/" class="nav-link">Directory</a>
+        <a href="/admin" class="nav-link active" aria-current="page">Admin</a>
+        <a href="/login" class="nav-link">Login</a>
+        <a href="/register" class="nav-link">Register</a>
+        <a href="http://localhost:5001/api/swagger" class="nav-link" target="_blank" rel="noopener noreferrer">API Docs</a>
+      </nav>
+
+      <div class="nav-right">
+        <span id="adminSessionBadge" class="admin-badge">Checking ADMIN...</span>
+        <button id="assignAdminMeBtn" type="button" class="btn btn-outline btn-sm">Assign Admin Role to Me</button>
+        <button id="themeToggleBtn" class="theme-toggle-btn" type="button" aria-label="Toggle theme">
+          <svg class="sun-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+          <svg class="moon-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+          <span id="themeLabel">Dark</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <section class="page-header">
+    <div class="container">
+      <div class="header-top">
+        <div>
+          <div class="kicker">
+            <span class="kicker-dot"></span>
+            <span>ROLE: ADMIN &middot; DATA CONSOLE</span>
+          </div>
+          <h1>Network administration &amp;<br><em>live data manipulation.</em></h1>
+        </div>
+        <div style="display:flex;gap:10px;">
+          <button id="refreshOverviewBtn" type="button" class="btn btn-outline">Refresh Data</button>
+          <a href="/" class="btn btn-primary">View Public Directory &rarr;</a>
+        </div>
+      </div>
+
+      <div class="metrics-strip">
+        <div class="metric-cell">
+          <span class="metric-label">Users</span>
+          <strong class="metric-value" id="cntUsers">—</strong>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-label">Alumni Profiles</span>
+          <strong class="metric-value" id="cntAlumni">—</strong>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-label">Announcements</span>
+          <strong class="metric-value" id="cntAnnouncements">—</strong>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-label">Job Postings</span>
+          <strong class="metric-value" id="cntJobs">—</strong>
+        </div>
+        <div class="metric-cell">
+          <span class="metric-label">Applications</span>
+          <strong class="metric-value" id="cntApplications">—</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="container">
+    <div id="adminAlert" class="alert-banner" role="alert" aria-live="polite"></div>
+
+    <div class="tabs-bar" role="tablist">
+      <button type="button" class="panel-tab active" data-pane="users">Users &amp; Roles</button>
+      <button type="button" class="panel-tab" data-pane="alumni">Alumni &amp; Mentors</button>
+      <button type="button" class="panel-tab" data-pane="announcements">Announcements</button>
+      <button type="button" class="panel-tab" data-pane="jobs">Job Postings</button>
+      <button type="button" class="panel-tab" data-pane="applications">Applications</button>
+    </div>
+
+    <div class="workspace">
+      <div>
+        <!-- Users Pane -->
+        <section id="pane-users" class="tab-pane active">
+          <div class="create-box">
+            <h3>Create User &amp; Assign Role</h3>
+            <form id="adminUserForm" class="form-grid">
+              <div class="field">
+                <label for="uName">Full Name *</label>
+                <input id="uName" required placeholder="e.g. Deniz Kaya">
+              </div>
+              <div class="field">
+                <label for="uEmail">Email *</label>
+                <input id="uEmail" type="email" required placeholder="deniz@alumni.edu">
+              </div>
+              <div class="field">
+                <label for="uRole">Role *</label>
+                <select id="uRole">
+                  <option value="STUDENT">STUDENT</option>
+                  <option value="ALUMNI">ALUMNI</option>
+                  <option value="ADMIN">ADMIN</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="uDept">Department</label>
+                <input id="uDept" value="Software Engineering" placeholder="Department">
+              </div>
+              <button type="submit" class="btn btn-primary">Add User</button>
+            </form>
+          </div>
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>User</th>
+                  <th>Department</th>
+                  <th>Role</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Alumni Pane -->
+        <section id="pane-alumni" class="tab-pane">
+          <div class="create-box">
+            <h3>Add Alumni Record</h3>
+            <form id="adminAlumniForm" class="form-grid">
+              <div class="field">
+                <label for="aName">Name *</label>
+                <input id="aName" required placeholder="e.g. Elif Arslan">
+              </div>
+              <div class="field">
+                <label for="aYear">Class Year *</label>
+                <input id="aYear" type="number" required value="2022" min="1980" max="2030">
+              </div>
+              <div class="field">
+                <label for="aDept">Department *</label>
+                <input id="aDept" required value="Computer Engineering">
+              </div>
+              <div class="field">
+                <label for="aCompany">Company</label>
+                <input id="aCompany" placeholder="Google">
+              </div>
+              <div class="field">
+                <label for="aRole">Title</label>
+                <input id="aRole" placeholder="Software Engineer">
+              </div>
+              <button type="submit" class="btn btn-primary">Add Alumni</button>
+            </form>
+          </div>
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Alumnus</th>
+                  <th>Company &amp; Role</th>
+                  <th>Mentor Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="alumniTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Announcements Pane -->
+        <section id="pane-announcements" class="tab-pane">
+          <div class="create-box">
+            <h3>Publish Announcement</h3>
+            <form id="adminAnnForm" class="form-grid">
+              <div class="field">
+                <label for="annTitle">Title *</label>
+                <input id="annTitle" required placeholder="Announcement title">
+              </div>
+              <div class="field">
+                <label for="annContent">Content *</label>
+                <input id="annContent" required placeholder="Details...">
+              </div>
+              <div class="field">
+                <label for="annCategory">Category</label>
+                <select id="annCategory">
+                  <option value="GENERAL">GENERAL</option>
+                  <option value="EVENT">EVENT</option>
+                  <option value="CAREER">CAREER</option>
+                  <option value="ACADEMIC">ACADEMIC</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="annPriority">Priority</label>
+                <select id="annPriority">
+                  <option value="NORMAL">NORMAL</option>
+                  <option value="HIGH">HIGH</option>
+                  <option value="URGENT">URGENT</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Publish</button>
+            </form>
+          </div>
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Bulletin</th>
+                  <th>Priority</th>
+                  <th>Pinned</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="announcementsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Jobs Pane -->
+        <section id="pane-jobs" class="tab-pane">
+          <div class="create-box">
+            <h3>Create Career Opportunity</h3>
+            <form id="adminJobForm" class="form-grid">
+              <div class="field">
+                <label for="jTitle">Title (max 120) *</label>
+                <input id="jTitle" required maxlength="120" placeholder="e.g. Backend Engineer">
+              </div>
+              <div class="field">
+                <label for="jCompany">Company *</label>
+                <input id="jCompany" required placeholder="e.g. Stripe">
+              </div>
+              <div class="field">
+                <label for="jLocation">Location</label>
+                <input id="jLocation" value="Remote">
+              </div>
+              <div class="field">
+                <label for="jType">Type</label>
+                <select id="jType">
+                  <option value="Full-Time">Full-Time</option>
+                  <option value="Internship">Internship</option>
+                  <option value="Part-Time">Part-Time</option>
+                  <option value="Contract">Contract</option>
+                </select>
+              </div>
+              <button type="submit" class="btn btn-primary">Post Job</button>
+            </form>
+          </div>
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Role &amp; Company</th>
+                  <th>Type</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="jobsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <!-- Applications Pane -->
+        <section id="pane-applications" class="tab-pane">
+          <div class="ledger-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Applicant</th>
+                  <th>Target Job</th>
+                  <th>Evaluation Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="applicationsTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+
+      <aside class="audit-panel">
+        <div class="kicker" style="margin-bottom: 6px;">
+          <span class="kicker-dot"></span>
+          <span>ADMIN AUDIT LOG</span>
+        </div>
+        <h3>Recent mutations</h3>
+        <div id="adminAuditLog" class="audit-list">
+          <div class="audit-item">
+            <div class="audit-time">READY</div>
+            <div class="audit-msg">Waiting for admin session initialization...</div>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const API_BASE = window.location.port === '5001' ? '' : 'http://localhost:5001';
+      const root = document.documentElement;
+      const themeBtn = document.getElementById('themeToggleBtn');
+      const themeLabel = document.getElementById('themeLabel');
+      const alertEl = document.getElementById('adminAlert');
+      const badgeEl = document.getElementById('adminSessionBadge');
+      const auditEl = document.getElementById('adminAuditLog');
+
+      function applyTheme(theme) {
+        root.setAttribute('data-theme', theme);
+        localStorage.setItem('alumni_theme', theme);
+        themeLabel.textContent = theme === 'dark' ? 'Light' : 'Dark';
+      }
+      applyTheme(localStorage.getItem('alumni_theme') || 'light');
+      themeBtn.addEventListener('click', () => {
+        applyTheme(root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+      });
+
+      function escapeHtml(val) {
+        const div = document.createElement('div');
+        div.textContent = val == null ? '' : String(val);
+        return div.innerHTML;
+      }
+
+      function showBanner(msg, isError) {
+        alertEl.className = 'alert-banner visible' + (isError ? ' error' : '');
+        alertEl.textContent = msg;
+      }
+
+      function logAudit(msg) {
+        const now = new Date().toTimeString().slice(0, 8);
+        const item = document.createElement('div');
+        item.className = 'audit-item';
+        item.innerHTML = '<div class="audit-time">' + now + '</div><div class="audit-msg">' + escapeHtml(msg) + '</div>';
+        auditEl.prepend(item);
+      }
+
+      function getAuthHeaders(extra) {
+        const token = localStorage.getItem('alumni_auth_token');
+        return Object.assign(
+          { Accept: 'application/json' },
+          token ? { Authorization: 'Bearer ' + token } : {},
+          extra || {}
+        );
+      }
+
+      async function assignAdminToMe(silent) {
+        let existingUser = null;
+        try {
+          existingUser = JSON.parse(localStorage.getItem('alumni_auth_user') || 'null');
+        } catch (e) {}
+
+        const res = await fetch(API_BASE + '/api/admin/assign-me', {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify(existingUser && existingUser.id ? { userId: existingUser.id, email: existingUser.email } : {})
+        });
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error(data.error || 'Could not assign ADMIN role.');
+
+        localStorage.setItem('alumni_auth_user', JSON.stringify(data.user));
+        localStorage.setItem('alumni_auth_token', data.token);
+        badgeEl.textContent = data.user.name + ' · ' + data.user.role;
+        logAudit('Assigned ADMIN role to ' + data.user.name + ' (#' + data.user.id + ')');
+        if (!silent) showBanner('ADMIN role active for ' + data.user.name + ' (' + data.user.email + ').');
+        return data.user;
+      }
+
+      async function loadOverview() {
+        try {
+          const res = await fetch(API_BASE + '/api/admin/overview', {
+            headers: getAuthHeaders()
+          });
+          if (res.status === 401 || res.status === 403) {
+            await assignAdminToMe(true);
+            return loadOverview();
+          }
+          const payload = await res.json();
+          if (!res.ok || !payload.success) throw new Error(payload.error || 'Failed to load admin overview.');
+
+          const { counts, data, admin } = payload;
+          if (admin) badgeEl.textContent = (admin.name || admin.email) + ' · ' + admin.role;
+
+          document.getElementById('cntUsers').textContent = counts.users;
+          document.getElementById('cntAlumni').textContent = counts.alumni;
+          document.getElementById('cntAnnouncements').textContent = counts.announcements;
+          document.getElementById('cntJobs').textContent = counts.jobs;
+          document.getElementById('cntApplications').textContent = counts.applications;
+
+          renderUsers(data.users || []);
+          renderAlumni(data.alumni || []);
+          renderAnnouncements(data.announcements || []);
+          renderJobs(data.jobs || []);
+          renderApplications(data.applications || []);
+        } catch (err) {
+          showBanner(err.message, true);
+        }
+      }
+
+      async function apiMutate(path, method, body, auditDesc) {
+        try {
+          const res = await fetch(API_BASE + path, {
+            method,
+            headers: getAuthHeaders(body ? { 'Content-Type': 'application/json' } : {}),
+            body: body ? JSON.stringify(body) : undefined
+          });
+          const data = await res.json();
+          if (!res.ok || data.success === false) {
+            throw new Error(data.error || 'Operation failed');
+          }
+          showBanner(auditDesc);
+          logAudit(auditDesc);
+          await loadOverview();
+        } catch (err) {
+          showBanner(err.message, true);
+        }
+      }
+
+      function renderUsers(users) {
+        const tbody = document.getElementById('usersTableBody');
+        tbody.innerHTML = users.map((u) => `
+          <tr>
+            <td class="mono-id">#${escapeHtml(u.id)}</td>
+            <td><strong>${escapeHtml(u.name)}</strong><br><span class="mono-id">${escapeHtml(u.email)}</span></td>
+            <td><input class="inline-input" data-user-dept="${escapeHtml(u.id)}" value="${escapeHtml(u.department || '')}"></td>
+            <td>
+              <select class="inline-select" data-user-role="${escapeHtml(u.id)}">
+                <option value="STUDENT" ${u.role === 'STUDENT' ? 'selected' : ''}>STUDENT</option>
+                <option value="ALUMNI" ${u.role === 'ALUMNI' ? 'selected' : ''}>ALUMNI</option>
+                <option value="ADMIN" ${u.role === 'ADMIN' ? 'selected' : ''}>ADMIN</option>
+              </select>
+            </td>
+            <td class="row-actions">
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.__saveUser('${escapeHtml(u.id)}')">Save</button>
+              <button type="button" class="btn btn-danger btn-sm" onclick="window.__deleteUser('${escapeHtml(u.id)}', '${escapeHtml(u.name)}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      function renderAlumni(list) {
+        const tbody = document.getElementById('alumniTableBody');
+        tbody.innerHTML = list.map((a) => `
+          <tr>
+            <td class="mono-id">#${escapeHtml(a.id)}</td>
+            <td><strong>${escapeHtml(a.name)}</strong><br><span class="mono-id">Class ${escapeHtml(a.graduationYear)} &middot; ${escapeHtml(a.department)}</span></td>
+            <td>${escapeHtml(a.company || '—')}<br><span class="mono-id">${escapeHtml(a.role || '')}</span></td>
+            <td>
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.__toggleMentor('${escapeHtml(a.id)}', ${!a.isMentor})">
+                ${a.isMentor ? 'Mentor: ON' : 'Mentor: OFF'}
+              </button>
+            </td>
+            <td>
+              <button type="button" class="btn btn-danger btn-sm" onclick="window.__deleteAlumni('${escapeHtml(a.id)}', '${escapeHtml(a.name)}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      function renderAnnouncements(list) {
+        const tbody = document.getElementById('announcementsTableBody');
+        tbody.innerHTML = list.map((ann) => `
+          <tr>
+            <td class="mono-id">#${escapeHtml(ann.id)}</td>
+            <td><strong>${escapeHtml(ann.title)}</strong><br><span class="mono-id">${escapeHtml(ann.category || 'GENERAL')} &middot; ${escapeHtml(ann.author || '')}</span></td>
+            <td>
+              <select class="inline-select" onchange="window.__updateAnnPriority('${escapeHtml(ann.id)}', this.value)">
+                <option value="NORMAL" ${ann.priority === 'NORMAL' ? 'selected' : ''}>NORMAL</option>
+                <option value="HIGH" ${ann.priority === 'HIGH' ? 'selected' : ''}>HIGH</option>
+                <option value="URGENT" ${ann.priority === 'URGENT' ? 'selected' : ''}>URGENT</option>
+              </select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.__togglePin('${escapeHtml(ann.id)}', ${!ann.isPinned})">
+                ${ann.isPinned ? 'Pinned' : 'Unpinned'}
+              </button>
+            </td>
+            <td>
+              <button type="button" class="btn btn-danger btn-sm" onclick="window.__deleteAnn('${escapeHtml(ann.id)}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      function renderJobs(list) {
+        const tbody = document.getElementById('jobsTableBody');
+        tbody.innerHTML = list.map((j) => `
+          <tr>
+            <td class="mono-id">${escapeHtml(j.id)}</td>
+            <td><strong>${escapeHtml(j.title)}</strong><br><span class="mono-id">${escapeHtml(j.company)} &middot; ${escapeHtml(j.location || 'Remote')}</span></td>
+            <td>${escapeHtml(j.type || 'Full-Time')}</td>
+            <td>
+              <button type="button" class="btn btn-outline btn-sm" onclick="window.__toggleJobStatus('${escapeHtml(j.id)}', '${j.status === 'ACTIVE' ? 'CLOSED' : 'ACTIVE'}')">
+                ${escapeHtml(j.status || 'ACTIVE')}
+              </button>
+            </td>
+            <td>
+              <button type="button" class="btn btn-danger btn-sm" onclick="window.__deleteJob('${escapeHtml(j.id)}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      function renderApplications(list) {
+        const tbody = document.getElementById('applicationsTableBody');
+        tbody.innerHTML = list.map((app) => `
+          <tr>
+            <td class="mono-id">${escapeHtml(app.id)}</td>
+            <td><strong>${escapeHtml(app.applicantName || 'Candidate')}</strong><br><span class="mono-id">${escapeHtml(app.applicantEmail || '')}</span></td>
+            <td class="mono-id">${escapeHtml(app.jobId)}</td>
+            <td>
+              <select class="inline-select" onchange="window.__updateAppStatus('${escapeHtml(app.id)}', this.value)">
+                <option value="PENDING" ${app.status === 'PENDING' ? 'selected' : ''}>PENDING</option>
+                <option value="REVIEWING" ${app.status === 'REVIEWING' ? 'selected' : ''}>REVIEWING</option>
+                <option value="SHORTLISTED" ${app.status === 'SHORTLISTED' ? 'selected' : ''}>SHORTLISTED</option>
+                <option value="ACCEPTED" ${app.status === 'ACCEPTED' ? 'selected' : ''}>ACCEPTED</option>
+                <option value="REJECTED" ${app.status === 'REJECTED' ? 'selected' : ''}>REJECTED</option>
+              </select>
+            </td>
+            <td>
+              <button type="button" class="btn btn-danger btn-sm" onclick="window.__deleteApp('${escapeHtml(app.id)}')">Delete</button>
+            </td>
+          </tr>
+        `).join('');
+      }
+
+      window.__saveUser = (id) => {
+        const role = document.querySelector('[data-user-role="' + id + '"]').value;
+        const department = document.querySelector('[data-user-dept="' + id + '"]').value.trim();
+        apiMutate('/api/users/' + id, 'PATCH', { role, department }, 'Updated user #' + id + ' (' + role + ', ' + department + ')');
+      };
+      window.__deleteUser = (id, name) => apiMutate('/api/users/' + id, 'DELETE', null, 'Deleted user #' + id + ' (' + name + ')');
+      window.__toggleMentor = (id, next) => apiMutate('/api/alumni/' + id, 'PATCH', { isMentor: next }, 'Set alumni #' + id + ' isMentor=' + next);
+      window.__deleteAlumni = (id, name) => apiMutate('/api/alumni/' + id, 'DELETE', null, 'Deleted alumni #' + id + ' (' + name + ')');
+      window.__updateAnnPriority = (id, priority) => apiMutate('/api/announcements/' + id, 'PATCH', { priority }, 'Set announcement #' + id + ' priority=' + priority);
+      window.__togglePin = (id, isPinned) => apiMutate('/api/announcements/' + id, 'PATCH', { isPinned }, 'Set announcement #' + id + ' isPinned=' + isPinned);
+      window.__deleteAnn = (id) => apiMutate('/api/announcements/' + id, 'DELETE', null, 'Deleted announcement #' + id);
+      window.__toggleJobStatus = (id, status) => apiMutate('/api/jobs/' + id, 'PATCH', { status }, 'Updated job ' + id + ' status=' + status);
+      window.__deleteJob = (id) => apiMutate('/api/jobs/' + id, 'DELETE', null, 'Deleted job ' + id);
+      window.__updateAppStatus = (id, status) => apiMutate('/api/applications/' + id, 'PATCH', { status }, 'Updated application ' + id + ' status=' + status);
+      window.__deleteApp = (id) => apiMutate('/api/applications/' + id, 'DELETE', null, 'Deleted application ' + id);
+
+      document.querySelectorAll('.panel-tab').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          document.querySelectorAll('.panel-tab').forEach((b) => b.classList.remove('active'));
+          document.querySelectorAll('.tab-pane').forEach((p) => p.classList.remove('active'));
+          btn.classList.add('active');
+          document.getElementById('pane-' + btn.getAttribute('data-pane')).classList.add('active');
+        });
+      });
+
+      document.getElementById('adminUserForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('uName').value.trim();
+        const email = document.getElementById('uEmail').value.trim();
+        const role = document.getElementById('uRole').value;
+        const department = document.getElementById('uDept').value.trim();
+        apiMutate('/api/users', 'POST', { name, email, role, department }, 'Created user ' + name + ' (' + role + ')');
+        e.target.reset();
+      });
+
+      document.getElementById('adminAlumniForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const name = document.getElementById('aName').value.trim();
+        const graduationYear = Number(document.getElementById('aYear').value);
+        const department = document.getElementById('aDept').value.trim();
+        const company = document.getElementById('aCompany').value.trim();
+        const role = document.getElementById('aRole').value.trim();
+        apiMutate('/api/alumni', 'POST', { name, graduationYear, department, company, role, isMentor: true }, 'Created alumni profile for ' + name);
+        e.target.reset();
+      });
+
+      document.getElementById('adminAnnForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('annTitle').value.trim();
+        const content = document.getElementById('annContent').value.trim();
+        const category = document.getElementById('annCategory').value;
+        const priority = document.getElementById('annPriority').value;
+        apiMutate('/api/announcements', 'POST', { title, content, category, priority, isPinned: true }, 'Published announcement "' + title + '"');
+        e.target.reset();
+      });
+
+      document.getElementById('adminJobForm').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const title = document.getElementById('jTitle').value.trim();
+        const company = document.getElementById('jCompany').value.trim();
+        const location = document.getElementById('jLocation').value.trim();
+        const type = document.getElementById('jType').value;
+        apiMutate('/api/jobs', 'POST', { title, company, location, type }, 'Posted job "' + title + '" at ' + company);
+        e.target.reset();
+      });
+
+      document.getElementById('assignAdminMeBtn').addEventListener('click', () => assignAdminToMe(false).then(loadOverview));
+      document.getElementById('refreshOverviewBtn').addEventListener('click', loadOverview);
+
+      assignAdminToMe(true).then(loadOverview).catch((err) => showBanner(err.message, true));
+    })();
+  </script>
+</body>
+</html>
