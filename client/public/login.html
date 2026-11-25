@@ -552,13 +552,10 @@
         </div>
       </a>
 
-      <nav class="primary-nav" aria-label="Primary navigation">
+      <nav class="primary-nav" data-dynamic-nav="true" aria-label="Primary navigation">
         <a href="/" class="nav-link">Directory</a>
         <a href="/login" class="nav-link active" aria-current="page">Login</a>
         <a href="/register" class="nav-link">Register</a>
-        <a href="/admin" class="nav-link">Admin</a>
-        <a href="http://localhost:5001/users" class="nav-link" target="_blank" rel="noopener noreferrer">Users</a>
-        <a href="http://localhost:5001/api/swagger" class="nav-link" target="_blank" rel="noopener noreferrer">API Docs</a>
       </nav>
 
       <div class="nav-right">
@@ -666,6 +663,7 @@
     </div>
   </footer>
 
+  <script src="/nav-role.js"></script>
   <script>
     (function () {
       const API_BASE = window.location.port === '5001' ? '' : 'http://localhost:5001';
@@ -750,6 +748,7 @@
         }
         localStorage.removeItem('alumni_auth_user');
         localStorage.removeItem('alumni_auth_token');
+        if (window.AlumniNav) window.AlumniNav.refresh();
         renderSessionState();
         showAlert('success', 'Signed out', 'Your session has been cleared safely.');
       }
@@ -835,6 +834,7 @@
             localStorage.setItem('alumni_auth_user', JSON.stringify(data.user));
           }
 
+          if (window.AlumniNav) window.AlumniNav.refresh();
           renderSessionState();
           showAlert(
             'success',

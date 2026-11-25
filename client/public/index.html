@@ -27,19 +27,19 @@
       </a>
 
       <nav class="primary-nav" aria-label="Main navigation">
-        <button id="nav-directory" class="tab-btn active" data-tab="directory" aria-controls="tab-directory" aria-current="page">
+        <button id="nav-directory" class="tab-btn active" data-tab="directory" data-roles="ALL" aria-controls="tab-directory" aria-current="page">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M3 20v-1.5a6 6 0 0 1 12 0V20M16 5.2a3.5 3.5 0 0 1 0 6.6M18 14a5 5 0 0 1 3 4.5V20"/></svg>
           <span>Directory</span>
         </button>
-        <button id="nav-jobs" class="tab-btn" data-tab="jobs" aria-controls="tab-jobs">
+        <button id="nav-jobs" class="tab-btn" data-tab="jobs" data-roles="ALL" aria-controls="tab-jobs">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="7" width="18" height="14" rx="2"/><path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M3 12h18M10 12v2h4v-2"/></svg>
           <span>Opportunities</span>
         </button>
-        <button id="nav-applications" class="tab-btn" data-tab="applications" aria-controls="tab-applications">
+        <button id="nav-applications" class="tab-btn" data-tab="applications" data-roles="STUDENT,ALUMNI,ADMIN" aria-controls="tab-applications">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M8 13h8M8 17h8"/></svg>
           <span>Applications</span>
         </button>
-        <button id="nav-architecture" class="tab-btn" data-tab="architecture" aria-controls="tab-architecture">
+        <button id="nav-architecture" class="tab-btn" data-tab="architecture" data-roles="ADMIN" aria-controls="tab-architecture">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/></svg>
           <span>Platform</span>
         </button>
@@ -74,20 +74,20 @@
           </svg>
           <span class="theme-label" id="themeLabel">Dark</span>
         </button>
-        <a href="/admin" id="navAdminLink" class="btn btn-secondary" title="Open AlumniSphere Admin Panel">
+        <a href="/admin" id="navAdminLink" data-roles="ADMIN" class="btn btn-secondary" title="Open AlumniSphere Admin Panel">
           <span>Admin</span>
         </a>
-        <a href="/login" id="navLoginLink" class="btn btn-secondary" title="Sign in to your AlumniSphere account">
+        <a href="/login" id="navLoginLink" data-roles="GUEST" class="btn btn-secondary" title="Sign in to your AlumniSphere account">
           <span>Login</span>
         </a>
-        <a href="/register" id="navRegisterLink" class="btn btn-secondary" title="Create a new AlumniSphere account">
+        <a href="/register" id="navRegisterLink" data-roles="GUEST" class="btn btn-secondary" title="Create a new AlumniSphere account">
           <span>Register</span>
         </a>
-        <div id="navAuthGroup" style="display: none; align-items: center; gap: 8px;">
+        <div id="navAuthGroup" data-roles="STUDENT,ALUMNI,ADMIN" data-display="inline-flex" style="display: none; align-items: center; gap: 8px;">
           <span id="navUserBadge" class="status-pill" style="font-weight: 600;"></span>
           <button id="navLogoutBtn" type="button" class="btn btn-secondary">Logout</button>
         </div>
-        <button id="openModalBtn" class="btn btn-primary" aria-label="Add alumni profile" title="Add alumni profile">
+        <button id="openModalBtn" data-roles="ALUMNI,ADMIN" class="btn btn-primary" aria-label="Add alumni profile" title="Add alumni profile">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
             <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -287,7 +287,7 @@
           <h2>Work worth passing along.</h2>
           <p>Roles and internships brought to the network by people who know the work.</p>
         </div>
-        <button class="btn btn-primary" id="openAddJobModalBtn">
+        <button class="btn btn-primary" id="openAddJobModalBtn" data-roles="ALUMNI,ADMIN">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           <span>Post New Job</span>
         </button>
@@ -341,7 +341,7 @@
           <h2>Meet the person behind the application.</h2>
           <p>Review candidate submissions and keep every next step in one place.</p>
         </div>
-        <button class="btn btn-primary" id="openDirectApplyModalBtn">
+        <button class="btn btn-primary" id="openDirectApplyModalBtn" data-roles="STUDENT,ALUMNI,ADMIN">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           <span>Submit Application</span>
         </button>
@@ -756,6 +756,7 @@ npm run client</code></pre>
     </div>
   </footer>
 
+  <script src="/nav-role.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

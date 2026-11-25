@@ -560,12 +560,9 @@
         </div>
       </a>
 
-      <nav class="primary-nav" aria-label="Primary navigation">
+      <nav class="primary-nav" data-dynamic-nav="true" aria-label="Primary navigation">
         <a href="/" class="nav-link">Directory</a>
         <a href="/admin" class="nav-link active" aria-current="page">Admin</a>
-        <a href="/login" class="nav-link">Login</a>
-        <a href="/register" class="nav-link">Register</a>
-        <a href="http://localhost:5001/api/swagger" class="nav-link" target="_blank" rel="noopener noreferrer">API Docs</a>
       </nav>
 
       <div class="nav-right">
@@ -859,6 +856,7 @@
     </div>
   </div>
 
+  <script src="/nav-role.js"></script>
   <script>
     (function () {
       const API_BASE = window.location.port === '5001' ? '' : 'http://localhost:5001';
@@ -923,6 +921,7 @@
 
         localStorage.setItem('alumni_auth_user', JSON.stringify(data.user));
         localStorage.setItem('alumni_auth_token', data.token);
+        if (window.AlumniNav) window.AlumniNav.refresh();
         badgeEl.textContent = data.user.name + ' · ' + data.user.role;
         logAudit('Assigned ADMIN role to ' + data.user.name + ' (#' + data.user.id + ')');
         if (!silent) showBanner('ADMIN role active for ' + data.user.name + ' (' + data.user.email + ').');

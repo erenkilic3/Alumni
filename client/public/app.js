@@ -1008,6 +1008,11 @@ function setupEventListeners() {
 // Session / Auth State Management (Login & Logout)
 // ==========================================================================
 function renderAuthNavState() {
+  if (window.AlumniNav && typeof window.AlumniNav.refresh === 'function') {
+    window.AlumniNav.refresh();
+    return;
+  }
+
   const loginLink = document.getElementById('navLoginLink');
   const registerLink = document.getElementById('navRegisterLink');
   const authGroup = document.getElementById('navAuthGroup');

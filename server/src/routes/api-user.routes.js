@@ -57,6 +57,9 @@ router.post('/logout', ApiUserController.logout);
 router.get(['/api/me', '/api/auth/me'], requireAuth, ApiUserController.me);
 
 // Admin Panel & RBAC endpoints
+router.get('/nav-role.js', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/nav-role.js'));
+});
 router.get('/admin', (req, res) => {
   res.sendFile(path.resolve(__dirname, '../../../client/public/admin.html'));
 });
