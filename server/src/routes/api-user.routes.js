@@ -45,6 +45,15 @@ router.get('/register', (req, res) => {
 router.post('/api/register', ApiUserController.register);
 router.post('/register', ApiUserController.register);
 
+// Login & Logout endpoints
+router.get('/login', (req, res) => {
+  res.sendFile(path.resolve(__dirname, '../../../client/public/login.html'));
+});
+router.post('/api/login', ApiUserController.login);
+router.post('/login', ApiUserController.login);
+router.post('/api/logout', ApiUserController.logout);
+router.post('/logout', ApiUserController.logout);
+
 // GET /api/users/count - Get total count of registered users
 router.get('/api/users/count', ApiUserController.count);
 

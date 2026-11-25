@@ -10,12 +10,15 @@ const AlumniModel = require('../models/alumni.model');
 class ApiUserController {
   constructor(model = UserModel) {
     this.model = model;
+    this.passwords = new Map();
 
     // Bind methods to ensure correct 'this' context when used as route handlers
     this.getAll = this.getAll.bind(this);
     this.getById = this.getById.bind(this);
     this.create = this.create.bind(this);
     this.register = this.register.bind(this);
+    this.login = this.login.bind(this);
+    this.logout = this.logout.bind(this);
     this.update = this.update.bind(this);
     this.patch = this.patch.bind(this);
     this.delete = this.delete.bind(this);
@@ -276,6 +279,10 @@ class ApiUserController {
         department: department && String(department).trim() ? String(department).trim() : 'Belirtilmedi'
       });
 
+      if (password !== undefined && password !== null && String(password).length > 0) {
+        this.passwords.set(newUser.email, String(password));
+      }
+
       let alumniProfile = null;
       const shouldCreateAlumni =
         newUser.role === 'ALUMNI' &&
@@ -300,6 +307,7 @@ class ApiUserController {
       return res.status(201).json({
         success: true,
         message: 'Registration completed successfully.',
+        token: 'as_tok_' + Buffer.from(newUser.id + ':' + newUser.email).toString('base64'),
         user: newUser,
         alumniProfile
       });
@@ -309,6 +317,65 @@ class ApiUserController {
         error: err.message
       });
     }
+  }
+
+  /**
+   * POST /api/login or POST /login
+   * Sign in using email and password
+   */
+  async login(req, res) {
+    try {
+      const { email, password } = req.body || {};
+
+      if (!email || !String(email).trim() || !password || !String(password)) {
+        return res.status(400).json({
+          success: false,
+          error: 'Email address and password are required.'
+        });
+      }
+
+      const user = await this.model.findByEmail(String(email).trim());
+      if (!user) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid email or password. No account found for this email.'
+        });
+      }
+
+      if (this.passwords.has(user.email) && this.passwords.get(user.email) !== String(password)) {
+        return res.status(401).json({
+          success: false,
+          error: 'Invalid email or password.'
+        });
+      }
+
+      const alumniProfile = await AlumniModel.findByUserId(user.id).catch(() => null);
+      const token = 'as_tok_' + Buffer.from(user.id + ':' + user.email).toString('base64');
+
+      return res.status(200).json({
+        success: true,
+        message: 'Signed in successfully.',
+        token,
+        user,
+        alumniProfile
+      });
+    } catch (err) {
+      return res.status(500).json({
+        success: false,
+        error: 'Login failed: ' + err.message
+      });
+    }
+  }
+
+  /**
+   * POST /api/logout or POST /logout
+   * End current user session
+   */
+  async logout(req, res) {
+    return res.status(200).json({
+      success: true,
+      message: 'Signed out successfully.'
+    });
   }
 }
 

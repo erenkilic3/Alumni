@@ -26,9 +26,13 @@ app.get(['/api/swagger', '/swagger', '/api/docs'], (req, res) => {
   res.redirect(`http://localhost:${backendPort}/api/swagger${queryString}`);
 });
 
-// Dedicated Register page route
+// Dedicated Register & Login page routes
 app.get(['/register', '/register.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'register.html'));
+});
+
+app.get(['/login', '/login.html'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
 app.get('*', (req, res) => {

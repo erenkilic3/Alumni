@@ -74,9 +74,16 @@
           </svg>
           <span class="theme-label" id="themeLabel">Dark</span>
         </button>
-        <a href="/register" class="btn btn-secondary" title="Create a new AlumniSphere account">
+        <a href="/login" id="navLoginLink" class="btn btn-secondary" title="Sign in to your AlumniSphere account">
+          <span>Login</span>
+        </a>
+        <a href="/register" id="navRegisterLink" class="btn btn-secondary" title="Create a new AlumniSphere account">
           <span>Register</span>
         </a>
+        <div id="navAuthGroup" style="display: none; align-items: center; gap: 8px;">
+          <span id="navUserBadge" class="status-pill" style="font-weight: 600;"></span>
+          <button id="navLogoutBtn" type="button" class="btn btn-secondary">Logout</button>
+        </div>
         <button id="openModalBtn" class="btn btn-primary" aria-label="Add alumni profile" title="Add alumni profile">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -164,11 +171,76 @@
             <label for="deptFilter">Department</label>
             <select id="deptFilter">
               <option value="All">All Departments</option>
-              <option value="Computer Engineering">Computer Engineering</option>
-              <option value="Software Engineering">Software Engineering</option>
-              <option value="Industrial Engineering">Industrial Engineering</option>
-              <option value="Electrical & Electronics Engineering">Electrical & Electronics</option>
-              <option value="Business Administration">Business Administration</option>
+              <optgroup label="Engineering &amp; Technology">
+                <option value="Computer Engineering">Computer Engineering</option>
+                <option value="Software Engineering">Software Engineering</option>
+                <option value="Data Science &amp; AI">Data Science &amp; AI</option>
+                <option value="Cybersecurity &amp; Networks">Cybersecurity &amp; Networks</option>
+                <option value="Electrical &amp; Electronics Engineering">Electrical &amp; Electronics Engineering</option>
+                <option value="Industrial Engineering">Industrial Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Mechatronics Engineering">Mechatronics Engineering</option>
+                <option value="Aerospace Engineering">Aerospace Engineering</option>
+                <option value="Chemical Engineering">Chemical Engineering</option>
+                <option value="Bioengineering">Bioengineering</option>
+                <option value="Biomedical Engineering">Biomedical Engineering</option>
+                <option value="Environmental Engineering">Environmental Engineering</option>
+                <option value="Food Engineering">Food Engineering</option>
+                <option value="Materials Science &amp; Engineering">Materials Science &amp; Engineering</option>
+              </optgroup>
+              <optgroup label="Architecture &amp; Design">
+                <option value="Architecture">Architecture</option>
+                <option value="Interior Architecture &amp; Environmental Design">Interior Architecture &amp; Environmental Design</option>
+                <option value="Industrial Design">Industrial Design</option>
+                <option value="Urban &amp; Regional Planning">Urban &amp; Regional Planning</option>
+                <option value="Visual Communication Design">Visual Communication Design</option>
+              </optgroup>
+              <optgroup label="Business, Economics &amp; Administrative Sciences">
+                <option value="Business Administration">Business Administration</option>
+                <option value="Economics">Economics</option>
+                <option value="International Trade &amp; Finance">International Trade &amp; Finance</option>
+                <option value="Management Information Systems">Management Information Systems</option>
+                <option value="Political Science &amp; International Relations">Political Science &amp; International Relations</option>
+                <option value="Public Administration">Public Administration</option>
+                <option value="Logistics Management">Logistics Management</option>
+              </optgroup>
+              <optgroup label="Medicine &amp; Health Sciences">
+                <option value="Medicine">Medicine</option>
+                <option value="Dentistry">Dentistry</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="Nursing">Nursing</option>
+                <option value="Nutrition &amp; Dietetics">Nutrition &amp; Dietetics</option>
+                <option value="Physiotherapy &amp; Rehabilitation">Physiotherapy &amp; Rehabilitation</option>
+              </optgroup>
+              <optgroup label="Law">
+                <option value="Law">Law</option>
+              </optgroup>
+              <optgroup label="Arts &amp; Sciences">
+                <option value="Mathematics">Mathematics</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Molecular Biology &amp; Genetics">Molecular Biology &amp; Genetics</option>
+                <option value="Psychology">Psychology</option>
+                <option value="Sociology">Sociology</option>
+                <option value="Philosophy">Philosophy</option>
+                <option value="History">History</option>
+                <option value="English Language &amp; Literature">English Language &amp; Literature</option>
+                <option value="Translation &amp; Interpreting">Translation &amp; Interpreting</option>
+              </optgroup>
+              <optgroup label="Communication &amp; Media">
+                <option value="New Media &amp; Communication">New Media &amp; Communication</option>
+                <option value="Public Relations &amp; Advertising">Public Relations &amp; Advertising</option>
+                <option value="Radio, Television &amp; Cinema">Radio, Television &amp; Cinema</option>
+                <option value="Journalism">Journalism</option>
+              </optgroup>
+              <optgroup label="Education &amp; Fine Arts">
+                <option value="Computer Education &amp; Instructional Technology">Computer Education &amp; Instructional Technology</option>
+                <option value="English Language Teaching">English Language Teaching</option>
+                <option value="Guidance &amp; Psychological Counseling">Guidance &amp; Psychological Counseling</option>
+                <option value="Gastronomy &amp; Culinary Arts">Gastronomy &amp; Culinary Arts</option>
+                <option value="Graphic Design">Graphic Design</option>
+              </optgroup>
             </select>
           </div>
 
@@ -395,11 +467,76 @@ npm run client</code></pre>
           <div class="form-group">
             <label for="formDept">Department *</label>
             <select id="formDept" required>
-              <option value="Computer Engineering">Computer Engineering</option>
-              <option value="Software Engineering">Software Engineering</option>
-              <option value="Industrial Engineering">Industrial Engineering</option>
-              <option value="Electrical & Electronics Engineering">Electrical & Electronics</option>
-              <option value="Business Administration">Business Administration</option>
+              <optgroup label="Engineering &amp; Technology">
+                <option value="Computer Engineering">Computer Engineering</option>
+                <option value="Software Engineering">Software Engineering</option>
+                <option value="Data Science &amp; AI">Data Science &amp; AI</option>
+                <option value="Cybersecurity &amp; Networks">Cybersecurity &amp; Networks</option>
+                <option value="Electrical &amp; Electronics Engineering">Electrical &amp; Electronics Engineering</option>
+                <option value="Industrial Engineering">Industrial Engineering</option>
+                <option value="Mechanical Engineering">Mechanical Engineering</option>
+                <option value="Civil Engineering">Civil Engineering</option>
+                <option value="Mechatronics Engineering">Mechatronics Engineering</option>
+                <option value="Aerospace Engineering">Aerospace Engineering</option>
+                <option value="Chemical Engineering">Chemical Engineering</option>
+                <option value="Bioengineering">Bioengineering</option>
+                <option value="Biomedical Engineering">Biomedical Engineering</option>
+                <option value="Environmental Engineering">Environmental Engineering</option>
+                <option value="Food Engineering">Food Engineering</option>
+                <option value="Materials Science &amp; Engineering">Materials Science &amp; Engineering</option>
+              </optgroup>
+              <optgroup label="Architecture &amp; Design">
+                <option value="Architecture">Architecture</option>
+                <option value="Interior Architecture &amp; Environmental Design">Interior Architecture &amp; Environmental Design</option>
+                <option value="Industrial Design">Industrial Design</option>
+                <option value="Urban &amp; Regional Planning">Urban &amp; Regional Planning</option>
+                <option value="Visual Communication Design">Visual Communication Design</option>
+              </optgroup>
+              <optgroup label="Business, Economics &amp; Administrative Sciences">
+                <option value="Business Administration">Business Administration</option>
+                <option value="Economics">Economics</option>
+                <option value="International Trade &amp; Finance">International Trade &amp; Finance</option>
+                <option value="Management Information Systems">Management Information Systems</option>
+                <option value="Political Science &amp; International Relations">Political Science &amp; International Relations</option>
+                <option value="Public Administration">Public Administration</option>
+                <option value="Logistics Management">Logistics Management</option>
+              </optgroup>
+              <optgroup label="Medicine &amp; Health Sciences">
+                <option value="Medicine">Medicine</option>
+                <option value="Dentistry">Dentistry</option>
+                <option value="Pharmacy">Pharmacy</option>
+                <option value="Nursing">Nursing</option>
+                <option value="Nutrition &amp; Dietetics">Nutrition &amp; Dietetics</option>
+                <option value="Physiotherapy &amp; Rehabilitation">Physiotherapy &amp; Rehabilitation</option>
+              </optgroup>
+              <optgroup label="Law">
+                <option value="Law">Law</option>
+              </optgroup>
+              <optgroup label="Arts &amp; Sciences">
+                <option value="Mathematics">Mathematics</option>
+                <option value="Physics">Physics</option>
+                <option value="Chemistry">Chemistry</option>
+                <option value="Molecular Biology &amp; Genetics">Molecular Biology &amp; Genetics</option>
+                <option value="Psychology">Psychology</option>
+                <option value="Sociology">Sociology</option>
+                <option value="Philosophy">Philosophy</option>
+                <option value="History">History</option>
+                <option value="English Language &amp; Literature">English Language &amp; Literature</option>
+                <option value="Translation &amp; Interpreting">Translation &amp; Interpreting</option>
+              </optgroup>
+              <optgroup label="Communication &amp; Media">
+                <option value="New Media &amp; Communication">New Media &amp; Communication</option>
+                <option value="Public Relations &amp; Advertising">Public Relations &amp; Advertising</option>
+                <option value="Radio, Television &amp; Cinema">Radio, Television &amp; Cinema</option>
+                <option value="Journalism">Journalism</option>
+              </optgroup>
+              <optgroup label="Education &amp; Fine Arts">
+                <option value="Computer Education &amp; Instructional Technology">Computer Education &amp; Instructional Technology</option>
+                <option value="English Language Teaching">English Language Teaching</option>
+                <option value="Guidance &amp; Psychological Counseling">Guidance &amp; Psychological Counseling</option>
+                <option value="Gastronomy &amp; Culinary Arts">Gastronomy &amp; Culinary Arts</option>
+                <option value="Graphic Design">Graphic Design</option>
+              </optgroup>
             </select>
           </div>
           <div class="form-group">

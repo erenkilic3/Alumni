@@ -1004,9 +1004,57 @@ function setupEventListeners() {
   });
 }
 
+// ==========================================================================
+// Session / Auth State Management (Login & Logout)
+// ==========================================================================
+function renderAuthNavState() {
+  const loginLink = document.getElementById('navLoginLink');
+  const registerLink = document.getElementById('navRegisterLink');
+  const authGroup = document.getElementById('navAuthGroup');
+  const userBadge = document.getElementById('navUserBadge');
+
+  let user = null;
+  try {
+    const raw = localStorage.getItem('alumni_auth_user');
+    user = raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    user = null;
+  }
+
+  if (user && user.name) {
+    if (loginLink) loginLink.style.display = 'none';
+    if (registerLink) registerLink.style.display = 'none';
+    if (authGroup) authGroup.style.display = 'inline-flex';
+    if (userBadge) userBadge.textContent = `${user.name} (${user.role || 'STUDENT'})`;
+  } else {
+    if (loginLink) loginLink.style.display = '';
+    if (registerLink) registerLink.style.display = '';
+    if (authGroup) authGroup.style.display = 'none';
+    if (userBadge) userBadge.textContent = '';
+  }
+}
+
+function initAuthSession() {
+  renderAuthNavState();
+  const logoutBtn = document.getElementById('navLogoutBtn');
+  if (!logoutBtn) return;
+
+  logoutBtn.addEventListener('click', async () => {
+    try {
+      await fetch(`${API_BASE_URL}/logout`, { method: 'POST' });
+    } catch (e) {
+      // Ignore network errors when clearing client session
+    }
+    localStorage.removeItem('alumni_auth_user');
+    localStorage.removeItem('alumni_auth_token');
+    renderAuthNavState();
+  });
+}
+
 // Initialize on DOM load
 document.addEventListener('DOMContentLoaded', () => {
   initTheme();
+  initAuthSession();
   setupEventListeners();
   loadAlumni();
   loadJobs();
