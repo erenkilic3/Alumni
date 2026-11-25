@@ -121,6 +121,17 @@ Sistemdeki kullanıcı hesaplarını, rollerini ve temel profil bilgilerini sakl
 }
 ```
 
+### User & Role Business Rules (Kullanıcı ve Rol İş Kuralları)
+
+1. Sistemdeki tüm kullanıcılar tanımlı üç rolden birine sahip olmalıdır: `ADMIN`, `ALUMNI` veya `STUDENT`.
+2. Rol değeri [`UserModel`](file:///Users/erenkilic/repo/Alumni/server/src/models/user.model.js) üzerinde büyük/küçük harf duyarsız (case-insensitive) olarak doğrulanır ve her zaman büyük harfe (`ADMIN`, `ALUMNI`, `STUDENT`) normalize edilir.
+3. Yeni kullanıcı oluşturulurken rol belirtilmezse veya boş gönderilirse varsayılan olarak `'STUDENT'` rolü atanır.
+4. `['ADMIN', 'ALUMNI', 'STUDENT']` dışındaki bir rol değeri gönderildiğinde sistem doğrulama hatası (`400 Bad Request`) döndürür.
+5. `name` alanı zorunludur; `email` alanı zorunlu, geçerli e-posta formatında ve tekil (`UNIQUE`) olmalıdır (`lowercase` olarak saklanır).
+6. Bir kullanıcı silindiğinde ilişkisel sahiplik kuralları veritabanı kısıtlamalarıyla korunur:
+   - `announcements.user_id`, `alumni.user_id` ve `job_postings.user_id` alanları `ON DELETE SET NULL` davranışı ile kurumsal duyuru, mezun profili ve iş ilanlarının kaybolmasını önler.
+   - `applications.user_id` alanı `ON DELETE CASCADE` davranışı ile silinen kullanıcı hesabına ait aday başvurularını temizler.
+
 ---
 
 ### 2. `announcements` Tablosu
@@ -285,6 +296,78 @@ Mezunların mesleki deneyimlerini, çalıştıkları sektörleri, uzmanlık alan
   "updated_at": "2026-10-15T11:00:00.000Z"
 }
 ```
+
+---
+
+## 🔐 Yetkilendirme ve Rol Tabanlı Erişim Kontrolü (Authorization & RBAC Matrix)
+
+AlumniSphere sisteminde yetkilendirme modeli, `users.role` alanı (`ADMIN`, `ALUMNI`, `STUDENT`) ve tablolardaki yabancı anahtar sahiplik bağları (`user_id`, `alumni_id`) üzerinden tanımlanır.
+
+### 👥 Sistem Rolleri ve Yetki Kapsamları
+
+| Rol (`users.role`) | Tanım ve Kapsam | Sahiplik Bağlantısı |
+| :--- | :--- | :--- |
+| **`ADMIN`** | **Sistem Yöneticisi / Üniversite & Kariyer Merkezi Yetkilisi**: Tüm kullanıcı hesapları, duyurular (sabitleme/`is_pinned` ve `URGENT` öncelik dahil), mezun profilleri, iş ilanları ve başvurular üzerinde tam sistem geneli CRUD ve yönetim yetkisine sahiptir. | Tüm kaynaklar üzerinde küresel erişim |
+| **`ALUMNI`** | **Mezun Kullanıcı**: Kendine bağlı `1:1` mezun profilini (`users.id -> alumni.user_id`) oluşturup güncelleyebilir, mentorluk (`is_mentor = true`) açabilir, kendi iş ilanlarını (`job_postings.user_id` / `alumni_id`) yayınlayıp yönetebilir, ilanlarına gelen başvuruların değerlendirme durumlarını (`REVIEWING`, `SHORTLISTED`, `ACCEPTED`, `REJECTED`) güncelleyebilir ve aktif ilanlara başvurabilir. | `alumni.user_id`, `job_postings.user_id` / `alumni_id`, `applications.user_id` |
+| **`STUDENT`** | **Öğrenci Kullanıcı** *(Varsayılan Rol)*: Kayıt sırasında varsayılan olarak atanan roldür. Mezun/mentor rehberini, aktif duyuruları ve açık iş/staj ilanlarını görüntüleyebilir; ilanlara başvuru (`applications`) oluşturabilir ve kendi kullanıcı hesabını/başvurularını görüntüleyip geri çekebilir. | `users.id`, `applications.user_id` |
+
+### 🧭 Rol – Varlık Sahiplik ve Yetki Akışı
+
+```mermaid
+flowchart TD
+    ADMIN["ADMIN (Sistem Yöneticisi)"] -->|"Tam CRUD (Tümü)"| USERS["users"]
+    ADMIN -->|"Yayın, Sabitleme (is_pinned), Arşiv"| ANNOUNCE["announcements"]
+    ADMIN -->|"Doğrulama & Tam CRUD"| ALUMNI["alumni"]
+    ADMIN -->|"Tam CRUD & Moderasyon"| JOBS["job_postings"]
+    ADMIN -->|"Tüm Başvurular & Durum Yönetimi"| APPS["applications"]
+
+    ALUMNI_ROLE["ALUMNI (Mezun Kullanıcı)"] -->|"Kendi Hesabı (user_id)"| USERS
+    ALUMNI_ROLE -->|"Okuma (ACTIVE)"| ANNOUNCE
+    ALUMNI_ROLE -->|"1:1 Kendi Profili & Mentorluk (user_id)"| ALUMNI
+    ALUMNI_ROLE -->|"Kendi İlanları CRUD (user_id / alumni_id)"| JOBS
+    ALUMNI_ROLE -->|"İlanlarına Gelenleri Değerlendirme & Kendi Başvuruları"| APPS
+
+    STUDENT["STUDENT (Öğrenci - Varsayılan)"] -->|"Kendi Hesabı (user_id)"| USERS
+    STUDENT -->|"Okuma (ACTIVE)"| ANNOUNCE
+    STUDENT -->|"Mentor & Mezun Rehberini Görüntüleme"| ALUMNI
+    STUDENT -->|"Aktif İlanları Görüntüleme"| JOBS
+    STUDENT -->|"Başvuru Oluşturma & Kendi Başvuruları (user_id)"| APPS
+```
+
+### 📋 Rol Tabanlı İzin Matrisi (RBAC Permission Matrix)
+
+> **Kapsam Anahtarı**: `TÜMÜ` = Sistemdeki tüm kayıtlar &bull; `KENDİ KAYDI` = Yalnızca `user_id` veya `alumni_id` ile kullanıcıya ait kayıtlar &bull; `YOK` = Erişim izni yok
+
+| Varlık / Tablo | İşlem / Yetki | `ADMIN` | `ALUMNI` | `STUDENT` |
+| :--- | :--- | :--- | :--- | :--- |
+| **`users`** | Listeleme / Arama (`GET /api/users`) | `TÜMÜ` | `KISITLI` *(Genel dizin alanları)* | `KISITLI` *(Genel dizin alanları)* |
+| **`users`** | Tekil Profil Okuma (`GET /api/users/:id`) | `TÜMÜ` | `KENDİ KAYDI` | `KENDİ KAYDI` |
+| **`users`** | Kullanıcı Oluşturma & Rol Atama (`POST /api/users`) | `TÜMÜ` *(Tüm roller)* | `YOK` *(Yalnızca self-kayıt)* | `YOK` *(Varsayılan `STUDENT`)* |
+| **`users`** | Güncelleme & Silme (`PUT/PATCH/DELETE`) | `TÜMÜ` | `KENDİ KAYDI` *(Rol değiştiremez)* | `KENDİ KAYDI` *(Rol değiştiremez)* |
+| **`announcements`** | Duyuruları Okuma (`GET /api/announcements`) | `TÜMÜ` *(DRAFT dahil)* | `ACTIVE` olanlar | `ACTIVE` olanlar |
+| **`announcements`** | Duyuru Oluşturma / Güncelleme / Silme | `TÜMÜ` | `YOK` *(Yalnızca okuma)* | `YOK` *(Yalnızca okuma)* |
+| **`announcements`** | Başa Sabitleme (`is_pinned`) & `URGENT` Öncelik | `EVET` | `YOK` | `YOK` |
+| **`alumni`** | Mezun ve Mentor Rehberini Okuma (`GET /api/alumni`) | `TÜMÜ` | `TÜMÜ` | `TÜMÜ` |
+| **`alumni`** | Mezun Profili Oluşturma / Güncelleme / Mentorluk (`is_mentor`) | `TÜMÜ` | `KENDİ KAYDI` (`user_id`) | `YOK` *(Yalnızca `ALUMNI` / `ADMIN`)* |
+| **`alumni`** | Mezun Profili Silme (`DELETE /api/alumni/:id`) | `TÜMÜ` | `KENDİ KAYDI` (`user_id`) | `YOK` |
+| **`job_postings`** | İş & Staj İlanlarını Görüntüleme (`GET /api/jobs`) | `TÜMÜ` *(CLOSED/DRAFT dahil)* | `ACTIVE` + `KENDİ KAYDI` | `ACTIVE` olanlar |
+| **`job_postings`** | İş İlanı Yayınlama (`POST /api/jobs`) | `TÜMÜ` | `EVET` (`user_id` / `alumni_id` ile) | `YOK` |
+| **`job_postings`** | İlan Güncelleme / Kapatma / Silme (`PUT/PATCH/DELETE`) | `TÜMÜ` | `KENDİ KAYDI` (`user_id` / `alumni_id`) | `YOK` |
+| **`applications`** | Başvuruları Listeleme (`GET /api/applications`) | `TÜMÜ` | `KENDİ İLANLARINA GELENLER` + `KENDİ BAŞVURULARI` | `KENDİ BAŞVURULARI` (`user_id`) |
+| **`applications`** | İlana Başvuru Gönderme (`POST /api/applications`) | `TÜMÜ` | `EVET` (`user_id` ile) | `EVET` (`user_id` ile) |
+| **`applications`** | Değerlendirme Durumu Güncelleme (`PENDING` → `REVIEWING` / `SHORTLISTED` / `ACCEPTED` / `REJECTED`) | `TÜMÜ` | `KENDİ İLANLARINA GELENLER` | `YOK` |
+| **`applications`** | Başvuru Geri Çekme / Silme (`DELETE`) | `TÜMÜ` | `KENDİ BAŞVURULARI` (`user_id`) | `KENDİ BAŞVURULARI` (`user_id`) |
+
+### 🔗 Sahiplik ve İlişkisel Bütünlük Kuralları (Ownership & Relational Integrity)
+
+1. **Doğrudan ve İç İçe Rotalarda Sahiplik Bağlamı**:
+   - İç içe rotalar (`/api/users/:userId/announcements`, `/api/users/:userId/alumni`, `/api/users/:userId/jobs`, `/api/users/:userId/applications`) üst kaynak olan `user_id` üzerinden sahiplik ilişkisini kurar.
+   - Mezun referanslı iş ilanları (`/api/alumni/:alumniId/jobs`) hem `alumni_id` hem de ilişkili kullanıcı üzerinden ilan sahibini izler; `/api/jobs/:jobId/applications` ise yalnızca ilanın sahibi (`job_postings.user_id`) veya `ADMIN` tarafından değerlendirilebilir.
+2. **Durum Değişikliği Sınırı**:
+   - Adaylar (`STUDENT` veya başvuran `ALUMNI`) kendi başvurularının `applicant_name`, `applicant_email`, `resume_url` ve `cover_letter` alanlarını düzenleyebilir veya başvuruyu silebilir; ancak `status` alanını (`REVIEWING`, `SHORTLISTED`, `ACCEPTED`, `REJECTED`) yalnızca ilan sahibi `ALUMNI` veya `ADMIN` güncelleyebilir.
+3. **Veri Koruma ve Katman Durumu Notu**:
+   - Veritabanı katmanında kullanıcı silindiğinde kurumsal süreklilik için `announcements`, `alumni` ve `job_postings` üzerindeki `user_id` referansları `ON DELETE SET NULL` ile korunurken, kullanıcıya özgü `applications` kayıtları `ON DELETE CASCADE` ile temizlenir.
+   - Mevcut REST ve Web SSR denetleyicilerinde (`server/src/controllers/`) oturum/JWT doğrulama ara katmanı henüz etkinleştirilmemiştir; bu bölüm, Phase 2 kimlik doğrulama ve rol korumaları (role-based guards) için hedef veri ve yetki sözleşmesini tanımlar.
 
 ---
 
